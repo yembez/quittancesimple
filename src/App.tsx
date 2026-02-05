@@ -48,6 +48,7 @@ import Admin from './pages/Admin';
 import QuittanceSuccess from './pages/QuittanceSuccess';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentCancelled from './pages/PaymentCancelled';
+import SetPassword from './pages/SetPassword'; // ← NOUVELLE LIGNE
 
 // Component to scroll to top on route change
 function ScrollToTop() {
@@ -73,8 +74,8 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const noLayoutPages = ['/billing', '/owner-confirmation', '/quick-confirm', '/quick-payment-confirm', '/sms-confirm', '/confirmation', '/quittance-success', '/payment-success', '/payment-cancelled'];
-  const noFooterPages = ['/billing', '/owner-confirmation', '/quick-confirm', '/quick-payment-confirm', '/sms-confirm', '/confirmation', '/dashboard', '/free-dashboard', '/manage-subscription', '/historique', '/revision-irl', '/quittance-success', '/payment-success', '/payment-cancelled'];
+  const noLayoutPages = ['/billing', '/owner-confirmation', '/quick-confirm', '/quick-payment-confirm', '/sms-confirm', '/confirmation', '/quittance-success', '/payment-success', '/payment-cancelled', '/set-password']; // ← AJOUT /set-password
+  const noFooterPages = ['/billing', '/owner-confirmation', '/quick-confirm', '/quick-payment-confirm', '/sms-confirm', '/confirmation', '/dashboard', '/free-dashboard', '/manage-subscription', '/historique', '/revision-irl', '/quittance-success', '/payment-success', '/payment-cancelled', '/set-password']; // ← AJOUT /set-password
   const formPages = ['/generator', '/generateur-quittance-loyer'];
 
   const shouldShowLayout = !noLayoutPages.includes(location.pathname) && !location.pathname.startsWith('/c/');
@@ -141,6 +142,7 @@ function App() {
           <Route path="/c/:code" element={<ShortLinkRedirect />} />
           <Route path="/inscription" element={<FreeSignup />} />
           <Route path="/signup" element={<FreeSignup />} />
+          <Route path="/set-password" element={<SetPassword />} /> {/* ← NOUVELLE ROUTE */}
           <Route path="/quittance-success" element={<QuittanceSuccess />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/payment-cancelled" element={<PaymentCancelled />} />
