@@ -475,13 +475,11 @@ const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
 
             <div className="mt-6 space-y-2">
               <p className="text-xs text-center text-[#7CAA89] font-semibold">
-                ✨ Compte créé automatiquement après paiement
+                ✨ Compte créé après paiement
               </p>
+            
               <p className="text-xs text-center text-[#545454]">
-                Vous recevrez vos identifiants par email
-              </p>
-              <p className="text-xs text-center text-[#545454]">
-                Paiement sécurisé par Stripe
+                Paiement sécurisé par Stripe - Sans engagement
               </p>
             </div>
           </div>
