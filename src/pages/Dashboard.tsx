@@ -880,13 +880,20 @@ setRecentTransactions(txData || []);
 
 const handleResendAccessLink = async () => {
     try {
-      // Récupérer l'email de l'utilisateur connecté automatiquement
+      // Essayer d'abord de récupérer l'email depuis la session
       const { data: { session } } = await supabase.auth.getSession();
-      const userEmail = session?.user?.email;
+      let userEmail = session?.user?.email;
 
+      // Si pas de session, essayer depuis le proprietaire (déjà chargé)
+      if (!userEmail && proprietaire) {
+        userEmail = proprietaire.email;
+      }
+
+      // Si toujours pas d'email, demander
       if (!userEmail) {
-        alert('Email introuvable. Veuillez vous reconnecter.');
-        return;
+        const emailInput = prompt('Entrez votre email pour recevoir le lien d\'accès :');
+        if (!emailInput) return;
+        userEmail = emailInput;
       }
 
       setResendingLink(true);
