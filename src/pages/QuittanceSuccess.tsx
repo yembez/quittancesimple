@@ -90,13 +90,13 @@ const QuittanceSuccess = () => {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="bg-gray-50 rounded-2xl p-3 md:p-8 border border-gray-200"
         >
-          <p className="text-base md:text-base font-medium text-[#1a1f20] mb-2">
+          <p className="text-base md:text-lg font-medium text-[#1a1f20] mb-2">
             Avec notre <span className="font-semibold text-[#1a1f20]">Mode Tranquillité...</span>  oubliez l'administratif locatif
           </p>
 <p className="text-1xl md:text-base font-medium text-[#1a1f20] mb-2">
            
           </p>
-          <div className="text-sm md:text-lg text-[#545454] mb-3 space-y-1.5">
+          <div className="text-sm md:text-base text-[#545454] mb-3 space-y-1.5">
             <div className="flex items-start gap-2">
               <FileText className="w-4 h-4 text-[#7CAA89] mt-0.5 flex-shrink-0" />
               <span><span className="font-semibold text-[#1a1f20]">Quittances</span> et relances loyer automatiques</span>
