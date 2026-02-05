@@ -880,16 +880,36 @@ setRecentTransactions(txData || []);
 
 const handleResendAccessLink = async () => {
     try {
-      // Essayer d'abord de récupérer l'email depuis la session
-      const { data: { session } } = await supabase.auth.getSession();
-      let userEmail = session?.user?.email;
+      let userEmail: string | null = null;
 
-      // Si pas de session, essayer depuis le proprietaire (déjà chargé)
+      // 1. Essayer depuis la session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.email) {
+        userEmail = session.user.email;
+      }
+
+      // 2. Essayer depuis le proprietaire
       if (!userEmail && proprietaire) {
         userEmail = proprietaire.email;
       }
 
-      // Si toujours pas d'email, demander
+      // 3. Essayer depuis l'URL (searchParams)
+      if (!userEmail) {
+        const emailFromUrl = searchParams.get('email');
+        if (emailFromUrl) {
+          userEmail = emailFromUrl;
+        }
+      }
+
+      // 4. Essayer depuis localStorage
+      if (!userEmail) {
+        const emailFromStorage = localStorage.getItem('proprietaireEmail');
+        if (emailFromStorage) {
+          userEmail = emailFromStorage;
+        }
+      }
+
+      // 5. En dernier recours, demander
       if (!userEmail) {
         const emailInput = prompt('Entrez votre email pour recevoir le lien d\'accès :');
         if (!emailInput) return;
@@ -924,7 +944,6 @@ const handleResendAccessLink = async () => {
       setResendingLink(false);
     }
   };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
