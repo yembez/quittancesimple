@@ -124,32 +124,83 @@ Deno.serve(async (req) => {
 
     console.log('📋 Plan config:', planConfig);
 
-    // 6. Upsert dans proprietaires
-    const { error: upsertError } = await supabase
+    // 6. CORRECTION: Chercher d'abord si le propriétaire existe
+    const { data: existingProprietaire, error: searchError } = await supabase
       .from('proprietaires')
-      .upsert(
-        {
-          email: customer_email,
+      .select('id, nom, prenom')
+      .eq('email', customer_email)
+      .single();
+
+    if (searchError && searchError.code !== 'PGRST116') {
+      console.error('❌ Error searching proprietaire:', searchError);
+      return corsResponse({ error: 'Database error' }, 500);
+    }
+
+    let proprietaireId: string;
+
+    if (existingProprietaire) {
+      // CAS 1: Le propriétaire existe déjà → UPDATE
+      console.log('✅ Propriétaire found, updating:', existingProprietaire.id);
+      
+      const { error: updateError } = await supabase
+        .from('proprietaires')
+        .update({
           abonnement_actif: true,
           plan_type: 'auto',
           plan_actuel: planConfig.plan_actuel,
           max_locataires: planConfig.max_locataires,
           stripe_customer_id: session.customer as string,
           stripe_subscription_id: (session.subscription as any)?.id || null,
+          lead_statut: 'QA_paying_customer',
           updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: 'email',
-          ignoreDuplicates: false,
-        }
-      );
+        })
+        .eq('id', existingProprietaire.id);
 
-    if (upsertError) {
-      console.error('❌ Error upserting proprietaire:', upsertError);
-      return corsResponse({ error: 'Failed to update account' }, 500);
+      if (updateError) {
+        console.error('❌ Error updating proprietaire:', updateError);
+        return corsResponse({ error: 'Failed to update account' }, 500);
+      }
+
+      proprietaireId = existingProprietaire.id;
+      console.log('✅ Proprietaire updated successfully');
+
+    } else {
+      // CAS 2: Nouveau propriétaire → INSERT avec valeurs par défaut
+      console.log('🆕 Creating new proprietaire');
+      
+      // Extraire nom/prénom de l'email si possible
+      const emailName = customer_email.split('@')[0];
+      const defaultName = emailName.charAt(0).toUpperCase() + emailName.slice(1);
+
+      const { data: newProprietaire, error: insertError } = await supabase
+        .from('proprietaires')
+        .insert({
+          email: customer_email,
+          nom: defaultName,
+          prenom: '',
+          telephone: '',
+          abonnement_actif: true,
+          plan_type: 'auto',
+          plan_actuel: planConfig.plan_actuel,
+          max_locataires: planConfig.max_locataires,
+          stripe_customer_id: session.customer as string,
+          stripe_subscription_id: (session.subscription as any)?.id || null,
+          lead_statut: 'QA_paying_customer',
+          source: 'quick_payment',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .select('id')
+        .single();
+
+      if (insertError) {
+        console.error('❌ Error creating proprietaire:', insertError);
+        return corsResponse({ error: 'Failed to create account' }, 500);
+      }
+
+      proprietaireId = newProprietaire.id;
+      console.log('✅ Proprietaire created successfully:', proprietaireId);
     }
-
-    console.log('✅ Proprietaire updated successfully');
 
     // 7. Vérifier si l'utilisateur Supabase Auth existe
     const { data: existingUser } = await supabase.auth.admin.getUserByEmail(customer_email);
@@ -223,14 +274,6 @@ Deno.serve(async (req) => {
     } else {
       console.log('✅ Confirmation email sent successfully');
     }
-
-    // 9. Mettre à jour le lead_statut après succès
-    await supabase
-      .from('proprietaires')
-      .update({ lead_statut: 'QA_paying_customer' })
-      .eq('email', customer_email);
-
-    console.log('✅ Lead status updated to paying customer');
 
     return corsResponse({
       success: true,
