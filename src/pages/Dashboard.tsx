@@ -878,15 +878,20 @@ setRecentTransactions(txData || []);
   const [resendingLink, setResendingLink] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
 
-  const handleResendAccessLink = async () => {
-    const emailInput = prompt('Entrez votre email pour recevoir le lien d\'accès :');
-
-    if (!emailInput) return;
-
-    setResendingLink(true);
-    setResendSuccess(false);
-
+const handleResendAccessLink = async () => {
     try {
+      // Récupérer l'email de l'utilisateur connecté automatiquement
+      const { data: { session } } = await supabase.auth.getSession();
+      const userEmail = session?.user?.email;
+
+      if (!userEmail) {
+        alert('Email introuvable. Veuillez vous reconnecter.');
+        return;
+      }
+
+      setResendingLink(true);
+      setResendSuccess(false);
+
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -896,7 +901,7 @@ setRecentTransactions(txData || []);
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${supabaseKey}`,
         },
-        body: JSON.stringify({ email: emailInput }),
+        body: JSON.stringify({ email: userEmail }),
       });
 
       if (!response.ok) {
@@ -904,10 +909,10 @@ setRecentTransactions(txData || []);
       }
 
       setResendSuccess(true);
-      alert('Email envoyé avec succès ! Vérifiez votre boîte mail et vos spams.');
+      alert(`✅ Email envoyé avec succès à ${userEmail} ! Vérifiez votre boîte mail et vos spams.`);
     } catch (err: any) {
       console.error('Error resending link:', err);
-      alert('Erreur lors de l\'envoi du lien. Vérifiez votre email ou contactez le support.');
+      alert('❌ Erreur lors de l\'envoi du lien. Contactez le support si le problème persiste.');
     } finally {
       setResendingLink(false);
     }
