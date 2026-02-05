@@ -326,16 +326,8 @@ Créée par des bailleurs, pour des bailleurs.
 
               {/* Contenu à droite */}
               <div className="flex-1 space-y-5">
-                <h2 className="text-3xl lg:text-3xl font-bold text-[#ed7862]">
-                 Mode Tranquillité
-                </h2>
-
-                <p className="text-xl text-[#415052] font-bold">
-                  Simplifiez-vous la vie...
-                </p>
-
-               
-                {/* Fonctionnalités */}
+              
+                {/* Fonctionnalités 
                 <ul className="space-y-2.5">
                   <li className="flex items-start">
                     <div className="w-5 h-5 bg-[#ed7862] rounded-full flex items-center justify-center mr-2.5 mt-0.5 flex-shrink-0">
@@ -391,7 +383,7 @@ Créée par des bailleurs, pour des bailleurs.
                       <p className="text-xs text-[#415052]">Toutes vos quittances accessibles 24/7</p>
                     </div>
                   </li>
-                </ul>
+                </ul> */}
 
                 {/* Toggle Mensuel/Annuel */}
                 <div className="flex justify-center lg:justify-start items-center gap-4">
