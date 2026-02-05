@@ -88,7 +88,7 @@ const QuittanceSuccess = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="bg-gray-50 rounded-2xl p-3 md:p-0 border border-gray-200"
+          className="bg-gray-50 rounded-2xl p-3 md:p-8 border border-gray-200"
         >
           <p className="text-base md:text-base font-medium text-[#1a1f20] mb-2">
             Avec notre <span className="font-semibold text-[#1a1f20]">Mode Tranquillité...</span>  oubliez l'administratif locatif
