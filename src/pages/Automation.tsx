@@ -287,7 +287,7 @@ Créée par des bailleurs, pour des bailleurs.
             </div>
 
             <div className="bg-[#7CAA89]/10 border-l-0 border-[#7CAA89] rounded-xl sm:items-center p-4 mt-6 hidden md:block">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex justify-center">
 
                 <button
                   onClick={() => openModal('Mode Tranquillité')}
