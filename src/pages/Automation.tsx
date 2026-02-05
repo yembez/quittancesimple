@@ -285,18 +285,6 @@ Créée par des bailleurs, pour des bailleurs.
                 </div>
               </div>
             </div>
-
-            <div className="bg-[#7CAA89]/10 border-l-0 border-[#7CAA89] rounded-xl sm:items-center p-4 mt-6 hidden md:block">
-              <div className="flex justify-center">
-
-                <button
-                  onClick={() => openModal('Mode Tranquillité')}
-                  className="whitespace-nowrap px-5 py-2.5 rounded-full bg-[#ed7862] hover:bg-[#e56651] text-white font-semibold text-sm transition-all transform hover:scale-105 shadow-md"
-                >
-                  Passer en Mode Tranquillité
-                </button>
-              </div>
-            </div>
           </motion.div>
         </div>
       </section>
