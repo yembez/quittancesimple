@@ -46,39 +46,21 @@ const QuittanceSuccess = () => {
       </header>
 
       {/* Content */}
-      <main className="flex-1 px-5 py-4 max-w-2xl mx-auto w-full">
-        {/* Back button
-        <motion.button
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.3 }}
-          onClick={() => {
-            trackGA4Event('back_button_clicked', {
-              page_source: 'quittance_success',
-              destination: 'home',
-            });
-            navigate('/');
-          }}
-          className="flex items-center gap-2 text-[#545454] hover:text-[#1a1f20] transition-colors mb-8"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span className="text-base">Retour</span>
-        </motion.button> */}
-
+      <main className="flex-1 px-5 py-4 md:py-12 max-w-3xl mx-auto w-full">
         {/* Success message */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="text-center mb-4"
+          className="text-center mb-6 md:mb-8"
         >
           <div className="flex items-center justify-center gap-2 mb-4">
-            <h1 className="text-xl md:text xl font-bold text-[#1a1f20]">
+            <h1 className="text-xl md:text-3xl font-bold text-[#1a1f20]">
               Quittance envoyée
             </h1>
-            <CheckCircle className="w-8 h-8 text-[#7CAA89]" />
+            <CheckCircle className="w-8 h-8 md:w-10 md:h-10 text-[#7CAA89]" />
           </div>
-          <p className="text-base md:text-lg text-[#545454]">
+          <p className="text-base md:text-xl text-[#545454]">
             Et si c'était la dernière à gérer manuellement?
           </p>
         </motion.div>
@@ -88,74 +70,78 @@ const QuittanceSuccess = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="bg-gray-50 rounded-2xl p-3 md:p-8 border border-gray-200"
+          className="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-6 md:p-10 border border-gray-200 shadow-lg"
         >
-          <p className="text-base md:text-lg font-medium text-[#1a1f20] mb-2">
-            Avec notre <span className="font-semibold text-[#1a1f20]">Mode Tranquillité...</span>  oubliez l'administratif locatif
-          </p>
-<p className="text-1xl md:text-base font-medium text-[#1a1f20] mb-2">
-           
-          </p>
-          <div className="text-sm md:text-base text-[#545454] mb-3 space-y-1.5">
-            <div className="flex items-start gap-2">
-              <FileText className="w-4 h-4 text-[#7CAA89] mt-0.5 flex-shrink-0" />
-              <span><span className="font-semibold text-[#1a1f20]">Quittances</span> et relances loyer automatiques</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <Calculator className="w-4 h-4 text-[#7CAA89] mt-0.5 flex-shrink-0" />
-              <span><span className="font-semibold text-[#1a1f20]">Calcul révisions IRL</span> automatique</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <Mail className="w-4 h-4 text-[#7CAA89] mt-0.5 flex-shrink-0" />
-              <span><span className="font-semibold text-[#1a1f20]">Courrier révision IRL</span> automatique</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <BarChart3 className="w-4 h-4 text-[#7CAA89] mt-0.5 flex-shrink-0" />
-              <span><span className="font-semibold text-[#1a1f20]">Bilans / CA annuel</span> prêts pour déclaration</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <Clock className="w-4 h-4 text-[#7CAA89] mt-0.5 flex-shrink-0" />
-              <span><span className="font-semibold text-[#1a1f20]">Historique</span> archivé, disponible 24/24</span>
-            </div>
-           
+          <div className="text-center mb-6 md:mb-8">
+            <p className="text-lg md:text-2xl font-bold text-[#1a1f20] mb-2">
+              Avec notre <span className="text-[#7CAA89]">Mode Tranquillité</span>
+            </p>
+            <p className="text-base md:text-lg text-[#545454]">
+              Oubliez l'administratif locatif
+            </p>
           </div>
 
-          <p className="text-sm md:text-base text-[#545454] mb-6">
+          <div className="text-sm md:text-lg text-[#545454] mb-6 md:mb-8 space-y-3 md:space-y-4 max-w-2xl mx-auto">
+            <div className="flex items-start gap-3 md:gap-4 p-3 md:p-4 bg-white rounded-xl border border-gray-100 hover:border-[#7CAA89] transition-colors">
+              <FileText className="w-5 h-5 md:w-6 md:h-6 text-[#7CAA89] mt-0.5 flex-shrink-0" />
+              <span><span className="font-semibold text-[#1a1f20]">Quittances</span> et relances loyer automatiques</span>
+            </div>
+            <div className="flex items-start gap-3 md:gap-4 p-3 md:p-4 bg-white rounded-xl border border-gray-100 hover:border-[#7CAA89] transition-colors">
+              <Calculator className="w-5 h-5 md:w-6 md:h-6 text-[#7CAA89] mt-0.5 flex-shrink-0" />
+              <span><span className="font-semibold text-[#1a1f20]">Calcul révisions IRL</span> automatique</span>
+            </div>
+            <div className="flex items-start gap-3 md:gap-4 p-3 md:p-4 bg-white rounded-xl border border-gray-100 hover:border-[#7CAA89] transition-colors">
+              <Mail className="w-5 h-5 md:w-6 md:h-6 text-[#7CAA89] mt-0.5 flex-shrink-0" />
+              <span><span className="font-semibold text-[#1a1f20]">Courrier révision IRL</span> automatique</span>
+            </div>
+            <div className="flex items-start gap-3 md:gap-4 p-3 md:p-4 bg-white rounded-xl border border-gray-100 hover:border-[#7CAA89] transition-colors">
+              <BarChart3 className="w-5 h-5 md:w-6 md:h-6 text-[#7CAA89] mt-0.5 flex-shrink-0" />
+              <span><span className="font-semibold text-[#1a1f20]">Bilans / CA annuel</span> prêts pour déclaration</span>
+            </div>
+            <div className="flex items-start gap-3 md:gap-4 p-3 md:p-4 bg-white rounded-xl border border-gray-100 hover:border-[#7CAA89] transition-colors">
+              <Clock className="w-5 h-5 md:w-6 md:h-6 text-[#7CAA89] mt-0.5 flex-shrink-0" />
+              <span><span className="font-semibold text-[#1a1f20]">Historique</span> archivé, disponible 24/24</span>
+            </div>
+          </div>
+
+          <p className="text-sm md:text-lg text-center text-[#545454] mb-6 md:mb-8 max-w-xl mx-auto">
             Tout est pris en charge, mais vous gardez le contrôle.
           </p>
 
           {/* CTA Button */}
-          <button
-            onClick={() => {
-              trackCtaClick('mode_tranquillite_success_page', 'quittance_success', 'payment_modal');
-              trackGA4Event('conversion_cta_clicked', {
-                cta_name: 'passer_mode_tranquillite',
-                page_source: 'quittance_success',
-                destination: 'payment_modal',
-              });
-              setIsPaymentModalOpen(true);
-            }}
-            className="w-full bg-[#ed7862] hover:bg-[#e56651] text-white font-bold text-base md:text-lg py-4 rounded-full transition-all transform hover:scale-[1.02] shadow-lg mb-4">
-            Passer en Mode Tranquillité
-          </button>
+          <div className="max-w-md mx-auto">
+            <button
+              onClick={() => {
+                trackCtaClick('mode_tranquillite_success_page', 'quittance_success', 'payment_modal');
+                trackGA4Event('conversion_cta_clicked', {
+                  cta_name: 'passer_mode_tranquillite',
+                  page_source: 'quittance_success',
+                  destination: 'payment_modal',
+                });
+                setIsPaymentModalOpen(true);
+              }}
+              className="w-full bg-[#ed7862] hover:bg-[#e56651] text-white font-bold text-base md:text-xl py-4 md:py-5 rounded-full transition-all transform hover:scale-[1.02] shadow-lg mb-4">
+              Passer en Mode Tranquillité
+            </button>
 
-          {/* Price */}
-          <p className="text-center text-sm md:text-base text-[#545454] mb-4">
-            Dès 0,82 € / mois • Sans engagement
-          </p>
+            {/* Price */}
+            <p className="text-center text-sm md:text-lg text-[#545454] mb-4">
+              Dès <span className="font-bold text-[#1a1f20]">0,82 € / mois</span> • Sans engagement
+            </p>
 
-          {/* Skip link */}
-          <button
-            onClick={() => {
-              trackGA4Event('skip_automation_clicked', {
-                page_source: 'quittance_success',
-                action: 'continue_without_automation',
-              });
-              navigate('/');
-            }}
-            className="w-full text-center text-sm md:text-base text-[#545454] hover:text-[#1a1f20] transition-colors underline">
-            Retour
-          </button>
+            {/* Skip link */}
+            <button
+              onClick={() => {
+                trackGA4Event('skip_automation_clicked', {
+                  page_source: 'quittance_success',
+                  action: 'continue_without_automation',
+                });
+                navigate('/');
+              }}
+              className="w-full text-center text-sm md:text-base text-[#545454] hover:text-[#1a1f20] transition-colors underline">
+              Retour
+            </button>
+          </div>
         </motion.div>
       </main>
 
