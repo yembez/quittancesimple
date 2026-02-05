@@ -349,7 +349,7 @@ const Home = () => {
 
         const messages = result.message.split('\n').filter((m: string) => m.trim());
         setSuccessMessage(messages);
-        navigate('/inscription', {
+        navigate('/quittance_success', {
           state: {
             email: formData.baillorEmail,
             nom: formData.baillorName,
