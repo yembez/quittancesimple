@@ -1,0 +1,1348 @@
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Home, Users, FileText, Settings, Bell, CheckCircle, XCircle, Send, Plus, Calendar, Euro, Mail, Phone, MapPin, Clock, Download, Eye, AlertCircle, Trash2, CreditCard, CreditCard as Edit, X, Lock, Edit2 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import QuittancePreview from '../components/QuittancePreview';
+import AddLocataireForm from '../components/AddLocataireForm';
+import ReminderPreviewModal from '../components/ReminderPreviewModal';
+import EditProprietaireModal from '../components/EditProprietaireModal';
+import EditLocataireModal from '../components/EditLocataireModal';
+import EditRappelModal from '../components/EditRappelModal';
+import LocatairesTable from '../components/LocatairesTable';
+import { processIBANInput } from '../utils/ibanUtils';
+
+interface Proprietaire {
+  id: string;
+  email: string;
+  nom: string;
+  prenom?: string;
+  adresse: string;
+  telephone?: string;
+  abonnement_actif: boolean;
+  plan_actuel?: string;
+  date_inscription?: string;
+}
+
+interface Locataire {
+  id: string;
+  proprietaire_id: string;
+  nom: string;
+  prenom?: string;
+  email?: string;
+  telephone?: string;
+  adresse_logement: string;
+  detail_adresse?: string;
+  loyer_mensuel: number;
+  charges_mensuelles: number;
+  caution_initiale?: number;
+  date_rappel: number; // Jour du mois (1-31)
+  heure_rappel?: number; // Heure (0-23)
+  minute_rappel?: number; // Minute (0-59)
+  periodicite: string; // 'mensuel', 'trimestriel'
+  statut: 'en_attente' | 'paye' | 'non_paye';
+  derniere_quittance?: string;
+  actif: boolean;
+  iban_hash?: string;
+  iban_last_digits?: string;
+  iban_display?: string;
+  iban_verified?: boolean;
+}
+
+interface Quittance {
+  id: string;
+  proprietaire_id: string;
+  locataire_id: string;
+  periode: string;
+  loyer: number;
+  charges: number;
+  total: number;
+  statut: 'generee' | 'envoyee' | 'archivee';
+  date_generation: string;
+  date_envoi?: string;
+  pdf_url?: string;
+}
+
+interface PaymentRule {
+  id: string;
+  locataire_id: string;
+  bank_connection_id: string;
+  expected_amount: number;
+  sender_iban?: string;
+  send_mode: 'auto' | 'manual_validation';
+}
+
+interface BankConnection {
+  id: string;
+  user_id: string;
+  status: string;
+  institution_name?: string;
+}
+
+interface Relance {
+  id: string;
+  proprietaire_id: string;
+  locataire_id: string;
+  date_envoi: string;
+  email_content: any;
+  statut: string;
+}
+
+const Dashboard = () => {
+  console.log('[Dashboard] 🔄 RENDER START');
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabParam || 'locataires');
+  const [proprietaire, setProprietaire] = useState<Proprietaire | null>(null);
+  const [locataires, setLocataires] = useState<Locataire[]>([]);
+  const [quittances, setQuittances] = useState<Quittance[]>([]);
+  const [paymentRules, setPaymentRules] = useState<Record<string, PaymentRule>>({});
+  const [bankConnection, setBankConnection] = useState<BankConnection | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [showAddLocataire, setShowAddLocataire] = useState(false);
+  const [editingLocataire, setEditingLocataire] = useState<Locataire | null>(null);
+  const [previewQuittance, setPreviewQuittance] = useState<any>(null);
+  const [isSending, setIsSending] = useState(false);
+  const [showReminderPreview, setShowReminderPreview] = useState(false);
+  const [reminderLocataire, setReminderLocataire] = useState<Locataire | null>(null);
+  const [relances, setRelances] = useState<Relance[]>([]);
+  const [showEditProprietaire, setShowEditProprietaire] = useState(false);
+  const [editingLocataireModal, setEditingLocataireModal] = useState<Locataire | null>(null);
+  const [editingRappelLocataire, setEditingRappelLocataire] = useState<Locataire | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const hasLoadedData = useRef(false);
+  const hasProcessedEmailAction = useRef(false);
+
+  // Formulaire nouveau locataire
+  const [newLocataire, setNewLocataire] = useState({
+    nom: '',
+    prenom: '',
+    email: '',
+    telephone: '',
+    adresse_logement: '',
+    detail_adresse: '',
+    loyer_mensuel: '',
+    charges_mensuelles: '',
+    caution_initiale: '',
+    date_rappel: '1',
+    heure_rappel: '9',
+    minute_rappel: '0',
+    periodicite: 'mensuel'
+  });
+
+
+  // Vérification de l'authentification et récupération des données
+  useEffect(() => {
+    console.log('[Dashboard] useEffect triggered, hasLoadedData:', hasLoadedData.current);
+
+    // Ne charger qu'une seule fois
+    if (hasLoadedData.current) return;
+
+    const token = searchParams.get('token');
+    const email = searchParams.get('email') || localStorage.getItem('proprietaireEmail');
+
+    console.log('[Dashboard] Token:', token, 'Email:', email);
+
+    if (!token && !email) {
+      // Rediriger vers la page d'authentification
+      navigate('/automation');
+      return;
+    }
+
+    if (email) {
+      localStorage.setItem('proprietaireEmail', email);
+      hasLoadedData.current = true;
+      loadDashboardData(email || '');
+    }
+  }, [searchParams, navigate]);
+
+  // Détection des actions depuis l'email (OUI/NON)
+  useEffect(() => {
+    console.log('[Dashboard] Second useEffect triggered, locataires:', locataires.length, 'hasProcessedEmailAction:', hasProcessedEmailAction.current);
+
+    // Ne traiter l'action qu'une seule fois
+    if (hasProcessedEmailAction.current) return;
+
+    const action = searchParams.get('action');
+    const locataireId = searchParams.get('locataireId');
+    const mois = searchParams.get('mois');
+    const annee = searchParams.get('annee');
+
+    if (action && locataireId && mois && annee && locataires.length > 0) {
+      console.log('[Dashboard] Action detected:', action, 'for locataire:', locataireId);
+      hasProcessedEmailAction.current = true; // Marquer comme traité
+
+      const locataire = locataires.find(l => l.id === locataireId);
+      if (locataire) {
+        if (action === 'send') {
+          // Action OUI : Envoyer la quittance
+          handleSendQuittanceFromEmail(locataire, mois, annee);
+        } else if (action === 'remind') {
+          // Action NON : Relancer le locataire
+          handleSendReminderFromEmail(locataire, mois, annee);
+        }
+      }
+    }
+  }, [searchParams, locataires]);
+
+  const loadRelances = async (proprietaireId: string) => {
+    const { data, error } = await supabase
+      .from('relances')
+      .select('*')
+      .eq('proprietaire_id', proprietaireId)
+      .order('date_envoi', { ascending: false });
+
+    if (!error && data) {
+      setRelances(data);
+    }
+  };
+
+  const loadDashboardData = async (email: string) => {
+    try {
+      setLoading(true);
+      console.log('[Dashboard] Loading data for:', email);
+
+      // 1. Récupérer les données du propriétaire
+      const { data: propData, error: propError } = await supabase
+        .from('proprietaires')
+        .select('*')
+        .eq('email', email)
+        .maybeSingle();
+
+      console.log('[Dashboard] Proprietaire data:', propData, 'Error:', propError);
+
+      if (propError) {
+        console.error('Erreur récupération propriétaire:', propError);
+        return;
+      }
+
+      if (!propData) {
+        console.error('Aucun propriétaire trouvé pour cet email');
+        navigate('/pricing');
+        return;
+      }
+
+      console.log('[Dashboard] Plan type:', propData.plan_type, 'Plan actuel:', propData.plan_actuel);
+
+      if (propData.plan_type === 'free') {
+        console.log('[Dashboard] Redirecting to free dashboard');
+        navigate(`/free-dashboard?email=${email}`);
+        return;
+      }
+
+      console.log('[Dashboard] Setting proprietaire state');
+      setProprietaire(propData);
+      console.log('[Dashboard] After setProprietaire');
+
+      // 2. Récupérer les locataires
+      const { data: locatairesData, error: locatairesError } = await supabase
+        .from('locataires')
+        .select('*')
+        .eq('proprietaire_id', propData.id)
+        .eq('actif', true);
+
+      if (!locatairesError && locatairesData) {
+        console.log('[Dashboard] Setting locataires state, count:', locatairesData.length);
+        setLocataires(locatairesData);
+        console.log('[Dashboard] After setLocataires');
+      }
+
+      // 3. Récupérer les quittances récentes
+      const { data: quittancesData, error: quittancesError } = await supabase
+        .from('quittances')
+        .select('*')
+        .eq('proprietaire_id', propData.id)
+        .order('date_generation', { ascending: false })
+        .limit(10);
+
+      if (!quittancesError && quittancesData) {
+        setQuittances(quittancesData);
+      }
+
+      // 4. Load relances history
+      loadRelances(propData.id);
+
+      // Si aucune quittance en base, créer des données de simulation pour la démo
+      if (!quittancesData || quittancesData.length === 0) {
+        // Créer des quittances de simulation
+        const today = new Date();
+        const simulatedQuittances = locatairesData?.slice(0, 3).map((locataire, index) => {
+          const date = new Date(today);
+          date.setMonth(date.getMonth() - index);
+          const periode = date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+
+          return {
+            id: `sim-${index}`,
+            proprietaire_id: propData.id,
+            locataire_id: locataire.id,
+            periode: periode,
+            loyer: locataire.loyer_mensuel,
+            charges: locataire.charges_mensuelles,
+            total: locataire.loyer_mensuel + locataire.charges_mensuelles,
+            statut: index === 0 ? 'envoyee' : 'envoyee',
+            date_generation: date.toISOString(),
+            date_envoi: date.toISOString()
+          };
+        }) || [];
+
+        if (simulatedQuittances.length > 0) {
+          setQuittances(simulatedQuittances);
+        }
+      }
+
+      // 4. Charger la connexion bancaire (pour plan Connectée+)
+      if (propData.plan_actuel === 'Quittance Connectée+' || propData.plan_actuel === 'premium') {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const { data: connData } = await supabase
+            .from('bank_connections')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .eq('status', 'active')
+            .maybeSingle();
+
+          if (connData) {
+            setBankConnection(connData);
+
+            // 5. Charger les règles de paiement pour chaque locataire
+            const { data: rulesData } = await supabase
+              .from('rent_payment_rules')
+              .select('*')
+              .eq('bank_connection_id', connData.id)
+              .eq('user_id', session.user.id);
+
+            if (rulesData) {
+              const rulesMap: Record<string, PaymentRule> = {};
+              rulesData.forEach((rule: any) => {
+                if (rule.locataire_id) {
+                  rulesMap[rule.locataire_id] = rule;
+                }
+              });
+              setPaymentRules(rulesMap);
+            }
+          }
+        }
+      }
+
+    } catch (error) {
+      console.error('Erreur chargement dashboard:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddLocataire = async () => {
+    if (!proprietaire) return;
+
+    try {
+      // Validation des champs requis
+      if (!newLocataire.nom || !newLocataire.adresse_logement || !newLocataire.loyer_mensuel) {
+        alert('Veuillez remplir tous les champs obligatoires (Nom, Adresse, Loyer)');
+        return;
+      }
+
+      // Store Paris time directly (no conversion needed)
+      const parisHour = parseInt(newLocataire.heure_rappel);
+      const parisMinute = parseInt(newLocataire.minute_rappel);
+
+      console.log(`Storing Paris time: ${parisHour}:${parisMinute}`);
+
+      const { data, error } = await supabase
+        .from('locataires')
+        .insert({
+          proprietaire_id: proprietaire.id,
+          nom: newLocataire.nom,
+          prenom: newLocataire.prenom,
+          email: newLocataire.email,
+          telephone: newLocataire.telephone,
+          adresse_logement: newLocataire.adresse_logement,
+          detail_adresse: newLocataire.detail_adresse || null,
+          loyer_mensuel: parseFloat(newLocataire.loyer_mensuel),
+          charges_mensuelles: parseFloat(newLocataire.charges_mensuelles) || 0,
+          caution_initiale: newLocataire.caution_initiale ? parseFloat(newLocataire.caution_initiale) : 0,
+          date_rappel: parseInt(newLocataire.date_rappel),
+          heure_rappel: parisHour,
+          minute_rappel: parisMinute,
+          periodicite: newLocataire.periodicite,
+          statut: 'en_attente',
+          actif: true
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Erreur ajout locataire:', error);
+        alert('Erreur lors de l\'ajout du locataire');
+        return;
+      }
+
+      console.log('Locataire ajouté avec succès:', data);
+      setLocataires([...locataires, data]);
+      setShowAddLocataire(false);
+      setNewLocataire({
+        nom: '',
+        prenom: '',
+        email: '',
+        telephone: '',
+        adresse_logement: '',
+        detail_adresse: '',
+        loyer_mensuel: '',
+        charges_mensuelles: '',
+        caution_initiale: '',
+        date_rappel: '1',
+        heure_rappel: '9',
+        minute_rappel: '0',
+        periodicite: 'mensuel'
+      });
+
+      alert('Locataire ajouté avec succès !');
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('Erreur lors de l\'ajout du locataire');
+    }
+  };
+
+  const handleGenerateQuittance = useCallback((locataire: Locataire) => {
+    if (!proprietaire) return;
+
+    const currentDate = new Date();
+    const periode = currentDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+
+    const quittanceData = {
+      baillorName: `${proprietaire.nom} ${proprietaire.prenom || ''}`.trim(),
+      baillorAddress: proprietaire.adresse,
+      baillorEmail: proprietaire.email,
+      locataireName: `${locataire.nom} ${locataire.prenom || ''}`.trim(),
+      logementAddress: locataire.adresse_logement,
+      loyer: locataire.loyer_mensuel.toString(),
+      charges: locataire.charges_mensuelles.toString(),
+      periode: periode,
+      isElectronicSignature: true,
+      locataireData: locataire
+    };
+
+    setPreviewQuittance(quittanceData);
+  }, [proprietaire]);
+
+  const handleSendQuittance = async () => {
+    if (!previewQuittance || !proprietaire || isSending) return;
+
+    const locataire = previewQuittance.locataireData;
+    if (!locataire.email) {
+      alert('❌ Email du locataire manquant. Veuillez ajouter une adresse email.');
+      return;
+    }
+
+    setIsSending(true);
+
+    try {
+      // Envoyer directement au locataire via la fonction Edge
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/send-quittance`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...previewQuittance,
+          locataireEmail: locataire.email  // Email du locataire
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        // Enregistrer en base
+        const currentDate = new Date();
+        const periode = currentDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+
+        const { error } = await supabase
+          .from('quittances')
+          .insert({
+            proprietaire_id: proprietaire.id,
+            locataire_id: locataire.id,
+            periode: periode,
+            loyer: parseFloat(previewQuittance.loyer),
+            charges: parseFloat(previewQuittance.charges),
+            total: parseFloat(previewQuittance.loyer) + parseFloat(previewQuittance.charges),
+            statut: 'envoyee',
+            date_generation: new Date().toISOString(),
+            date_envoi: new Date().toISOString()
+          });
+
+        // Mettre à jour le statut du locataire
+        await supabase
+          .from('locataires')
+          .update({
+            statut: 'paye',
+            derniere_quittance: new Date().toISOString()
+          })
+          .eq('id', locataire.id);
+
+        // Recharger les données
+        await loadDashboardData(proprietaire.email);
+
+        // Fermer la prévisualisation
+        setPreviewQuittance(null);
+
+        console.log('Affichage du popup de succès');
+
+        // Attendre un peu pour que la modal se ferme
+        setTimeout(() => {
+          // Message de succès popup modal
+          const popup = document.createElement('div');
+          popup.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4';
+          popup.style.zIndex = '9999';
+          popup.innerHTML = `
+            <div class="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl" id="success-popup" style="transform: scale(0); transition: transform 0.3s ease-out">
+              <div class="text-center">
+                <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg class="w-10 h-10 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                </div>
+                <h3 class="text-2xl font-bold text-[#2b2b2b] mb-2">
+                  Quittance PDF envoyée avec succès à votre locataire !
+                </h3>
+                <p class="text-gray-600 mb-6">
+                  L'email a été envoyé à <strong>${locataire.email}</strong>
+                </p>
+                <button
+                  onclick="this.closest('.fixed').remove()"
+                  class="bg-[#2D3436] hover:bg-[#1a1f20] text-white px-6 py-3 rounded-lg font-semibold transition-colors w-full"
+                >
+                  Parfait !
+                </button>
+              </div>
+            </div>
+          `;
+          document.body.appendChild(popup);
+          console.log('Popup ajouté au DOM');
+
+          // Animation d'entrée
+          setTimeout(() => {
+            const popupContent = document.getElementById('success-popup');
+            if (popupContent) {
+              popupContent.style.transform = 'scale(1)';
+              console.log('Animation du popup démarrée');
+            }
+          }, 50);
+
+          // Fermeture automatique après 5 secondes
+          setTimeout(() => {
+            if (popup.parentNode) {
+              const popupContent = document.getElementById('success-popup');
+              if (popupContent) {
+                popupContent.style.transform = 'scale(0)';
+              }
+              setTimeout(() => popup.remove(), 300);
+            }
+          }, 5000);
+        }, 300);
+      } else {
+        alert('❌ Erreur lors de l\'envoi de la quittance: ' + (result.message || 'Erreur inconnue'));
+      }
+    } catch (error) {
+      console.error('Erreur envoi quittance:', error);
+      alert('❌ Erreur lors de l\'envoi de la quittance');
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleTestReminders = async () => {
+    if (!proprietaire) return;
+
+    const confirmed = confirm('⚠️ TEST : Cela va vous envoyer les rappels SMS et email pour chaque locataire (comme si c\'était la date anniversaire). Continuer ?');
+    if (!confirmed) return;
+
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      const currentDate = new Date();
+      const moisCapitalized = currentDate.toLocaleDateString('fr-FR', { month: 'long' });
+      const mois = moisCapitalized.charAt(0).toUpperCase() + moisCapitalized.slice(1);
+      const annee = currentDate.getFullYear();
+      const periode = `${mois} ${annee}`;
+
+      for (const locataire of locataires) {
+        const montantTotal = locataire.loyer_mensuel + locataire.charges_mensuelles;
+        const proprietaireName = `${proprietaire.prenom || ''} ${proprietaire.nom}`.trim();
+        const locataireName = `${locataire.prenom || ''} ${locataire.nom}`.trim();
+
+        // Envoyer email au propriétaire avec boutons OUI/NON
+        try {
+          console.log(`📧 Envoi email de rappel au propriétaire: ${proprietaire.email}`);
+          const emailPayload = {
+            proprietaireId: proprietaire.id,
+            proprietaireEmail: proprietaire.email,
+            proprietaireName: proprietaireName,
+            locataireName: locataireName,
+            locataireId: locataire.id,
+            mois: periode,
+            annee: annee,
+            montantTotal: montantTotal
+          };
+          console.log('Payload email:', emailPayload);
+
+          const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-owner-reminder`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${supabaseKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(emailPayload)
+          });
+
+          const emailResult = await emailResponse.json();
+          console.log('Résultat email:', emailResult);
+
+          if (emailResponse.ok && emailResult.success) {
+            successCount++;
+            console.log(`✅ Email de rappel envoyé pour ${locataire.nom} - ID: ${emailResult.data?.id}`);
+          } else {
+            errorCount++;
+            console.error(`❌ Erreur email pour ${locataire.nom}:`, emailResult);
+          }
+        } catch (error) {
+          console.error(`Erreur email pour ${locataire.nom}:`, error);
+          errorCount++;
+        }
+
+        // Envoyer SMS au propriétaire si téléphone configuré
+        if (proprietaire.telephone) {
+          try {
+            console.log(`📱 Création lien court pour SMS...`);
+
+            // Générer un code court aléatoire (6 caractères)
+            const shortCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+
+            // Créer le lien court dans la base
+            const { error: linkError } = await supabase
+              .from('short_links')
+              .insert({
+                id: shortCode,
+                proprietaire_id: proprietaire.id,
+                locataire_id: locataire.id,
+                mois: periode,
+                annee: new Date().getFullYear(),
+                action: 'send',
+                source: 'sms'
+              });
+
+            if (linkError) {
+              console.error('Erreur création lien court:', linkError);
+              throw linkError;
+            }
+
+            console.log(`✅ Lien court créé: ${shortCode}`);
+            console.log(`📱 Envoi SMS à: ${proprietaire.telephone}`);
+
+            const smsResponse = await fetch(`${supabaseUrl}/functions/v1/send-owner-reminder-sms`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${supabaseKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                telephone: proprietaire.telephone,
+                proprietaireName: proprietaireName,
+                locataireName: locataireName,
+                shortCode: shortCode,
+                montantTotal: montantTotal
+              })
+            });
+
+            const smsResult = await smsResponse.json();
+            console.log('📥 Résultat SMS complet:', smsResult);
+            console.log('📊 Status HTTP:', smsResponse.status);
+
+            if (smsResponse.ok && smsResult.success) {
+              successCount++;
+              console.log(`✅ SMS de rappel envoyé avec succès pour ${locataire.nom}`);
+              console.log(`📱 Détails:`, smsResult.data);
+            } else if (smsResult.skipped) {
+              console.log(`⚠️ SMS non envoyé pour ${locataire.nom} - Service SMS non configuré`);
+            } else {
+              errorCount++;
+              console.error(`❌ Erreur SMS pour ${locataire.nom}:`, smsResult.error);
+
+              // Message d'aide selon l'erreur
+              if (smsResult.error?.includes('not yet activated')) {
+                console.error('🔧 Votre compte Brevo n\'a pas l\'envoi SMS activé. Contactez contact@sendinblue.com pour activer les SMS.');
+              } else if (smsResult.error?.includes('Key not found') || smsResult.error?.includes('unauthorized')) {
+                console.error('🔧 Clé API Brevo invalide. Vérifiez BREVO_API_KEY dans Supabase.');
+              } else {
+                console.error('🔧 Vérifiez la configuration SMS dans Supabase (BREVO_API_KEY ou TWILIO_*)');
+              }
+            }
+          } catch (error) {
+            console.error(`❌ Erreur SMS pour ${locataire.nom}:`, error);
+          }
+        } else {
+          console.log(`⚠️ Pas de téléphone configuré pour le propriétaire - SMS non envoyé`);
+        }
+      }
+
+      alert(`🎯 Test terminé !\n\n✅ ${successCount} rappel(s) envoyé(s) à votre adresse\n❌ ${errorCount} erreur(s)\n\nVérifiez votre email${proprietaire.telephone ? ' et SMS' : ''} !`);
+    } catch (error) {
+      console.error('Erreur test rappels:', error);
+      alert('❌ Erreur lors du test des rappels');
+    }
+  };
+
+  const handleRelanceLocataire = useCallback((locataire: Locataire) => {
+    if (!proprietaire || !locataire.email) {
+      alert('Email du locataire manquant. Veuillez ajouter une adresse email.');
+      return;
+    }
+    setReminderLocataire(locataire);
+    setShowReminderPreview(true);
+  }, [proprietaire]);
+
+  const handleConfirmSendReminder = async (customMessage?: string) => {
+    if (!proprietaire || !reminderLocataire) return;
+
+    setIsSending(true);
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      const emailContent = {
+        locataireEmail: reminderLocataire.email,
+        locataireName: `${reminderLocataire.nom} ${reminderLocataire.prenom || ''}`.trim(),
+        baillorName: `${proprietaire.nom} ${proprietaire.prenom || ''}`.trim(),
+        loyer: reminderLocataire.loyer_mensuel,
+        charges: reminderLocataire.charges_mensuelles,
+        adresseLogement: reminderLocataire.adresse_logement,
+        customMessage: customMessage
+      };
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/send-reminder-email`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(emailContent)
+      });
+
+      if (response.ok) {
+        // Save reminder history
+        await supabase.from('relances').insert({
+          proprietaire_id: proprietaire.id,
+          locataire_id: reminderLocataire.id,
+          email_content: emailContent,
+          statut: 'envoyee'
+        });
+
+        alert(`✅ Relance envoyée avec succès à ${reminderLocataire.nom} !`);
+        setShowReminderPreview(false);
+        setReminderLocataire(null);
+        loadRelances(proprietaire.id);
+      } else {
+        alert('❌ Erreur lors de l\'envoi de la relance');
+      }
+    } catch (error) {
+      console.error('Erreur relance:', error);
+      alert('❌ Erreur lors de l\'envoi de la relance');
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleSendQuittanceFromEmail = async (locataire: Locataire, mois: string, annee: string) => {
+    if (!proprietaire) return;
+
+    const currentDate = new Date();
+    const periode = `${mois} ${annee}`;
+
+    const quittanceData = {
+      proprietaireNom: `${proprietaire.nom} ${proprietaire.prenom || ''}`.trim(),
+      proprietaireAdresse: proprietaire.adresse,
+      locataireNom: `${locataire.nom} ${locataire.prenom || ''}`.trim(),
+      locataireAdresse: locataire.adresse_logement,
+      locataireDetailAdresse: locataire.detail_adresse || '',
+      periode: periode,
+      loyer: locataire.loyer_mensuel.toString(),
+      charges: locataire.charges_mensuelles.toString(),
+      caution: locataire.caution_initiale?.toString() || '0',
+      locataireData: locataire
+    };
+
+    setPreviewQuittance(quittanceData);
+
+    setTimeout(async () => {
+      if (!locataire.email) {
+        alert('❌ Email du locataire manquant.');
+        return;
+      }
+
+      try {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+        const response = await fetch(`${supabaseUrl}/functions/v1/send-quittance`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...quittanceData,
+            locataireEmail: locataire.email
+          })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          await supabase.from('quittances').insert({
+            proprietaire_id: proprietaire.id,
+            locataire_id: locataire.id,
+            periode: periode,
+            loyer: locataire.loyer_mensuel,
+            charges: locataire.charges_mensuelles,
+            total: locataire.loyer_mensuel + locataire.charges_mensuelles,
+            statut: 'envoyee',
+            date_generation: new Date().toISOString(),
+            date_envoi: new Date().toISOString()
+          });
+
+          await supabase.from('locataires').update({
+            statut: 'paye',
+            derniere_quittance: new Date().toISOString()
+          }).eq('id', locataire.id);
+
+          alert(`✅ Quittance envoyée avec succès à ${locataire.nom} !`);
+          navigate('/dashboard');
+        } else {
+          alert('❌ Erreur lors de l\'envoi de la quittance');
+        }
+      } catch (error) {
+        console.error('Erreur envoi quittance:', error);
+        alert('❌ Erreur lors de l\'envoi de la quittance');
+      }
+    }, 100);
+  };
+
+  const handleSendReminderFromEmail = async (locataire: Locataire, mois: string, annee: string) => {
+    if (!proprietaire || !locataire.email) {
+      alert('Email du locataire manquant.');
+      return;
+    }
+
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/send-reminder-email`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          locataireEmail: locataire.email,
+          locataireName: `${locataire.nom} ${locataire.prenom || ''}`.trim(),
+          baillorName: `${proprietaire.nom} ${proprietaire.prenom || ''}`.trim(),
+          loyer: locataire.loyer_mensuel,
+          charges: locataire.charges_mensuelles,
+          adresseLogement: locataire.adresse_logement
+        })
+      });
+
+      if (response.ok) {
+        alert(`✅ Relance envoyée avec succès à ${locataire.nom} pour ${mois} ${annee} !`);
+        navigate('/dashboard');
+      } else {
+        alert('❌ Erreur lors de l\'envoi de la relance');
+      }
+    } catch (error) {
+      console.error('Erreur relance:', error);
+      alert('❌ Erreur lors de l\'envoi de la relance');
+    }
+  };
+
+  const handleEditLocataire = async () => {
+    if (!editingLocataire || !proprietaire) return;
+
+    try {
+      // Store Paris time directly (no conversion needed)
+      const parisHour = parseInt(newLocataire.heure_rappel);
+      const parisMinute = parseInt(newLocataire.minute_rappel);
+
+      console.log(`Storing Paris time: ${parisHour}:${parisMinute}`);
+
+      const { error } = await supabase
+        .from('locataires')
+        .update({
+          nom: newLocataire.nom,
+          prenom: newLocataire.prenom,
+          email: newLocataire.email,
+          telephone: newLocataire.telephone,
+          adresse_logement: newLocataire.adresse_logement,
+          detail_adresse: newLocataire.detail_adresse || null,
+          loyer_mensuel: parseFloat(newLocataire.loyer_mensuel),
+          charges_mensuelles: parseFloat(newLocataire.charges_mensuelles),
+          caution_initiale: newLocataire.caution_initiale ? parseFloat(newLocataire.caution_initiale) : 0,
+          date_rappel: parseInt(newLocataire.date_rappel),
+          heure_rappel: parisHour,
+          minute_rappel: parisMinute,
+          periodicite: newLocataire.periodicite
+        })
+        .eq('id', editingLocataire.id);
+
+      if (error) {
+        console.error('Erreur modification locataire:', error);
+        alert('Erreur lors de la modification du locataire');
+        return;
+      }
+
+      console.log('Locataire modifié avec succès');
+      await loadDashboardData(proprietaire.email);
+      setEditingLocataire(null);
+      setNewLocataire({
+        nom: '',
+        prenom: '',
+        email: '',
+        telephone: '',
+        adresse_logement: '',
+        detail_adresse: '',
+        loyer_mensuel: '',
+        charges_mensuelles: '',
+        caution_initiale: '',
+        date_rappel: '1',
+        heure_rappel: '9',
+        minute_rappel: '0',
+        periodicite: 'mensuel'
+      });
+
+      alert('Locataire modifié avec succès !');
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('Erreur lors de la modification du locataire');
+    }
+  };
+
+  const handleDeleteLocataire = async (locataire: Locataire) => {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer ${locataire.nom} ${locataire.prenom || ''} ?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('locataires')
+        .delete()
+        .eq('id', locataire.id);
+
+      if (error) {
+        console.error('Erreur suppression locataire:', error);
+        alert('Erreur lors de la suppression du locataire');
+        return;
+      }
+
+      if (proprietaire) {
+        await loadDashboardData(proprietaire.email);
+      }
+      alert('Locataire supprimé avec succès !');
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('Erreur lors de la suppression du locataire');
+    }
+  };
+
+  // Déterminer le type de plan
+  const planType = (proprietaire?.plan_actuel === 'Quittance Connectée+' || proprietaire?.plan_actuel === 'premium')
+    ? 'connectee_plus'
+    : 'automatique';
+
+  // Handlers pour le tableau
+  const handleSyncPayment = useCallback(async (locataire: Locataire) => {
+    if (!proprietaire) return;
+    setIsSyncing(true);
+    try {
+      // Logique de synchronisation bancaire ici
+      alert(`Synchronisation pour ${locataire.nom} - Fonctionnalité à implémenter`);
+      await loadDashboardData(proprietaire.email);
+    } catch (error) {
+      console.error('Erreur sync:', error);
+      alert('Erreur lors de la synchronisation');
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [proprietaire]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-[#ed7862] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Chargement de votre tableau de bord...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!proprietaire) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-[#2b2b2b] mb-2">Accès non autorisé</h2>
+          <p className="text-gray-600 mb-4">Vous devez être connecté pour accéder au tableau de bord.</p>
+          <button
+            onClick={() => navigate('/automation')}
+            className="bg-[#ed7862] hover:bg-[#e56651] text-white px-6 py-3 rounded-lg font-semibold"
+          >
+            Retour à l'accueil
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  console.log('[Dashboard] About to render, proprietaire:', proprietaire?.email, 'locataires:', locataires.length);
+
+  return (
+    <div className="min-h-screen bg-gray-50 pt-20">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid lg:grid-cols-5 gap-8">
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
+            <nav className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 space-y-1 sticky top-24">
+              <button
+                onClick={() => setActiveTab('dashboard')}
+                className={`w-full flex items-center space-x-3 px-3 py-3 rounded-lg transition-colors text-base ${
+                  activeTab === 'dashboard'
+                    ? 'bg-[#7CAA89]/10 text-[#7CAA89] font-semibold'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <Home className="w-5 h-5" />
+                <span>Tableau de bord</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('historique')}
+                className={`w-full flex items-center space-x-3 px-3 py-3 rounded-lg transition-colors text-base ${
+                  activeTab === 'historique'
+                    ? 'bg-[#7CAA89]/10 text-[#7CAA89] font-semibold'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <FileText className="w-5 h-5" />
+                <span>Historique</span>
+              </button>
+              {planType === 'connectee_plus' && (
+                <button
+                  onClick={() => navigate('/bank-sync')}
+                  className="w-full flex items-center space-x-3 px-3 py-3 rounded-lg transition-colors text-base text-gray-600 hover:bg-gray-50"
+                >
+                  <CreditCard className="w-5 h-5" />
+                  <span>Synchro bancaire</span>
+                </button>
+              )}
+            </nav>
+          </div>
+
+          {/* Main Content */}
+          <div className="lg:col-span-4">
+            {activeTab === 'dashboard' && (
+              <div className="space-y-6">
+                {/* Section Mes informations */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold text-[#2b2b2b]">Mes informations</h2>
+                    <button
+                      onClick={() => setShowEditProprietaire(true)}
+                      className="flex items-center space-x-1 text-gray-500 hover:text-[#7CAA89] transition-colors"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                      <span className="text-sm">Modifier</span>
+                    </button>
+                  </div>
+                  <div className="grid md:grid-cols-3 gap-4 text-base">
+                    <div>
+                      <p className="text-sm text-gray-500">Nom complet</p>
+                      <p className="font-semibold text-gray-900">{proprietaire.nom} {proprietaire.prenom}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Email</p>
+                      <p className="text-gray-900">{proprietaire.email}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Plan</p>
+                      <p className="font-semibold text-[#7CAA89]">
+                        {proprietaire.plan_actuel || 'Mode Tranquillité'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section Mes locataires */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                  <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+                    <div>
+                      <h2 className="text-xl font-bold text-[#2b2b2b]">Mes locataires</h2>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {locataires.length} locataire{locataires.length > 1 ? 's' : ''} actif{locataires.length > 1 ? 's' : ''}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setShowAddLocataire(true)}
+                      className="bg-[#ed7862] hover:bg-[#e56651] text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2 transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Ajouter</span>
+                    </button>
+                  </div>
+
+                  {locataires.length > 0 ? (
+                    <LocatairesTable
+                      locataires={locataires}
+                      planType={planType}
+                      onEditLocataire={setEditingLocataireModal}
+                      onEditRappel={setEditingRappelLocataire}
+                      onSendQuittance={handleGenerateQuittance}
+                      onSendReminder={handleRelanceLocataire}
+                      onSyncPayment={planType === 'connectee_plus' ? handleSyncPayment : undefined}
+                      isSyncing={isSyncing}
+                    />
+                  ) : (
+                    <div className="p-12 text-center">
+                      <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-600 mb-4 text-base">Aucun locataire enregistré</p>
+                      <p className="text-sm text-gray-500 mb-4">
+                        Ajoutez votre premier locataire pour commencer à générer et envoyer des quittances.
+                      </p>
+                      <button
+                        onClick={() => setShowAddLocataire(true)}
+                        className="bg-[#7CAA89] hover:bg-[#6b9378] text-white px-6 py-3 rounded-lg font-semibold transition-colors text-base"
+                      >
+                        Ajouter un locataire
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'historique' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold text-[#2b2b2b]">Historique des quittances</h2>
+                </div>
+
+                {quittances.length > 0 ? (
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    {quittances.map((quittance) => (
+                      <div key={quittance.id} className="p-4 border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-semibold text-[#2b2b2b] text-base">{quittance.periode}</p>
+                            <p className="text-sm text-gray-600">
+                              {new Date(quittance.date_generation).toLocaleDateString('fr-FR')}
+                            </p>
+                          </div>
+                          <div className="flex items-center space-x-4">
+                            <span className="font-semibold text-[#2b2b2b] text-base">
+                              {quittance.total.toFixed(2)}€
+                            </span>
+                            <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                              quittance.statut === 'envoyee' ? 'bg-green-100 text-green-800' : 
+                              quittance.statut === 'generee' ? 'bg-blue-100 text-blue-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {quittance.statut === 'envoyee' ? 'Envoyée' : 
+                               quittance.statut === 'generee' ? 'Générée' : 'Archivée'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+                    <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-600 mb-2 text-base">Aucune quittance générée</p>
+                    <p className="text-sm text-gray-500">
+                      Les quittances que vous générerez apparaîtront ici.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Modals */}
+      {showEditProprietaire && proprietaire && (
+        <EditProprietaireModal
+          proprietaire={proprietaire}
+          onClose={() => setShowEditProprietaire(false)}
+          onSave={(updated) => {
+            setProprietaire(updated);
+            setShowEditProprietaire(false);
+          }}
+        />
+      )}
+
+      {editingLocataireModal && (
+        <EditLocataireModal
+          locataire={editingLocataireModal}
+          onClose={() => setEditingLocataireModal(null)}
+          onSave={(updated) => {
+            setLocataires(locataires.map(l => l.id === updated.id ? updated : l));
+            setEditingLocataireModal(null);
+          }}
+        />
+      )}
+
+      {editingRappelLocataire && (
+        <EditRappelModal
+          locataire={editingRappelLocataire}
+          onClose={() => setEditingRappelLocataire(null)}
+          onSave={(updated) => {
+            setLocataires(locataires.map(l => 
+              l.id === editingRappelLocataire.id ? { ...l, ...updated } : l
+            ));
+            setEditingRappelLocataire(null);
+          }}
+        />
+      )}
+
+      {showAddLocataire && (
+        <AddLocataireForm
+          newLocataire={newLocataire}
+          setNewLocataire={setNewLocataire}
+          onSubmit={handleAddLocataire}
+          onClose={() => {
+            setShowAddLocataire(false);
+            setNewLocataire({
+              nom: '',
+              prenom: '',
+              email: '',
+              telephone: '',
+              adresse_logement: '',
+              detail_adresse: '',
+              loyer_mensuel: '',
+              charges_mensuelles: '',
+              caution_initiale: '',
+              date_rappel: '1',
+              heure_rappel: '9',
+              minute_rappel: '0',
+              periodicite: 'mensuel'
+            });
+          }}
+        />
+      )}
+
+      {editingLocataire && (
+        <AddLocataireForm
+          newLocataire={newLocataire}
+          setNewLocataire={setNewLocataire}
+          onSubmit={handleEditLocataire}
+          onClose={() => {
+            setEditingLocataire(null);
+            setNewLocataire({
+              nom: '',
+              prenom: '',
+              email: '',
+              telephone: '',
+              adresse_logement: '',
+              detail_adresse: '',
+              loyer_mensuel: '',
+              charges_mensuelles: '',
+              caution_initiale: '',
+              date_rappel: '1',
+              heure_rappel: '9',
+              minute_rappel: '0',
+              periodicite: 'mensuel'
+            });
+          }}
+          isEditing={true}
+        />
+      )}
+
+      {previewQuittance && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-4xl w-full my-8 shadow-2xl">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10 rounded-t-2xl">
+              <h2 className="text-xl font-bold text-[#2b2b2b]">Prévisualisation de la quittance</h2>
+              <button
+                onClick={() => setPreviewQuittance(null)}
+                className="text-gray-400 hover:text-gray-600 text-2xl"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-6 max-h-[70vh] overflow-y-auto">
+              <QuittancePreview data={previewQuittance} />
+            </div>
+
+            <div className="border-t border-gray-200 bg-gray-50 p-6 rounded-b-2xl">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={handleSendQuittance}
+                  disabled={isSending}
+                  className="flex-1 bg-[#7CAA89] hover:bg-[#6b9378] text-white px-6 py-3 rounded-lg font-semibold flex items-center justify-center space-x-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-base"
+                >
+                  <Send className="w-5 h-5" />
+                  <span>{isSending ? 'Envoi en cours...' : 'Envoyer au locataire'}</span>
+                </button>
+
+                <button
+                  onClick={async () => {
+                    try {
+                      const { generateQuittancePDF } = await import('../utils/pdfGenerator');
+                      const pdfBlob = await generateQuittancePDF(previewQuittance);
+                      const url = URL.createObjectURL(pdfBlob);
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.download = `Quittance_${previewQuittance.periode.replace(/\s/g, '_')}.pdf`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      URL.revokeObjectURL(url);
+                    } catch (error) {
+                      console.error('Erreur téléchargement:', error);
+                      alert('Erreur lors du téléchargement');
+                    }
+                  }}
+                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold flex items-center justify-center space-x-2 transition-colors text-base"
+                >
+                  <Download className="w-5 h-5" />
+                  <span>Télécharger PDF</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showReminderPreview && reminderLocataire && (
+        <ReminderPreviewModal
+          locataire={reminderLocataire}
+          proprietaire={proprietaire}
+          onClose={() => {
+            setShowReminderPreview(false);
+            setReminderLocataire(null);
+          }}
+          onConfirm={handleConfirmSendReminder}
+          isSending={isSending}
+        />
+      )}
+    </div>
+  );
+};
+
+export default Dashboard;

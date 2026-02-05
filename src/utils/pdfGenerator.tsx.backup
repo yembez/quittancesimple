@@ -1,0 +1,479 @@
+import React from 'react';
+import { Document, Page, Text, View, StyleSheet, pdf } from '@react-pdf/renderer';
+
+interface QuittanceData {
+  nomProprietaire?: string;
+  prenomProprietaire?: string;
+  adresseProprietaire?: string;
+  baillorName?: string;
+  baillorAddress?: string;
+  baillorEmail?: string;
+  nomLocataire?: string;
+  prenomLocataire?: string;
+  adresseLogement?: string;
+  locataireName?: string;
+  logementAddress?: string;
+  moisLoyer?: string;
+  periode?: string;
+  montantLoyer?: string;
+  loyer?: string;
+  montantCharges?: string;
+  charges?: string;
+  dateDebut?: string;
+  dateFin?: string;
+  isProrata?: boolean;
+  typeCalcul?: string;
+  isElectronicSignature?: boolean;
+}
+
+const numberToFrench = (num: number): string => {
+  num = Math.round(num * 100) / 100;
+  if (num === 0) return 'zéro';
+
+  const ones = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf'];
+  const teens = ['dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
+  const tens = ['', '', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante', 'quatre-vingt', 'quatre-vingt'];
+
+  const convertHundreds = (n: number): string => {
+    let result = '';
+    if (n >= 100) {
+      const hundreds = Math.floor(n / 100);
+      result += (hundreds === 1) ? 'cent' : ones[hundreds] + ' cent';
+      if (n % 100 === 0 && hundreds > 1) result += 's';
+      n %= 100;
+      if (n > 0) result += ' ';
+    }
+    if (n >= 20) {
+      const tensDigit = Math.floor(n / 10);
+      const onesDigit = n % 10;
+      if (tensDigit === 7 || tensDigit === 9) {
+        result += tens[tensDigit - 1] + '-' + teens[onesDigit];
+      } else {
+        result += tens[tensDigit];
+        if (tensDigit === 8 && onesDigit === 0) result += 's';
+        if (onesDigit > 0) {
+          result += (onesDigit === 1 && [2,3,4,5,6].includes(tensDigit)) ? ' et un' : '-' + ones[onesDigit];
+        }
+      }
+    } else if (n >= 10) {
+      result += teens[n - 10];
+    } else if (n > 0) {
+      result += ones[n];
+    }
+    return result;
+  };
+
+  const convertThousands = (n: number): string => {
+    if (n === 0) return '';
+    let result = '';
+    if (n >= 1000000) {
+      const millions = Math.floor(n / 1000000);
+      result += (millions === 1) ? 'un million' : convertHundreds(millions) + ' millions';
+      n %= 1000000;
+      if (n > 0) result += ' ';
+    }
+    if (n >= 1000) {
+      const thousands = Math.floor(n / 1000);
+      result += (thousands === 1) ? 'mille' : convertHundreds(thousands) + ' mille';
+      n %= 1000;
+      if (n > 0) result += ' ';
+    }
+    if (n > 0) result += convertHundreds(n);
+    return result;
+  };
+
+  const integerPart = Math.floor(num);
+  const decimalPart = Math.round((num - integerPart) * 100);
+  let finalIntegerPart = integerPart;
+  let finalDecimalPart = decimalPart;
+
+  if (finalDecimalPart >= 100) {
+    finalIntegerPart += Math.floor(finalDecimalPart / 100);
+    finalDecimalPart = finalDecimalPart % 100;
+  }
+
+  let result = (finalIntegerPart === 0) ? 'zéro euro' : convertThousands(finalIntegerPart) + ((finalIntegerPart === 1) ? ' euro' : ' euros');
+
+  if (finalDecimalPart > 0) {
+    result += ' et ' + convertHundreds(finalDecimalPart) + ((finalDecimalPart === 1) ? ' centime' : ' centimes');
+  }
+
+  return result;
+};
+
+const styles = StyleSheet.create({
+  page: {
+    padding: 50,
+    fontFamily: 'Helvetica',
+    fontSize: 10,
+    backgroundColor: '#ffffff',
+  },
+  header: {
+    textAlign: 'center',
+    borderBottom: '2px solid #d1d5db',
+    paddingBottom: 20,
+    marginBottom: 30,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 10,
+    color: '#6b7280',
+  },
+  twoColumns: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    gap: 15,
+  },
+  column: {
+    width: '48%',
+  },
+  cardBailleur: {
+    backgroundColor: '#eff6ff',
+    padding: 12,
+    borderRadius: 8,
+  },
+  cardLocataire: {
+    backgroundColor: '#f0fdf4',
+    padding: 12,
+    borderRadius: 8,
+  },
+  cardTitle: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  baillorTitle: {
+    color: '#1e3a8a',
+  },
+  locataireTitle: {
+    color: '#15803d',
+  },
+  text: {
+    fontSize: 9,
+    marginBottom: 3,
+    color: '#374151',
+  },
+  textBold: {
+    fontSize: 9,
+    marginBottom: 3,
+    color: '#111827',
+    fontWeight: 'bold',
+  },
+  bienSection: {
+    backgroundColor: '#f9fafb',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    marginBottom: 6,
+    color: '#111827',
+  },
+  declaration: {
+    backgroundColor: '#ffffff',
+    border: '2px solid #d1d5db',
+    padding: 18,
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  declarationText: {
+    fontSize: 9,
+    lineHeight: 1.6,
+    color: '#1f2937',
+  },
+  detailBox: {
+    border: '1px solid #d1d5db',
+    borderRadius: 8,
+    marginBottom: 20,
+    overflow: 'hidden',
+  },
+  detailHeader: {
+    backgroundColor: '#f3f4f6',
+    padding: 8,
+  },
+  detailHeaderText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 8,
+    borderBottom: '1px solid #e5e7eb',
+  },
+  detailLabel: {
+    fontSize: 9,
+    color: '#374151',
+  },
+  detailValue: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 10,
+    backgroundColor: '#f9fafb',
+  },
+  totalLabel: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  totalValue: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#2563eb',
+  },
+  signatureSection: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginBottom: 30,
+    marginTop: 20,
+  },
+  signatureBox: {
+    alignItems: 'center',
+  },
+  signatureText: {
+    fontSize: 9,
+    color: '#6b7280',
+    marginBottom: 3,
+  },
+  signatureLabel: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    marginTop: 8,
+  },
+  stampBox: {
+    width: 120,
+    height: 70,
+    border: '2px solid #dc2626',
+    borderRadius: 8,
+    backgroundColor: '#fef2f2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stampText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#dc2626',
+    textAlign: 'center',
+  },
+  stampName: {
+    fontSize: 8,
+    color: '#6b7280',
+    marginTop: 5,
+    textAlign: 'center',
+  },
+  footer: {
+    backgroundColor: '#f9fafb',
+    padding: 12,
+    borderRadius: 8,
+    borderTop: '2px solid #d1d5db',
+  },
+  footerTitle: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    marginBottom: 6,
+  },
+  footerText: {
+    fontSize: 8,
+    color: '#6b7280',
+    lineHeight: 1.5,
+    marginBottom: 5,
+  },
+  footerElectronic: {
+    fontSize: 8,
+    color: '#059669',
+    lineHeight: 1.5,
+    marginTop: 6,
+  },
+});
+
+const QuittanceDocument: React.FC<{ data: QuittanceData }> = ({ data }) => {
+  const proprietaire = data.baillorName || `${data.prenomProprietaire || ''} ${data.nomProprietaire || ''}`.trim();
+  const adresseProprietaire = data.baillorAddress || data.adresseProprietaire || '';
+  const emailProprietaire = data.baillorEmail || '';
+  const locataire = data.locataireName || `${data.prenomLocataire || ''} ${data.nomLocataire || ''}`.trim();
+  const adresseLogement = data.logementAddress || data.adresseLogement || '';
+  const periode = data.periode || data.moisLoyer || '';
+  const loyer = data.loyer || data.montantLoyer || '0';
+  const charges = data.charges || data.montantCharges || '0';
+
+  const loyerNum = parseFloat(loyer) || 0;
+  const chargesNum = parseFloat(charges) || 0;
+  const total = loyerNum + chargesNum;
+
+  const currentDate = new Date();
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  };
+
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const getPeriodDates = (periode: string) => {
+    if (data.isProrata && data.dateDebut && data.dateFin) {
+      const startDate = new Date(data.dateDebut);
+      const endDate = new Date(data.dateFin);
+      return {
+        start: startDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }),
+        end: endDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+      };
+    }
+
+    const [month, year] = periode.split(' ');
+    const monthNames: { [key: string]: number } = {
+      'Janvier': 0, 'Février': 1, 'Mars': 2, 'Avril': 3, 'Mai': 4, 'Juin': 5,
+      'Juillet': 6, 'Août': 7, 'Septembre': 8, 'Octobre': 9, 'Novembre': 10, 'Décembre': 11
+    };
+
+    const monthIndex = monthNames[month] || 8;
+    const yearNum = parseInt(year) || 2025;
+
+    const startDate = new Date(yearNum, monthIndex, 1);
+    const endDate = new Date(yearNum, monthIndex + 1, 0);
+
+    return {
+      start: startDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }),
+      end: endDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+    };
+  };
+
+  const periodDates = getPeriodDates(periode);
+
+  const getVille = (address: string | undefined): string => {
+    if (!address) return 'Paris';
+    const parts = address.split(',');
+    const lastPart = parts[parts.length - 1].trim();
+    const words = lastPart.split(' ').filter(w => w.length > 0);
+    const ville = words.reverse().find(w => isNaN(Number(w)));
+    return ville || 'Paris';
+  };
+
+  const ville = getVille(adresseProprietaire);
+
+  return (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        <View style={styles.header}>
+          <Text style={styles.title}>QUITTANCE DE LOYER</Text>
+          <Text style={styles.subtitle}>Document généré le {formatDate(currentDate)}</Text>
+        </View>
+
+        <View style={styles.twoColumns}>
+          <View style={styles.column}>
+            <View style={styles.cardBailleur}>
+              <Text style={[styles.cardTitle, styles.baillorTitle]}>BAILLEUR</Text>
+              <Text style={styles.textBold}>{proprietaire}</Text>
+              <Text style={styles.text}>{adresseProprietaire}</Text>
+              <Text style={styles.text}>{emailProprietaire}</Text>
+            </View>
+          </View>
+
+          <View style={styles.column}>
+            <View style={styles.cardLocataire}>
+              <Text style={[styles.cardTitle, styles.locataireTitle]}>LOCATAIRE</Text>
+              <Text style={styles.textBold}>{locataire}</Text>
+              <Text style={styles.text}>Locataire du bien ci-dessous</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.bienSection}>
+          <Text style={styles.sectionTitle}>BIEN LOUÉ</Text>
+          <Text style={styles.text}>{adresseLogement}</Text>
+        </View>
+
+        <View style={styles.declaration}>
+          <Text style={styles.declarationText}>
+            Je soussigné(e) <Text style={{ fontWeight: 'bold' }}>{proprietaire}</Text>, propriétaire du logement désigné ci-dessus,
+            déclare avoir reçu de <Text style={{ fontWeight: 'bold' }}>{locataire}</Text>, la somme de{' '}
+            <Text style={{ fontWeight: 'bold', fontSize: 10, color: '#2563eb' }}>{total.toFixed(2)} €</Text>{' '}
+            ({numberToFrench(total)}) au titre du paiement du loyer et des charges pour la période du{' '}
+            <Text style={{ fontWeight: 'bold' }}>{periodDates.start}</Text> au <Text style={{ fontWeight: 'bold' }}>{periodDates.end}</Text>{' '}
+            et lui en donne quittance, sous réserve de tous mes droits.
+          </Text>
+        </View>
+
+        <View style={styles.detailBox}>
+          <View style={styles.detailHeader}>
+            <Text style={styles.detailHeaderText}>DÉTAIL DU RÈGLEMENT</Text>
+          </View>
+
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Loyer</Text>
+            <Text style={styles.detailValue}>{loyerNum.toFixed(2)} €</Text>
+          </View>
+
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Provision pour charges</Text>
+            <Text style={styles.detailValue}>{chargesNum.toFixed(2)} €</Text>
+          </View>
+
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>TOTAL</Text>
+            <Text style={styles.totalValue}>{total.toFixed(2)} €</Text>
+          </View>
+        </View>
+
+        <View style={styles.signatureSection}>
+          <View style={styles.signatureBox}>
+            <Text style={styles.signatureText}>Fait à : {ville}</Text>
+            <Text style={styles.signatureText}>Le : {formatDate(currentDate)}</Text>
+            <Text style={styles.signatureLabel}>Signature du bailleur</Text>
+
+            {data.isElectronicSignature ? (
+              <View>
+                <View style={styles.stampBox}>
+                  <Text style={{ fontSize: 16, color: '#dc2626' }}>✓</Text>
+                  <Text style={styles.stampText}>SIGNÉ</Text>
+                  <Text style={styles.stampText}>ÉLECTRONIQUEMENT</Text>
+                </View>
+                <Text style={styles.stampName}>{proprietaire}</Text>
+              </View>
+            ) : (
+              <View style={{ width: 120, height: 60, borderBottom: '2px solid #9ca3af' }} />
+            )}
+          </View>
+        </View>
+
+        <View style={styles.footer}>
+          <Text style={styles.footerTitle}>Mentions légales :</Text>
+          <Text style={styles.footerText}>
+            Cette quittance annule tous les reçus qui auraient pu être établis précédemment en cas de paiement partiel du montant du présent terme.
+            Elle est à conserver pendant trois ans par le locataire (loi n° 89-462 du 6 juillet 1989 : art. 7-1).
+          </Text>
+          {data.isElectronicSignature && (
+            <Text style={styles.footerElectronic}>
+              ✓ Quittance validée électroniquement par le bailleur via Quittance Simple, le {formatDate(currentDate)} à {formatTime(currentDate)},
+              conformément à l'article 1367 du Code civil sur la valeur juridique de la signature électronique.
+            </Text>
+          )}
+        </View>
+      </Page>
+    </Document>
+  );
+};
+
+export async function generateQuittancePDF(data: QuittanceData): Promise<Blob> {
+  const doc = <QuittanceDocument data={data} />;
+  const blob = await pdf(doc).toBlob();
+  return blob;
+}

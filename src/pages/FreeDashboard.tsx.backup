@@ -1,0 +1,600 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { Home, FileText, Download, Star, Zap, Info, Crown, Edit2, ArrowLeft } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import QuittancePreview from '../components/QuittancePreview';
+
+interface Proprietaire {
+  id: string;
+  email: string;
+  nom: string;
+  prenom?: string;
+  adresse: string;
+  telephone?: string;
+  plan_type: string;
+  max_locataires: number;
+  max_quittances: number;
+}
+
+interface Locataire {
+  id: string;
+  proprietaire_id: string;
+  nom: string;
+  prenom?: string;
+  email?: string;
+  adresse_logement: string;
+  loyer_mensuel: number;
+  charges_mensuelles: number;
+  actif: boolean;
+}
+
+interface Quittance {
+  id: string;
+  proprietaire_id: string;
+  locataire_id: string;
+  periode_debut: string;
+  periode_fin: string;
+  loyer: number;
+  charges: number;
+  total: number;
+  date_generation: string;
+}
+
+const FreeDashboard = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState('tableau-de-bord');
+  const [proprietaire, setProprietaire] = useState<Proprietaire | null>(null);
+  const [locataire, setLocataire] = useState<Locataire | null>(null);
+  const [quittances, setQuittances] = useState<Quittance[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [previewQuittance, setPreviewQuittance] = useState<any>(null);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showEditProprietaire, setShowEditProprietaire] = useState(false);
+  const [showEditLocataire, setShowEditLocataire] = useState(false);
+
+  useEffect(() => {
+    const email = searchParams.get('email') || localStorage.getItem('proprietaireEmail');
+
+    if (!email) {
+      navigate('/');
+      return;
+    }
+
+    loadDashboardData(email);
+  }, [searchParams, navigate]);
+
+  const loadDashboardData = async (email: string) => {
+    try {
+      setLoading(true);
+
+      const { data: propData, error: propError } = await supabase
+        .from('proprietaires')
+        .select('*')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (propError || !propData) {
+        console.error('Erreur propriétaire:', propError);
+        navigate('/');
+        return;
+      }
+
+      if (propData.plan_type !== 'free') {
+        navigate('/dashboard');
+        return;
+      }
+
+      setProprietaire(propData);
+
+      const { data: locataireData } = await supabase
+        .from('locataires')
+        .select('*')
+        .eq('proprietaire_id', propData.id)
+        .eq('actif', true)
+        .maybeSingle();
+
+      if (locataireData) {
+        setLocataire(locataireData);
+      }
+
+      const { data: quittancesData } = await supabase
+        .from('quittances')
+        .select('*')
+        .eq('proprietaire_id', propData.id)
+        .order('date_generation', { ascending: false })
+        .limit(3);
+
+      if (quittancesData) {
+        setQuittances(quittancesData);
+      }
+
+    } catch (error) {
+      console.error('Erreur chargement:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGenerateQuittance = async () => {
+    if (!proprietaire || !locataire) return;
+
+    const currentDate = new Date();
+    const periode = currentDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+
+    const quittanceData = {
+      baillorName: `${proprietaire.nom} ${proprietaire.prenom || ''}`.trim(),
+      baillorAddress: proprietaire.adresse || 'Adresse à compléter dans Paramètres',
+      baillorEmail: proprietaire.email,
+      locataireName: `${locataire.nom} ${locataire.prenom || ''}`.trim(),
+      logementAddress: locataire.adresse_logement,
+      loyer: locataire.loyer_mensuel.toString(),
+      charges: locataire.charges_mensuelles.toString(),
+      periode: periode,
+      isElectronicSignature: true
+    };
+
+    setPreviewQuittance(quittanceData);
+    setShowPreviewModal(true);
+  };
+
+  const handleSaveQuittance = async () => {
+    if (!proprietaire || !locataire) return;
+
+    try {
+      const currentDate = new Date();
+      const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+
+      const { error: saveError } = await supabase
+        .from('quittances')
+        .insert({
+          proprietaire_id: proprietaire.id,
+          locataire_id: locataire.id,
+          periode_debut: firstDayOfMonth.toISOString().split('T')[0],
+          periode_fin: lastDayOfMonth.toISOString().split('T')[0],
+          loyer: locataire.loyer_mensuel,
+          charges: locataire.charges_mensuelles,
+          signature_electronique: true,
+          statut: 'generee',
+          source: 'dashboard_gratuit',
+          date_generation: new Date().toISOString()
+        });
+
+      if (saveError) {
+        console.error('Erreur sauvegarde quittance:', saveError);
+      } else {
+        console.log('✅ Quittance enregistrée dans la base de données');
+        await loadDashboardData(proprietaire.email);
+      }
+    } catch (error) {
+      console.error('Erreur sauvegarde quittance:', error);
+    }
+  };
+
+  const handleDownloadQuittance = async (quittance: Quittance) => {
+    if (!proprietaire || !locataire) return;
+
+    const periodeDebut = new Date(quittance.periode_debut);
+    const periode = periodeDebut.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+
+    const quittanceData = {
+      baillorName: `${proprietaire.nom} ${proprietaire.prenom || ''}`.trim(),
+      baillorAddress: proprietaire.adresse || 'Adresse à compléter',
+      baillorEmail: proprietaire.email,
+      locataireName: `${locataire.nom} ${locataire.prenom || ''}`.trim(),
+      logementAddress: locataire.adresse_logement,
+      loyer: quittance.loyer.toString(),
+      charges: quittance.charges.toString(),
+      periode: periode,
+      isElectronicSignature: true
+    };
+
+    setPreviewQuittance(quittanceData);
+    setShowPreviewModal(true);
+  };
+
+  const formatPeriode = (periodeDebut: string) => {
+    const date = new Date(periodeDebut);
+    return date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-[#7CAA89] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!proprietaire) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">Accès non autorisé</p>
+          <button
+            onClick={() => navigate('/')}
+            className="bg-[#7CAA89] text-white px-6 py-3 rounded-lg font-semibold"
+          >
+            Retour à l'accueil
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 pt-16">
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="bg-gradient-to-r from-[#7CAA89] to-[#6b9378] rounded-xl shadow-lg p-6 mb-6 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center space-x-2 mb-2">
+                <Star className="w-5 h-5" />
+                <span className="text-sm font-medium">Plan Gratuit</span>
+              </div>
+              <h1 className="text-2xl font-bold">
+                Bonjour {proprietaire.nom} {proprietaire.prenom}
+              </h1>
+              <p className="text-white/90 mt-1">
+                1 locataire • 3 dernières quittances conservées
+              </p>
+            </div>
+            <Link
+              to="/pricing"
+              className="bg-white/20 hover:bg-white/30 backdrop-blur-sm px-6 py-3 rounded-lg font-semibold transition-colors flex items-center space-x-2"
+            >
+              <Zap className="w-5 h-5" />
+              <span>Découvrir l'automatique</span>
+            </Link>
+          </div>
+        </div>
+
+        <div className="grid lg:grid-cols-4 gap-8">
+          <div className="lg:col-span-1">
+            <nav className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 space-y-1">
+              <button
+                onClick={() => setActiveTab('tableau-de-bord')}
+                className={`w-full flex items-center space-x-3 px-3 py-3 rounded-lg transition-colors ${
+                  activeTab === 'tableau-de-bord'
+                    ? 'bg-[#7CAA89]/10 text-[#7CAA89] font-semibold'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <Home className="w-5 h-5" />
+                <span>Tableau de bord</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('historique')}
+                className={`w-full flex items-center space-x-3 px-3 py-3 rounded-lg transition-colors ${
+                  activeTab === 'historique'
+                    ? 'bg-[#7CAA89]/10 text-[#7CAA89] font-semibold'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <FileText className="w-5 h-5" />
+                <span>Historique</span>
+              </button>
+              <Link
+                to="/pricing"
+                className="w-full flex items-center space-x-3 px-3 py-3 rounded-lg text-[#ed7862] hover:bg-[#ed7862]/10 font-semibold transition-colors"
+              >
+                <Crown className="w-5 h-5" />
+                <span>Abonnement</span>
+              </Link>
+            </nav>
+          </div>
+
+          <div className="lg:col-span-3">
+            {activeTab === 'tableau-de-bord' && (
+              <div className="space-y-6">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold text-[#2b2b2b]">Informations propriétaire</h2>
+                    <span className="bg-[#7CAA89]/10 text-[#7CAA89] px-3 py-1 rounded-full text-sm font-semibold">
+                      Plan Gratuit • Quittance manuelle
+                    </span>
+                  </div>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <p><span className="font-medium">Nom:</span> {proprietaire.nom} {proprietaire.prenom}</p>
+                    <p><span className="font-medium">Email:</span> {proprietaire.email}</p>
+                    {proprietaire.adresse && <p><span className="font-medium">Adresse:</span> {proprietaire.adresse}</p>}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-4">
+                    Vous pouvez générer vos quittances gratuitement pour 1 locataire et conserver vos 3 derniers mois.
+                  </p>
+                </div>
+
+                {locataire ? (
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h2 className="text-xl font-bold text-[#2b2b2b] mb-4">Mon locataire</h2>
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Nom</p>
+                        <p className="text-base font-semibold text-[#2b2b2b]">
+                          {locataire.nom} {locataire.prenom}
+                        </p>
+                      </div>
+                      {locataire.email && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">Email</p>
+                          <p className="text-base text-[#2b2b2b]">{locataire.email}</p>
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Adresse</p>
+                        <p className="text-base text-[#2b2b2b]">{locataire.adresse_logement}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Loyer + Charges</p>
+                        <p className="text-base font-semibold text-[#2b2b2b]">
+                          {locataire.loyer_mensuel}€ + {locataire.charges_mensuelles}€
+                        </p>
+                      </div>
+
+                      <div className="pt-4 space-y-3">
+                        <button
+                          onClick={handleGenerateQuittance}
+                          className="w-full bg-[#7CAA89] hover:bg-[#6b9378] text-white px-4 py-3 rounded-lg font-semibold flex items-center justify-center space-x-2 transition-colors"
+                        >
+                          <FileText className="w-5 h-5" />
+                          <span>Générer la quittance du mois</span>
+                        </button>
+
+                        <div className="group relative">
+                          <button
+                            disabled
+                            className="w-full bg-gray-200 text-gray-400 px-4 py-3 rounded-lg font-semibold flex items-center justify-center space-x-2 cursor-not-allowed"
+                          >
+                            <span>🔔 Relancer le locataire</span>
+                          </button>
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                            Relance automatique disponible dans Mode Tranquillité dès 1 €/mois
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
+                              <div className="border-4 border-transparent border-t-gray-900"></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+                    <p className="text-gray-600 mb-4">Aucun locataire enregistré</p>
+                    <p className="text-sm text-gray-500">
+                      Générez une quittance gratuite depuis la page d'accueil pour enregistrer votre premier locataire.
+                    </p>
+                    <Link
+                      to="/"
+                      className="inline-block mt-4 bg-[#7CAA89] hover:bg-[#6b9378] text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+                    >
+                      Générer une quittance
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'historique' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold text-[#2b2b2b]">Historique des quittances</h2>
+                  <span className="text-sm text-gray-500">
+                    {quittances.length}/3 quittances
+                  </span>
+                </div>
+
+                {quittances.length > 0 ? (
+                  <>
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                      {quittances.map((quittance) => (
+                        <div key={quittance.id} className="p-4 border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-semibold text-[#2b2b2b]">{formatPeriode(quittance.periode_debut)}</p>
+                              <p className="text-sm text-gray-600">
+                                {new Date(quittance.date_generation).toLocaleDateString('fr-FR')}
+                              </p>
+                            </div>
+                            <div className="flex items-center space-x-4">
+                              <span className="font-semibold text-[#2b2b2b]">
+                                {quittance.total.toFixed(2)}€
+                              </span>
+                              <button
+                                onClick={() => handleDownloadQuittance(quittance)}
+                                className="text-[#7CAA89] hover:text-[#6b9378] flex items-center space-x-1 transition-colors"
+                              >
+                                <Download className="w-4 h-4" />
+                                <span>Télécharger</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="bg-gradient-to-r from-[#ed7862]/10 to-[#ed7862]/5 border border-[#ed7862]/20 rounded-xl p-6">
+                      <div className="flex items-start space-x-3">
+                        <Info className="w-5 h-5 text-[#ed7862] flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-[#2b2b2b] mb-2">
+                            Besoin de plus ?
+                          </h3>
+                          <p className="text-sm text-gray-600 mb-4">
+                            Historique complet, plusieurs locataires et envoi automatique chaque mois dès 1 €/mois.
+                          </p>
+                          <Link
+                            to="/pricing"
+                            className="inline-flex items-center space-x-2 bg-[#ed7862] hover:bg-[#e56651] text-white px-6 py-2 rounded-lg font-semibold transition-colors"
+                          >
+                            <Zap className="w-4 h-4" />
+                            <span>Découvrir la version automatique</span>
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+                    <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-600 mb-2">Aucune quittance générée</p>
+                    <p className="text-sm text-gray-500">
+                      Les quittances que vous générerez apparaîtront ici.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'parametres' && (
+              <div className="space-y-4">
+                <h2 className="text-2xl font-bold text-[#2b2b2b] mb-4">Paramètres</h2>
+
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                  <h3 className="text-lg font-semibold text-[#2b2b2b] mb-4">
+                    Informations du propriétaire
+                  </h3>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Nom</label>
+                      <input
+                        type="text"
+                        value={proprietaire.nom}
+                        onChange={(e) => setProprietaire({ ...proprietaire, nom: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7CAA89]/20 focus:border-[#7CAA89]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Prénom</label>
+                      <input
+                        type="text"
+                        value={proprietaire.prenom || ''}
+                        onChange={(e) => setProprietaire({ ...proprietaire, prenom: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7CAA89]/20 focus:border-[#7CAA89]"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                      <input
+                        type="email"
+                        value={proprietaire.email}
+                        disabled
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Adresse</label>
+                      <input
+                        type="text"
+                        value={proprietaire.adresse || ''}
+                        onChange={(e) => setProprietaire({ ...proprietaire, adresse: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7CAA89]/20 focus:border-[#7CAA89]"
+                        placeholder="Votre adresse complète"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      const { error } = await supabase
+                        .from('proprietaires')
+                        .update({
+                          nom: proprietaire.nom,
+                          prenom: proprietaire.prenom,
+                          adresse: proprietaire.adresse
+                        })
+                        .eq('email', proprietaire.email);
+
+                      if (error) {
+                        alert('Erreur lors de la mise à jour');
+                      } else {
+                        alert('Informations mises à jour avec succès !');
+                      }
+                    }}
+                    className="mt-4 bg-[#7CAA89] hover:bg-[#6b9378] text-white px-6 py-2 rounded-lg font-semibold transition-colors"
+                  >
+                    Enregistrer
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {showPreviewModal && previewQuittance && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-4xl w-full my-8 shadow-2xl">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10 rounded-t-2xl">
+              <h2 className="text-xl font-bold text-[#2b2b2b]">Prévisualisation de la quittance</h2>
+              <button
+                onClick={() => {
+                  setShowPreviewModal(false);
+                  setPreviewQuittance(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 text-2xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 max-h-[60vh] overflow-y-auto">
+              <QuittancePreview
+                formData={previewQuittance}
+                isElectronicSignatureChecked={true}
+                onClose={() => {}}
+              />
+            </div>
+
+            <div className="border-t border-gray-200 bg-gray-50 p-6 rounded-b-2xl">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={async () => {
+                    try {
+                      const { generateQuittancePDF } = await import('../utils/pdfGenerator');
+                      const pdfBlob = await generateQuittancePDF(previewQuittance);
+
+                      const url = URL.createObjectURL(pdfBlob);
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.download = `Quittance_${previewQuittance.periode.replace(/\s/g, '_')}_${previewQuittance.locataireName.replace(/\s/g, '_')}.pdf`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      URL.revokeObjectURL(url);
+
+                      await handleSaveQuittance();
+                      setShowPreviewModal(false);
+                      setPreviewQuittance(null);
+                    } catch (error) {
+                      console.error('Erreur téléchargement:', error);
+                      alert('Erreur lors du téléchargement de la quittance');
+                    }
+                  }}
+                  className="flex-1 bg-[#7CAA89] hover:bg-[#6b9378] text-white px-6 py-3 rounded-lg font-semibold flex items-center justify-center space-x-2 transition-colors"
+                >
+                  <Download className="w-5 h-5" />
+                  <span>Télécharger en PDF</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowPreviewModal(false);
+                    setPreviewQuittance(null);
+                  }}
+                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold transition-colors"
+                >
+                  Fermer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default FreeDashboard;
