@@ -120,7 +120,7 @@ const QuittanceSuccess = () => {
            
           </div>
 
-          <p className="text-sm md:text-lg text-[#545454] mb-6">
+          <p className="text-sm md:text-base text-[#545454] mb-6">
             Tout est pris en charge, mais vous gardez le contrôle.
           </p>
 
