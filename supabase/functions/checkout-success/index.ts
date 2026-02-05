@@ -114,15 +114,39 @@ Deno.serve(async (req) => {
 
     console.log('💰 Price ID:', price_id);
 
-    // 5. Déduire le plan depuis le price_id
-    const planConfig = PRICE_TO_PLAN[price_id];
+    // 5. Déduire le plan depuis le price_id OU les metadata
+    let planConfig = PRICE_TO_PLAN[price_id];
+
+    // Si le price_id n'est pas trouvé, essayer de déduire depuis les metadata
+    if (!planConfig && session.metadata) {
+      console.log('📋 Price ID not found in mapping, using metadata:', session.metadata);
+      
+      const { tenantTier, quickCheckout } = session.metadata;
+      
+      if (quickCheckout === 'true' && tenantTier) {
+        // Mapping des tiers pour quick checkout
+        const tierToMaxLocataires: Record<string, number> = {
+          '1-2': 2,
+          '3-5': 5,
+          '5+': 999,
+        };
+        
+        const maxLocataires = tierToMaxLocataires[tenantTier] || 2;
+        planConfig = {
+          max_locataires: maxLocataires,
+          plan_actuel: `Mode Tranquillité (${tenantTier} locataires)`,
+        };
+        
+        console.log('✅ Plan config from metadata:', planConfig);
+      }
+    }
 
     if (!planConfig) {
-      console.error('❌ Unknown price_id:', price_id);
+      console.error('❌ Unknown price_id and no valid metadata:', price_id);
       return corsResponse({ error: 'Unknown pricing plan' }, 400);
     }
 
-    console.log('📋 Plan config:', planConfig);
+    console.log('📋 Final plan config:', planConfig);
 
     // 6. CORRECTION: Chercher d'abord si le propriétaire existe
     const { data: existingProprietaire, error: searchError } = await supabase
