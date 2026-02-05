@@ -1,0 +1,114 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* 🎯 SYSTÈME D'ESPACEMENT MOBILE SOLIDE - STYLE INLINE
+   *
+   * Ces variables sont appliquées directement via l'attribut style=""
+   * sur les éléments concernés. Elles ne peuvent PAS être écrasées par
+   * les classes Tailwind = système 100% fiable.
+   *
+   * Change simplement les valeurs ci-dessous pour ajuster les espacements
+   * sur mobile (écran ≤ 480px). Les changements sont instantanés.
+   */
+  --mobile-header-spacing: 80px;           /* Espace entre navbar et titre */
+  --mobile-section-spacing: 0px;            /* Espace entre sections (flex gap) */
+  --mobile-title-bottom-spacing: 20px;       /* Espace sous le titre H1 */
+  --mobile-visual-bottom-spacing: 15px;     /* Espace sous le visuel femme */
+  --mobile-cta-spacing: 10px;               /* Espace entre les boutons CTA */
+}
+
+@layer base {
+  body {
+    @apply antialiased;
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #fef5e7 0%, #ffffff 50%, #eef7ff 100%);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight;
+    font-family: 'Inter', sans-serif;
+    line-height: 1.2;
+  }
+}
+
+@layer utilities {
+  .warm-gradient {
+    background: linear-gradient(135deg, #ff9068 0%, #fd6585 100%);
+  }
+
+  .blue-gradient {
+    background: linear-gradient(135deg, #5b86e5 0%, #36c9d4 100%);
+  }
+
+  .soft-shadow {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  }
+
+  .hover-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-fadeIn {
+    animation: fadeIn 0.5s ease-out;
+  }
+
+  .animate-scaleIn {
+    animation: scaleIn 0.5s ease-out;
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @media (max-width: 767px) {
+    button,
+    input[type="submit"],
+    input[type="button"],
+    .btn {
+      min-height: 44px;
+      touch-action: manipulation;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="number"],
+    input[type="date"],
+    input[type="tel"],
+    select,
+    textarea {
+      min-height: 44px;
+      font-size: 16px;
+    }
+  }
+}
