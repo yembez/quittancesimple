@@ -228,7 +228,7 @@ Créée par des bailleurs, pour des bailleurs.
                     <div>
                       <h4 className="font-bold text-[#1a1f20] mb-1 text-sm">Zéros oubli, vos quittances envoyées automatiquement</h4>
                       <p className="text-xs text-[#415052] leading-relaxed">
-                        C'est automatique mais vous êtes toujours maitre à bord.
+                        Quittance conforme générée et envoyée sous votre contrôle.
                       </p>
                     </div>
                   </div>
@@ -846,7 +846,7 @@ Créée par des bailleurs, pour des bailleurs.
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t-0 border-[#7CAA89] shadow-2xl p-4 z-50 md:hidden">
         <button
           onClick={() => setIsQuickPaymentModalOpen(true)}
-          className="w-full px-6 py-3.5 rounded-full bg-[#ed7862] hover:bg-[#e56651] text-white font-bold text-base transition-all transform hover:scale-105 shadow-lg"
+          className="w-full px-6 py-3.5 rounded-full bg-[#1a1f20] hover:bg-[#415052] text-white font-bold text-base transition-all transform hover:scale-105 shadow-lg"
         >
           Passer en Mode Tranquillité
         </button>
