@@ -1,5 +1,5 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet, pdf, Image } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, pdf } from '@react-pdf/renderer';
 
 interface QuittanceData {
   nomProprietaire?: string;
@@ -104,259 +104,227 @@ const numberToFrench = (num: number): string => {
 
 const styles = StyleSheet.create({
   page: {
-    padding: 40,
+    padding: 50,
     fontFamily: 'Helvetica',
     fontSize: 10,
-    backgroundColor: '#f5f5f0',
-  },
-  container: {
     backgroundColor: '#ffffff',
-    padding: 30,
-    height: '100%',
   },
-  headerTop: {
+  // Header moderne et épuré
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 30,
-    paddingBottom: 15,
-    borderBottom: '1px solid #e5e5e5',
-  },
-  logoSection: {
-    flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 35,
+    paddingBottom: 18,
+    borderBottom: '2px solid #2C3E50',
   },
-  logoText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#7ba0a0',
+  logo: {
+    fontSize: 18,
+    fontFamily: 'Helvetica-Bold',
+    color: '#2C3E50',
+    letterSpacing: 0.5,
   },
-  logoAccent: {
-    color: '#d4af37',
-  },
-  infoSection: {
+  headerInfo: {
     alignItems: 'flex-end',
   },
-  infoLabel: {
+  headerLabel: {
     fontSize: 8,
-    color: '#666666',
+    color: '#7F8C8D',
     marginBottom: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  infoValue: {
-    fontSize: 9,
-    color: '#333333',
-    marginBottom: 4,
+  headerValue: {
+    fontSize: 10,
+    color: '#2C3E50',
+    fontFamily: 'Helvetica-Bold',
+    marginBottom: 6,
   },
+  // Titre
   titleSection: {
     marginBottom: 30,
-    paddingBottom: 20,
-    borderBottom: '1px solid #e5e5e5',
   },
   mainTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#2c2c2c',
-    letterSpacing: 1,
-    marginBottom: 5,
+    fontSize: 28,
+    fontFamily: 'Helvetica-Bold',
+    color: '#2C3E50',
+    letterSpacing: 1.2,
+    marginBottom: 8,
   },
-  subtitleDate: {
+  subtitle: {
     fontSize: 9,
-    color: '#666666',
-    marginTop: 8,
+    color: '#7F8C8D',
+    marginTop: 4,
   },
-  tableContainer: {
+  // Section parties (Bailleur, Locataire, Bien)
+  partiesSection: {
     marginBottom: 25,
-    border: '1px solid #a8b5b2',
+    backgroundColor: '#F8F9FA',
+    padding: 20,
+    borderRadius: 2,
   },
-  tableHeaderRow: {
+  partyRow: {
+    marginBottom: 14,
+  },
+  partyLabel: {
+    fontSize: 8,
+    color: '#7F8C8D',
+    fontFamily: 'Helvetica-Bold',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  partyValue: {
+    fontSize: 10,
+    color: '#2C2C2C',
+    fontFamily: 'Helvetica-Bold',
+    marginBottom: 2,
+  },
+  partyDetail: {
+    fontSize: 9,
+    color: '#5D6D7E',
+    marginTop: 2,
+    lineHeight: 1.4,
+  },
+  // Déclaration
+  declaration: {
+    marginBottom: 25,
+    padding: 16,
+    backgroundColor: '#EBF5FB',
+    borderLeft: '3px solid #3498DB',
+    borderRadius: 2,
+  },
+  declarationText: {
+    fontSize: 9.5,
+    lineHeight: 1.6,
+    color: '#2C2C2C',
+  },
+  // Tableau
+  table: {
+    marginBottom: 25,
+    border: '1px solid #D5D8DC',
+    borderRadius: 2,
+  },
+  tableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#5a7476',
-    padding: 8,
+    backgroundColor: '#2C3E50',
+    padding: 10,
   },
   tableHeaderCell: {
-    color: '#ffffff',
+    color: '#FFFFFF',
     fontSize: 9,
-    fontWeight: 'bold',
-  },
-  tableHeaderLarge: {
-    width: '40%',
-  },
-  tableHeaderMedium: {
-    width: '30%',
-  },
-  tableHeaderSmall: {
-    width: '30%',
+    fontFamily: 'Helvetica-Bold',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   tableRow: {
     flexDirection: 'row',
-    borderBottom: '1px solid #d4d9d7',
+    padding: 10,
+    borderBottom: '1px solid #E5E7E9',
   },
   tableRowAlt: {
-    backgroundColor: '#a8b5b2',
+    backgroundColor: '#F8F9FA',
   },
   tableCell: {
-    padding: 8,
-    fontSize: 9,
-    color: '#2c2c2c',
+    fontSize: 9.5,
+    color: '#2C2C2C',
   },
   tableCellLabel: {
-    width: '40%',
+    width: '50%',
   },
-  tableCellValue: {
-    width: '30%',
+  tableCellAmount: {
+    width: '25%',
     textAlign: 'right',
   },
-  tableCellEmpty: {
-    width: '30%',
+  tableCellTotal: {
+    width: '25%',
   },
   totalRow: {
     flexDirection: 'row',
-    backgroundColor: '#a8b5b2',
-    padding: 10,
+    backgroundColor: '#34495E',
+    padding: 12,
   },
   totalLabel: {
-    width: '40%',
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#2c2c2c',
+    width: '50%',
+    fontSize: 11,
+    fontFamily: 'Helvetica-Bold',
+    color: '#FFFFFF',
   },
   totalValue: {
-    width: '30%',
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#2c2c2c',
+    width: '25%',
+    fontSize: 11,
+    fontFamily: 'Helvetica-Bold',
+    color: '#FFFFFF',
     textAlign: 'right',
   },
-  declarationSection: {
-    marginBottom: 25,
-    padding: 15,
-    backgroundColor: '#f9f9f9',
-    border: '1px solid #e5e5e5',
-  },
-  declarationText: {
-    fontSize: 9,
-    lineHeight: 1.6,
-    color: '#2c2c2c',
-  },
-  partiesSection: {
-    marginBottom: 20,
-  },
-  partiesRow: {
-    flexDirection: 'row',
-    marginBottom: 12,
-  },
-  partyLabel: {
-    width: '25%',
-    fontSize: 9,
-    color: '#666666',
-  },
-  partyValue: {
-    width: '75%',
-    fontSize: 9,
-    color: '#2c2c2c',
-    fontWeight: 'bold',
-  },
+  // Signature
   signatureSection: {
-    marginTop: 20,
-    marginBottom: 25,
+    marginTop: 30,
+    marginBottom: 20,
     flexDirection: 'row',
     justifyContent: 'flex-end',
   },
   signatureBox: {
-    alignItems: 'center',
+    width: 200,
   },
-  signatureText: {
-    fontSize: 8,
-    color: '#666666',
-    marginBottom: 2,
-  },
-  signatureLabel: {
+  signatureInfo: {
     fontSize: 9,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    marginTop: 8,
-    color: '#2c2c2c',
-  },
-  stampBox: {
-    width: 120,
-    height: 60,
-    border: '2px solid #7ba0a0',
-    borderRadius: 4,
-    backgroundColor: '#f0f5f5',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stampText: {
-    fontSize: 9,
-    fontWeight: 'bold',
-    color: '#5a7476',
-    textAlign: 'center',
-  },
-  stampName: {
-    fontSize: 10,
-    color: '#2b2b2b',
-    fontWeight: 'bold',
+    color: '#5D6D7E',
     marginBottom: 3,
   },
+  signatureLabel: {
+    fontSize: 10,
+    fontFamily: 'Helvetica-Bold',
+    color: '#2C3E50',
+    marginTop: 12,
+    marginBottom: 12,
+  },
+  signatureLine: {
+    width: '100%',
+    height: 50,
+    borderBottom: '1px solid #BDC3C7',
+  },
   electronicSignature: {
+    marginTop: 8,
+    padding: 10,
+    backgroundColor: '#E8F8F5',
+    borderRadius: 2,
+    border: '1px solid #1ABC9C',
+  },
+  signatureName: {
+    fontSize: 10,
+    fontFamily: 'Helvetica-Bold',
+    color: '#2C3E50',
+    marginBottom: 4,
+  },
+  electronicBadge: {
     fontSize: 9,
-    color: '#7CAA89',
-    fontWeight: 'bold',
+    color: '#16A085',
+    fontFamily: 'Helvetica-Bold',
   },
-  footerSection: {
-    marginTop: 'auto',
-    paddingTop: 20,
-    borderTop: '1px solid #e5e5e5',
-  },
-  footerTitle: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#2c2c2c',
-  },
-  footerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  footerLeft: {
-    width: '70%',
+  // Footer - FIX DU BUG D'AFFICHAGE
+  footer: {
+    marginTop: 20,
+    paddingTop: 12,
+    borderTop: '1px solid #D5D8DC',
   },
   footerText: {
     fontSize: 7.5,
-    color: '#666666',
+    color: '#7F8C8D',
     lineHeight: 1.4,
-    marginBottom: 4,
+    marginBottom: 5,
   },
   footerElectronic: {
     fontSize: 7.5,
-    color: '#5a7476',
-    lineHeight: 1.4,
+    color: '#16A085',
     marginTop: 6,
-  },
-  footerRight: {
-    width: '25%',
-    alignItems: 'flex-end',
-  },
-  qrPlaceholder: {
-    width: 60,
-    height: 60,
-    border: '1px solid #cccccc',
-    backgroundColor: '#f9f9f9',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  qrText: {
-    fontSize: 7,
-    color: '#999999',
-    textAlign: 'center',
+    lineHeight: 1.4,
   },
 });
 
 const QuittanceDocument: React.FC<{ data: QuittanceData }> = ({ data }) => {
-  // Construire le nom complet du propriétaire
-  const proprietaire = data.baillorName
-    ? data.baillorName
-    : `${data.prenomProprietaire || ''} ${data.nomProprietaire || ''}`.trim();
+  // Construction des données
+  const proprietaire = data.baillorName || `${data.prenomProprietaire || ''} ${data.nomProprietaire || ''}`.trim();
   const adresseProprietaire = data.baillorAddress || data.adresseProprietaire || '';
   const emailProprietaire = data.baillorEmail || '';
   const locataire = data.locataireName || `${data.prenomLocataire || ''} ${data.nomLocataire || ''}`.trim();
@@ -370,6 +338,7 @@ const QuittanceDocument: React.FC<{ data: QuittanceData }> = ({ data }) => {
   const total = loyerNum + chargesNum;
 
   const currentDate = new Date();
+  
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('fr-FR', {
       day: 'numeric',
@@ -434,141 +403,129 @@ const QuittanceDocument: React.FC<{ data: QuittanceData }> = ({ data }) => {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        <View style={styles.container}>
-          <View style={styles.headerTop}>
-            <View style={styles.logoSection}>
-              <Text style={styles.logoText}>
-                <Text style={styles.logoAccent}>Quittance_S</Text>
-              </Text>
-            </View>
-            <View style={styles.infoSection}>
-              <Text style={styles.infoLabel}>Quittance N°</Text>
-              <Text style={styles.infoValue}>{currentDate.getTime().toString().slice(-8)}</Text>
-              <Text style={styles.infoLabel}>Période</Text>
-              <Text style={styles.infoValue}>{periode || '[Période]'}</Text>
-              <Text style={styles.infoLabel}>Montant</Text>
-              <Text style={styles.infoValue}>{total.toFixed(2)} €</Text>
-            </View>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.logo}>QUITTANCE SIMPLE</Text>
+          <View style={styles.headerInfo}>
+            <Text style={styles.headerLabel}>N° Quittance</Text>
+            <Text style={styles.headerValue}>{currentDate.getTime().toString().slice(-8)}</Text>
+            <Text style={styles.headerLabel}>Période</Text>
+            <Text style={styles.headerValue}>{periode || '[Période]'}</Text>
+          </View>
+        </View>
+
+        {/* Title */}
+        <View style={styles.titleSection}>
+          <Text style={styles.mainTitle}>QUITTANCE DE LOYER</Text>
+          <Text style={styles.subtitle}>Document généré le {formatDate(currentDate)}</Text>
+        </View>
+
+        {/* Parties */}
+        <View style={styles.partiesSection}>
+          <View style={styles.partyRow}>
+            <Text style={styles.partyLabel}>Bailleur</Text>
+            <Text style={styles.partyValue}>{proprietaire || '[Nom propriétaire]'}</Text>
+            {adresseProprietaire && <Text style={styles.partyDetail}>{adresseProprietaire}</Text>}
+            {emailProprietaire && <Text style={styles.partyDetail}>{emailProprietaire}</Text>}
           </View>
 
-          <View style={styles.titleSection}>
-            <Text style={styles.mainTitle}>QUITTANCE</Text>
-            <Text style={styles.mainTitle}>DE LOYER</Text>
-            <Text style={styles.subtitleDate}>Document généré le {formatDate(currentDate)}</Text>
-          </View>
-
-          <View style={styles.partiesSection}>
-            <View style={styles.partiesRow}>
-              <Text style={styles.partyLabel}>BAILLEUR</Text>
-              <View style={{ width: '75%' }}>
-                <Text style={styles.partyValue}>{proprietaire || '[Nom propriétaire]'}</Text>
-                {adresseProprietaire && <Text style={[styles.infoLabel, { marginTop: 2 }]}>{adresseProprietaire}</Text>}
-                {emailProprietaire && <Text style={[styles.infoLabel, { marginTop: 1 }]}>{emailProprietaire}</Text>}
+          <View style={styles.partyRow}>
+            <Text style={styles.partyLabel}>Locataire</Text>
+            <Text style={styles.partyValue}>{locataire || '[Nom locataire]'}</Text>
+            {data.locataireDomicileAddress && data.locataireDomicileAddress.trim() !== '' ? (
+              <View>
+                <Text style={[styles.partyDetail, { fontFamily: 'Helvetica-Bold', marginTop: 4 }]}>
+                  Adresse de domicile :
+                </Text>
+                <Text style={styles.partyDetail}>{data.locataireDomicileAddress}</Text>
               </View>
-            </View>
-            <View style={styles.partiesRow}>
-              <Text style={styles.partyLabel}>LOCATAIRE</Text>
-              <View style={{ width: '75%' }}>
-                <Text style={styles.partyValue}>{locataire || '[Nom locataire]'}</Text>
-                {data.locataireDomicileAddress && data.locataireDomicileAddress.trim() !== '' ? (
-                  <View style={{ marginTop: 4 }}>
-                    <Text style={[styles.infoLabel, { fontFamily: 'Helvetica-Bold', color: '#555555' }]}>Adresse de domicile :</Text>
-                    <Text style={[styles.infoLabel, { marginTop: 1 }]}>{data.locataireDomicileAddress}</Text>
-                  </View>
-                ) : (
-                  <Text style={[styles.infoLabel, { marginTop: 2 }]}>Locataire du bien ci-dessous</Text>
-                )}
-              </View>
-            </View>
-            <View style={styles.partiesRow}>
-              <Text style={styles.partyLabel}>BIEN LOUÉ</Text>
-              <Text style={styles.partyValue}>{adresseLogement || '[Adresse logement]'}</Text>
-            </View>
+            ) : (
+              <Text style={styles.partyDetail}>Locataire du bien ci-dessous</Text>
+            )}
           </View>
 
-          <View style={styles.declarationSection}>
-            <Text style={styles.declarationText}>
-              Je soussigné(e) <Text style={{ fontWeight: 'bold' }}>{proprietaire || '[Propriétaire]'}</Text>, propriétaire du logement désigné ci-dessus,
-              déclare avoir reçu de <Text style={{ fontWeight: 'bold' }}>{locataire || '[Locataire]'}</Text>, la somme de{' '}
-              <Text style={{ fontWeight: 'bold' }}>{total.toFixed(2)} €</Text>{' '}
-              ({numberToFrench(total) || 'zéro euro'}) au titre du paiement du loyer et des charges pour la période du{' '}
-              <Text style={{ fontWeight: 'bold' }}>{periodDates.start || '[Date début]'}</Text> au <Text style={{ fontWeight: 'bold' }}>{periodDates.end || '[Date fin]'}</Text>{' '}
-              et lui en donne quittance, sous réserve de tous mes droits.
+          <View style={styles.partyRow}>
+            <Text style={styles.partyLabel}>Bien loué</Text>
+            <Text style={styles.partyValue}>{adresseLogement || '[Adresse logement]'}</Text>
+          </View>
+        </View>
+
+        {/* Declaration */}
+        <View style={styles.declaration}>
+          <Text style={styles.declarationText}>
+            Je soussigné(e) <Text style={{ fontFamily: 'Helvetica-Bold' }}>{proprietaire || '[Propriétaire]'}</Text>, propriétaire du logement désigné ci-dessus,
+            déclare avoir reçu de <Text style={{ fontFamily: 'Helvetica-Bold' }}>{locataire || '[Locataire]'}</Text>, la somme de{' '}
+            <Text style={{ fontFamily: 'Helvetica-Bold' }}>{total.toFixed(2)} €</Text>{' '}
+            ({numberToFrench(total)}) au titre du paiement du loyer et des charges pour la période du{' '}
+            <Text style={{ fontFamily: 'Helvetica-Bold' }}>{periodDates.start}</Text> au <Text style={{ fontFamily: 'Helvetica-Bold' }}>{periodDates.end}</Text>{' '}
+            et lui en donne quittance, sous réserve de tous mes droits.
+          </Text>
+        </View>
+
+        {/* Table */}
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <Text style={[styles.tableHeaderCell, { width: '50%' }]}>Description</Text>
+            <Text style={[styles.tableHeaderCell, { width: '25%', textAlign: 'right' }]}>Montant</Text>
+            <Text style={[styles.tableHeaderCell, { width: '25%' }]}></Text>
+          </View>
+
+          <View style={styles.tableRow}>
+            <Text style={[styles.tableCell, styles.tableCellLabel]}>Loyer mensuel</Text>
+            <Text style={[styles.tableCell, styles.tableCellAmount]}>{loyerNum.toFixed(2)} €</Text>
+            <Text style={[styles.tableCell, styles.tableCellTotal]}></Text>
+          </View>
+
+          <View style={[styles.tableRow, styles.tableRowAlt]}>
+            <Text style={[styles.tableCell, styles.tableCellLabel]}>Provision pour charges</Text>
+            <Text style={[styles.tableCell, styles.tableCellAmount]}>{chargesNum.toFixed(2)} €</Text>
+            <Text style={[styles.tableCell, styles.tableCellTotal]}></Text>
+          </View>
+
+          <View style={styles.tableRow}>
+            <Text style={[styles.tableCell, styles.tableCellLabel]}>Régularisations</Text>
+            <Text style={[styles.tableCell, styles.tableCellAmount]}>0.00 €</Text>
+            <Text style={[styles.tableCell, styles.tableCellTotal]}></Text>
+          </View>
+
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Total payé</Text>
+            <Text style={styles.totalValue}>{total.toFixed(2)} €</Text>
+            <Text style={{ width: '25%' }}></Text>
+          </View>
+        </View>
+
+        {/* Signature */}
+        <View style={styles.signatureSection}>
+          <View style={styles.signatureBox}>
+            <Text style={styles.signatureInfo}>Fait à {ville}</Text>
+            <Text style={styles.signatureInfo}>Le {formatDate(currentDate)}</Text>
+            <Text style={styles.signatureLabel}>Signature du bailleur</Text>
+
+            {data.isElectronicSignature ? (
+              <View style={styles.electronicSignature}>
+                <Text style={styles.signatureName}>{proprietaire || '[Propriétaire]'}</Text>
+                <Text style={styles.electronicBadge}>✓ Signé électroniquement</Text>
+              </View>
+            ) : (
+              <View style={styles.signatureLine} />
+            )}
+          </View>
+        </View>
+
+        {/* Footer - BUG CORRIGÉ */}
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            Cette quittance annule tous les reçus qui auraient pu être établis précédemment en cas de paiement partiel du montant du présent terme.
+          </Text>
+          <Text style={styles.footerText}>
+            Elle est à conserver pendant trois ans par le locataire (loi n° 89-462 du 6 juillet 1989 : art. 7-1).
+          </Text>
+          {data.isElectronicSignature && (
+            <Text style={styles.footerElectronic}>
+              ✓ Quittance validée électroniquement par le bailleur le {formatDate(currentDate)} à {formatTime(currentDate)}, conformément à l'article 1367 du Code civil.
             </Text>
-          </View>
-
-          <View style={styles.tableContainer}>
-            <View style={styles.tableHeaderRow}>
-              <Text style={[styles.tableHeaderCell, styles.tableHeaderLarge]}>Description</Text>
-              <Text style={[styles.tableHeaderCell, styles.tableHeaderMedium]}>Montant</Text>
-              <Text style={[styles.tableHeaderCell, styles.tableHeaderSmall]}>Total</Text>
-            </View>
-
-            <View style={styles.tableRow}>
-              <Text style={[styles.tableCell, styles.tableCellLabel]}>Loyer mensuel</Text>
-              <Text style={[styles.tableCell, styles.tableCellValue]}>{loyerNum.toFixed(2)} €</Text>
-              <Text style={[styles.tableCell, styles.tableCellEmpty]}>{' '}</Text>
-            </View>
-
-            <View style={[styles.tableRow, styles.tableRowAlt]}>
-              <Text style={[styles.tableCell, styles.tableCellLabel]}>Provision pour charges</Text>
-              <Text style={[styles.tableCell, styles.tableCellValue]}>{chargesNum.toFixed(2)} €</Text>
-              <Text style={[styles.tableCell, styles.tableCellEmpty]}>{' '}</Text>
-            </View>
-
-            <View style={styles.tableRow}>
-              <Text style={[styles.tableCell, styles.tableCellLabel]}>Régularisations</Text>
-              <Text style={[styles.tableCell, styles.tableCellValue]}>0.00 €</Text>
-              <Text style={[styles.tableCell, styles.tableCellEmpty]}>{' '}</Text>
-            </View>
-
-            <View style={[styles.tableRow, styles.tableRowAlt]}>
-              <Text style={[styles.tableCell, styles.tableCellLabel]}>Report du bail</Text>
-              <Text style={[styles.tableCell, styles.tableCellValue]}>{' '}</Text>
-              <Text style={[styles.tableCell, styles.tableCellEmpty]}>{' '}</Text>
-            </View>
-
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Total</Text>
-              <Text style={styles.totalValue}>{total.toFixed(2)} €</Text>
-              <Text style={{ width: '30%' }}>{' '}</Text>
-            </View>
-          </View>
-
-          <View style={styles.signatureSection}>
-            <View style={styles.signatureBox}>
-              <Text style={styles.signatureText}>Fait à : {ville}</Text>
-              <Text style={styles.signatureText}>Le : {formatDate(currentDate)}</Text>
-              <Text style={styles.signatureLabel}>Signature du bailleur</Text>
-
-              {data.isElectronicSignature ? (
-                <View style={{ marginTop: 10 }}>
-                  <Text style={styles.stampName}>{proprietaire || '[Propriétaire]'}</Text>
-                  <Text style={styles.electronicSignature}>✓ Signature électronique</Text>
-                </View>
-              ) : (
-                <View style={{ width: 120, height: 50, borderBottom: '1px solid #999999' }} />
-              )}
-            </View>
-          </View>
-
-          <View style={styles.footerSection}>
-            <View style={styles.footerContent}>
-              <View style={styles.footerLeft}>
-                <Text style={styles.footerText}>
-                  Cette quittance annule tous les reçus qui auraient pu être établis précédemment en cas de paiement partiel du montant du présent terme.
-                </Text>
-                <Text style={styles.footerText}>
-                  Elle est à conserver pendant trois ans par le locataire (loi n° 89-462 du 6 juillet 1989 : art. 7-1).
-                </Text>
-                {data.isElectronicSignature && (
-                  <Text style={styles.footerText}>
-                    ✓ Quittance validée électroniquement par le bailleur le {formatDate(currentDate)} à {formatTime(currentDate)}, conformément à l'article 1367 du Code civil sur la valeur juridique de la signature électronique.
-                  </Text>
-                )}
-              </View>
-            </View>
-          </View>
+          )}
         </View>
       </Page>
     </Document>
@@ -576,7 +533,7 @@ const QuittanceDocument: React.FC<{ data: QuittanceData }> = ({ data }) => {
 };
 
 export async function generateQuittancePDF(data: QuittanceData): Promise<Blob> {
-  console.log('📄 Données reçues dans generateQuittancePDF:', {
+  console.log('📄 Génération PDF moderne - Données:', {
     locataireName: data.locataireName,
     locataireDomicileAddress: data.locataireDomicileAddress,
     logementAddress: data.logementAddress
