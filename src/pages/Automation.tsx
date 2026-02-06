@@ -90,7 +90,7 @@ const Automation = () => {
       />
 
       {/* Section description principale */}
-      <section className="pt-4 sm:pt-16 pb-8 sm:pb-12 bg-[#fefdf9]">
+      <section className="pt-4 sm:pt-16 pb-8 sm:pb-12">
         <div className="max-w-6xl mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
