@@ -405,7 +405,7 @@ const QuittanceDocument: React.FC<{ data: QuittanceData }> = ({ data }) => {
       <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.logo}>QUITTANCE SIMPLE</Text>
+          <Text style={styles.logo}>QS Estate-</Text>
           <View style={styles.headerInfo}>
             <Text style={styles.headerLabel}>N° Quittance</Text>
             <Text style={styles.headerValue}>{currentDate.getTime().toString().slice(-8)}</Text>
