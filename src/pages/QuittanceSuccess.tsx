@@ -1,103 +1,160 @@
-import { createClient } from 'npm:@supabase/supabase-js@2';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { ArrowLeft, CheckCircle, FileText, Calculator, Mail, BarChart3, Clock, FolderArchive } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { trackGA4Event, trackCtaClick } from '../utils/analytics';
+import QuickPaymentModal from '../components/QuickPaymentModal';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS'
+const QuittanceSuccess = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const email = location.state?.email || '';
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
+  // Track page view + store email
+  useEffect(() => {
+    trackGA4Event('quittance_success_viewed', {
+      page_source: 'generator',
+      has_email: !!email,
+    });
+
+    if (email) {
+      localStorage.setItem('captured_email', email);
+    }
+  }, [email]);
+
+  return (
+    <div className="min-h-screen bg-white flex flex-col">
+      {/* Header - Mobile optimized */}
+      <header className="bg-white border-b border-gray-200 px-4 py-4 sticky top-0 z-50">
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-[#7CAA89] rounded-full flex items-center justify-center">
+              <CheckCircle className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-lg font-bold text-[#1a1f20]">Quittance Simple</span>
+          </div>
+          <button
+            className="md:hidden p-2"
+            onClick={() => navigate('/')}
+          >
+            <div className="w-6 h-0.5 bg-[#1a1f20] mb-1.5"></div>
+            <div className="w-6 h-0.5 bg-[#1a1f20] mb-1.5"></div>
+            <div className="w-6 h-0.5 bg-[#1a1f20]"></div>
+          </button>
+        </div>
+      </header>
+
+      {/* Content - DESKTOP 40% SMALLER */}
+      <main className="flex-1 px-5 py-4 md:py-8 max-w-3xl md:max-w-2xl mx-auto w-full">
+        {/* Success message */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="text-center mb-6 md:mb-6"
+        >
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <h1 className="text-xl md:text-2xl font-bold text-[#1a1f20]">
+              Quittance envoyée
+            </h1>
+            <CheckCircle className="w-8 h-8 md:w-8 md:h-8 text-[#7CAA89]" />
+          </div>
+          <p className="text-base md:text-lg text-[#545454] max-w-2xl mx-auto">
+            Et si c'était la dernière fois que vous y pensiez ?
+          </p>
+        </motion.div>
+
+        {/* CTA Card - Mode Tranquillité */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-6 md:p-8 border border-gray-200 shadow-lg"
+        >
+          <div className="mb-6 md:mb-6">
+            <p className="text-base md:text-base text-[#545454] leading-relaxed max-w-2xl mx-auto">
+              Chaque mois, c'est la même chose : générer la quittance, télécharger, chercher, envoyer le PDF, archiver…
+            </p>
+            <p className="text-base md:text-base text-[#1a1f20] font-semibold mt-4 max-w-2xl mx-auto">
+              La prochaine fois, vous pourriez ne rien faire du tout.
+            </p>
+          </div>
+
+          <div className="text-sm md:text-base text-[#545454] mb-6 md:mb-6 space-y-3 md:space-y-3 max-w-2xl mx-auto">
+            <div className="flex items-start gap-3 md:gap-3">
+              <span className="text-[#7CAA89] font-bold text-lg flex-shrink-0">✓</span>
+              <span>Quittance générée et envoyée automatiquement</span>
+            </div>
+            <div className="flex items-start gap-3 md:gap-3">
+              <span className="text-[#7CAA89] font-bold text-lg flex-shrink-0">✓</span>
+              <span>Relance envoyée en cas de retard de loyer</span>
+            </div>
+            <div className="flex items-start gap-3 md:gap-3">
+              <span className="text-[#7CAA89] font-bold text-lg flex-shrink-0">✓</span>
+              <span>Révision IRL calculée toute seule</span>
+            </div>
+            <div className="flex items-start gap-3 md:gap-3">
+              <span className="text-[#7CAA89] font-bold text-lg flex-shrink-0">✓</span>
+              <span>Courrier IRL prêt</span>
+            </div>
+            <div className="flex items-start gap-3 md:gap-3">
+              <span className="text-[#7CAA89] font-bold text-lg flex-shrink-0">✓</span>
+              <span>Historique conservé, disponible 24/24</span>
+            </div>
+          </div>
+
+          {/* CTA Button */}
+          <div className="max-w-md mx-auto">
+            <button
+              onClick={() => {
+                trackCtaClick('mode_tranquillite_success_page', 'quittance_success', 'payment_modal');
+                trackGA4Event('conversion_cta_clicked', {
+                  cta_name: 'passer_mode_tranquillite',
+                  page_source: 'quittance_success',
+                  destination: 'payment_modal',
+                });
+                setIsPaymentModalOpen(true);
+              }}
+              className="w-full bg-[#ed7862] hover:bg-[#e56651] text-white font-bold text-base md:text-lg py-4 md:py-4 rounded-full transition-all transform hover:scale-[1.02] shadow-lg mb-4">
+              Passer en Mode Tranquillité
+            </button>
+
+            {/* Price */}
+            <p className="text-center text-sm md:text-base text-[#545454] mb-4">
+              Dès <span className="font-bold text-[#1a1f20]">0,82 € / mois</span> • Sans engagement
+            </p>
+
+            {/* Skip link */}
+            <button
+              onClick={() => {
+                trackGA4Event('skip_automation_clicked', {
+                  page_source: 'quittance_success',
+                  action: 'continue_without_automation',
+                });
+                navigate('/');
+              }}
+              className="w-full text-center text-sm md:text-sm text-[#545454] hover:text-[#1a1f20] transition-colors underline">
+              Retour
+            </button>
+          </div>
+        </motion.div>
+      </main>
+
+      {/* Simple footer - Mobile optimized */}
+      <footer className="py-6 text-center">
+
+      </footer>
+
+      {/* Payment Modal */}
+      <QuickPaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        selectedPlan="auto"
+        prefilledEmail={email}
+      />
+    </div>
+  );
 };
 
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
-
-  try {
-    const { userEmail } = await req.json();
-    
-    if (!userEmail) {
-      return new Response(JSON.stringify({ error: 'Email requis' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
-    const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
-
-    // 1. Trouver le propriétaire
-    const { data: proprietaire, error: propError } = await supabase
-      .from('proprietaires')
-      .select('stripe_customer_id, stripe_subscription_id')
-      .eq('email', userEmail)
-      .single();
-
-    if (propError || !proprietaire) {
-      return new Response(JSON.stringify({ error: 'Utilisateur non trouvé' }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    // 2. Annuler l'abonnement Stripe
-    if (proprietaire.stripe_subscription_id) {
-      const cancelResponse = await fetch(
-        `https://api.stripe.com/v1/subscriptions/${proprietaire.stripe_subscription_id}`,
-        {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${stripeKey}`,
-            'Content-Type': 'application/x-www-form-urlencoded',
-          }
-        }
-      );
-
-      if (!cancelResponse.ok) {
-        const error = await cancelResponse.text();
-        console.error('Erreur Stripe:', error);
-        return new Response(JSON.stringify({ 
-          error: 'Erreur annulation Stripe',
-          details: error
-        }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
-    }
-
-    // 3. Mettre à jour Supabase
-    const { error: updateError } = await supabase
-      .from('proprietaires')
-      .update({
-        stripe_subscription_id: null,
-        stripe_subscription_status: 'canceled',
-        plan_type: null,
-        updated_at: new Date().toISOString()
-      })
-      .eq('email', userEmail);
-
-    if (updateError) {
-      console.error('Erreur mise à jour Supabase:', updateError);
-    }
-
-    return new Response(JSON.stringify({
-      success: true,
-      message: `Abonnement annulé pour ${userEmail}`,
-      subscriptionId: proprietaire.stripe_subscription_id
-    }), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-
-  } catch (error: any) {
-    console.error('Erreur:', error);
-    return new Response(JSON.stringify({
-      success: false,
-      error: error.message
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-  }
-});
+export default QuittanceSuccess;
