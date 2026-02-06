@@ -209,14 +209,14 @@ const SetPassword = () => {
             {loading ? 'Création du compte...' : 'Créer mon mot de passe'}
           </button>
 
-          {/* Passer cette étape */}
+          {/* Passer cette étape
           <button
             type="button"
             onClick={handleSkip}
             className="w-full text-sm text-gray-500 hover:text-gray-700 underline"
           >
             Passer cette étape (je le ferai plus tard)
-          </button>
+          </button> */}
         </form>
 
         <div className="mt-6 pt-6 border-t border-gray-200">
