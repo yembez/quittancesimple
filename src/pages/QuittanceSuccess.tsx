@@ -61,7 +61,7 @@ const QuittanceSuccess = () => {
             <CheckCircle className="w-8 h-8 md:w-8 md:h-8 text-[#7CAA89]" />
           </div>
           <p className="text-base md:text-lg font-semibold text-[#1a1f20] max-w-2xl mx-auto px-2">
-            Et si c'était la dernière fois que vous y&nbsp;pensiez&nbsp;?
+            Les prochaines ? Vous pouvez les oublier...
           </p>
         </motion.div>
 
@@ -74,17 +74,17 @@ const QuittanceSuccess = () => {
         >
           <div className="mb-4 md:mb-6">
             <p className="text-base md:text-base text-[#545454] leading-relaxed max-w-2xl mx-auto">
-              Chaque mois, c'est la même chose : générer la quittance, télécharger, chercher, envoyer le PDF, archiver…
-            </p>
+              Chaque mois, même contrainte, un oubli, une erreur ou un retard et il faut faire et re-faire...
+(créer, remplir, copier, télécharger, vérifier, chercher, coller, rédiger, envoyer etc.)
             <p className="text-base md:text-base text-[#1a1f20] font-semibold mt-3 md:mt-4 max-w-2xl mx-auto">
-              La prochaine fois, vous pourriez ne rien faire du tout.
+              Et si vous arretiez de vous embeter avec çà ?
             </p>
           </div>
 
           <div className="text-sm md:text-base text-[#545454] mb-4 md:mb-6 space-y-2 md:space-y-3 max-w-2xl mx-auto">
             <div className="flex items-start gap-3 md:gap-3">
               <span className="text-[#7CAA89] font-bold text-lg flex-shrink-0">✓</span>
-              <span>Quittance et relance générée et envoyée automatiquement</span>
+              <span>Quittance et relance envoyée automatiquement sans oubli</span>
             </div>
             <div className="flex items-start gap-3 md:gap-3">
               <span className="text-[#7CAA89] font-bold text-lg flex-shrink-0">✓</span>
@@ -96,7 +96,7 @@ const QuittanceSuccess = () => {
             </div>
             <div className="flex items-start gap-3 md:gap-3">
               <span className="text-[#7CAA89] font-bold text-lg flex-shrink-0">✓</span>
-              <span>Plus de perte, rappel et Courrier IRL prêt</span>
+              <span>Rappel et Courrier IRL prêt, plus d'oubli ni de perte</span>
             </div>
             <div className="flex items-start gap-3 md:gap-3">
               <span className="text-[#7CAA89] font-bold text-lg flex-shrink-0">✓</span>
@@ -122,9 +122,11 @@ const QuittanceSuccess = () => {
 
             {/* Price */}
             <p className="text-center text-sm md:text-base text-[#545454] mb-4">
-              Dès <span className="font-bold text-[#1a1f20]">0,82 € / mois</span> • Sans engagement
+              Ne plus m'en occuper dès <span className="font-bold text-[#1a1f20]">0,82 € / mois</span>
             </p>
-
+ <p className="text-center text-sm md:text-base text-[#545454] mb-4">
+             Sans engagement
+            </p>
             {/* Skip link */}
             <button
               onClick={() => {
