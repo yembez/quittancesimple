@@ -104,10 +104,8 @@ const Automation = () => {
                 <br />Passez en Mode Tranquillité<br /> <span className="text-2xl text-[#545454] font-medium">et oubliez l'administratif locatif</span>
               </h1>
 
-              <p className="text-base text-[#ed7862] font-bold mb-4 sm:mb-6">
-                Quittances, IRL, courriers, bilans, historique.<br />
+              <p className="text-base text-[#1a1f20] font-bold mb-4 sm:mb-6">
 Tout est pris en charge, mais toujours sous votre contrôle.
-                <span className="italic text-sm text-[#545454] font-normal"></span>
               </p>
 
               <div className="space-y-2 sm:space-y-4 text-left flex justify-center">
@@ -130,7 +128,7 @@ Créée par des bailleurs, pour des bailleurs.
             <h3 className="text-xl sm:text-2xl font-bold text-[#1a1f20] mb-2 text-center mt-20 sm:mt-32">
               Le Mode Tranquillité en détail
             </h3>
-            <p className="text-sm text-[#ed7862] font-semibold text-center mb-8 md:hidden">
+            <p className="text-sm text-[#1a1f20] font-semibold text-center mb-8 md:hidden">
               0,82€/mois, offre de lancement
             </p>
 
@@ -300,7 +298,7 @@ Créée par des bailleurs, pour des bailleurs.
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="bg-gradient-to-br from-[#fef5f1] to-[#fef9f7] rounded-3xl p-6 lg:p-9 mb-16 shadow-lg"
+            className="rounded-3xl p-6 lg:p-9 mb-16 shadow-lg"
           >
             <div className="flex flex-col lg:flex-row items-center gap-6 lg:gap-9">
               {/* Image femme à gauche */}
