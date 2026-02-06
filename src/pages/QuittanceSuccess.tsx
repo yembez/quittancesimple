@@ -84,19 +84,19 @@ const QuittanceSuccess = () => {
           <div className="text-sm md:text-base text-[#545454] mb-4 md:mb-6 space-y-2 md:space-y-3 max-w-2xl mx-auto">
             <div className="flex items-start gap-3 md:gap-3">
               <span className="text-[#7CAA89] font-bold text-lg flex-shrink-0">✓</span>
-              <span>Quittance générée et envoyée automatiquement</span>
+              <span>Quittance et relance générée et envoyée automatiquement</span>
             </div>
             <div className="flex items-start gap-3 md:gap-3">
               <span className="text-[#7CAA89] font-bold text-lg flex-shrink-0">✓</span>
-              <span>Relance envoyée en cas de retard de loyer</span>
+              <span>Bilan anuel / CA prêt pour déclaration (lmnp/Pinel/vide)</span>
             </div>
             <div className="flex items-start gap-3 md:gap-3">
               <span className="text-[#7CAA89] font-bold text-lg flex-shrink-0">✓</span>
-              <span>Révision IRL calculée toute seule</span>
+              <span>Calcul révison IRL automatique</span>
             </div>
             <div className="flex items-start gap-3 md:gap-3">
               <span className="text-[#7CAA89] font-bold text-lg flex-shrink-0">✓</span>
-              <span>Courrier IRL prêt</span>
+              <span>Plus de perte, rappel et Courrier IRL prêt</span>
             </div>
             <div className="flex items-start gap-3 md:gap-3">
               <span className="text-[#7CAA89] font-bold text-lg flex-shrink-0">✓</span>
