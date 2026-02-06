@@ -122,7 +122,7 @@ const QuittanceSuccess = () => {
 
             {/* Price */}
             <p className="text-center text-sm md:text-base text-[#545454] mb-4">
-              Ne plus m'en occuper dès <span className="font-bold text-[#1a1f20]">0,82 € / mois</span>
+              <strong>et ne plus m'en occuper</strong> dès <span className="font-bold text-[#1a1f20]">0,82 € / mois</span>
             </p>
  <p className="text-center text-sm md:text-base text-[#545454] mb-4">
              Sans engagement
