@@ -88,19 +88,19 @@ const QuittanceSuccess = () => {
             </div>
             <div className="flex items-start gap-3 md:gap-3">
               <span className="text-[#7CAA89] font-bold text-lg flex-shrink-0">✓</span>
-              <span>Bilan anuel / CA prêt pour déclaration (lmnp/Pinel/vide)</span>
+              <span>Bilan anuel / CA <strong>prêt pour déclaration</strong> (lmnp/Pinel/vide)</span>
             </div>
             <div className="flex items-start gap-3 md:gap-3">
               <span className="text-[#7CAA89] font-bold text-lg flex-shrink-0">✓</span>
-              <span>Calcul révison IRL automatique</span>
+              <span>Calcul révison IRL automatique <strong>au bon moment</strong></span>
             </div>
             <div className="flex items-start gap-3 md:gap-3">
               <span className="text-[#7CAA89] font-bold text-lg flex-shrink-0">✓</span>
-              <span>Rappel et Courrier IRL prêt, plus d'oubli ni de perte</span>
+              <span>Rappel et Courrier IRL prêt, <strong>sans perte d'argent</strong></span>
             </div>
             <div className="flex items-start gap-3 md:gap-3">
               <span className="text-[#7CAA89] font-bold text-lg flex-shrink-0">✓</span>
-              <span>Historique conservé, disponible 24/24</span>
+              <span>Historique conservé, <strong>bien rangé</strong> 24/24</span>
             </div>
           </div>
 
