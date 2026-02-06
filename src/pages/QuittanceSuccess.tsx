@@ -84,7 +84,7 @@ const QuittanceSuccess = () => {
           <div className="text-sm md:text-base text-[#545454] mb-4 md:mb-6 space-y-2 md:space-y-3 max-w-2xl mx-auto">
             <div className="flex items-start gap-3 md:gap-3">
               <span className="text-[#7CAA89] font-bold text-lg flex-shrink-0">✓</span>
-              <span>Quittance et relance envoyée automatiquement sans oubli</span>
+              <span>Quittance et relance envoyée automatiquement <strong>sans oubli</strong></span>
             </div>
             <div className="flex items-start gap-3 md:gap-3">
               <span className="text-[#7CAA89] font-bold text-lg flex-shrink-0">✓</span>
