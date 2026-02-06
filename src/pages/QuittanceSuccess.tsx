@@ -116,7 +116,7 @@ const QuittanceSuccess = () => {
                 });
                 setIsPaymentModalOpen(true);
               }}
-              className="w-full bg-[#ed7862] hover:bg-[#e56651] text-white font-bold text-base md:text-lg py-4 md:py-4 rounded-full transition-all transform hover:scale-[1.02] shadow-lg mb-4">
+              className="w-full bg-[#7CAA89] hover:bg-[#1a1f20] text-white font-bold text-base md:text-lg py-4 md:py-4 rounded-full transition-all transform hover:scale-[1.02] shadow-lg mb-4">
               Passer en Mode Tranquillité
             </button>
 
