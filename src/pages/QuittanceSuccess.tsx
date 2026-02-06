@@ -74,11 +74,10 @@ const QuittanceSuccess = () => {
         >
           <div className="mb-4 md:mb-6">
             <p className="text-base md:text-base text-[#545454] leading-relaxed max-w-2xl mx-auto">
-              Chaque mois, même contrainte, un oubli, une erreur ou un retard et il faut faire et re-faire...
-(créer, remplir, copier, télécharger, vérifier, chercher, coller, rédiger, envoyer etc.)
+              Chaque mois, même contrainte, créer, remplir, copier, télécharger, vérifier, chercher, coller, rédiger, envoyer etc. Un oubli? une erreur? ou un retard? et il faut faire et re-faire...
                </p>
             <p className="text-base md:text-base text-[#1a1f20] font-semibold mt-3 md:mt-4 max-w-2xl mx-auto">
-              Et si vous arretiez de vous embeter avec çà ?
+              Et si vous arretiez de vous embeter avec tout çà&nbsp;?
             </p>
           </div>
 
