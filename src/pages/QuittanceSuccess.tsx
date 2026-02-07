@@ -352,7 +352,7 @@ const QuittanceSuccess = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackGA4Event('google_review_clicked', { page_source: 'quittance_success' })}
-                className="block w-full bg-[#4285F4] hover:bg-[#3367D6] text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors text-center"
+                className="block w-full bg-[#7caa89] hover:bg-[#70997b] text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors text-center"
               >
                 Laisser un avis Google ⭐
               </a>
