@@ -183,7 +183,7 @@ const QuittanceSuccess = () => {
         >
           <div className="mb-3 md:mb-6">
             <p className="text-xs md:text-sm text-[#545454] leading-relaxed max-w-2xl mx-auto">
-              Mais vous devrez recommencer les mois prochains : chercher e-mail et loyer, transférer le PDF, rédiger l'email, archiver…😕
+             Vous devrez recommencer les mois prochains : chercher e-mail et loyer, transférer le PDF, rédiger l'email, archiver…😕
             </p>
             <p className="text-sm md:text-base text-[#1a1f20] font-semibold mt-2 md:mt-4 max-w-2xl mx-auto">
               Et si vous stoppiez enfin ces corvées&nbsp;?
