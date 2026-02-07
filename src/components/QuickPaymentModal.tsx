@@ -391,15 +391,15 @@ const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
               <div className="mt-3 space-y-1.5">
                 <div className="flex items-center text-xs text-[#545454]">
                   <Check className="w-3.5 h-3.5 text-[#7CAA89] mr-2" />
-                  Quittances et relances automatiques + histoirique
+                  Quittances et relances automatiques + historique
                 </div>
                 <div className="flex items-center text-xs text-[#545454]">
                   <Check className="w-3.5 h-3.5 text-[#7CAA89] mr-2" />
-                  Calcul IRL et courriers automatiques
+                  Calcul IRL "timé" + courriers automatiques
                 </div>
                  <div className="flex items-center text-xs text-[#545454]">
                   <Check className="w-3.5 h-3.5 text-[#7CAA89] mr-2" />
-                  Export revenus annuels
+                  Export revenus annuels / CA déclaration
                 </div>
                 <div className="flex items-center text-xs text-[#545454]">
                   <Check className="w-3.5 h-3.5 text-[#7CAA89] mr-2" />
