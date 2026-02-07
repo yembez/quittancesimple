@@ -147,6 +147,10 @@ const QuittanceSuccess = () => {
               <span className="text-[#7CAA89] font-bold text-base md:text-lg flex-shrink-0">✓</span>
               <span><strong>Zéro stress :</strong> Tout est archivé accéssible 24h/24</span>
             </div>
+             <div className="flex items-start gap-2 md:gap-3">
+              <span className="text-[#7CAA89] font-bold text-base md:text-lg flex-shrink-0">✓</span>
+              <span><strong>Prix de lancement :</strong> Dès 0,82€/mois</span>
+            </div>
           </div>
 
           {/* Desktop CTA (hidden on mobile) */}
@@ -295,8 +299,7 @@ const QuittanceSuccess = () => {
             setIsPaymentModalOpen(true);
           }}
           className="w-full bg-[#545454] hover:bg-[#1a1f20] text-white font-bold text-sm py-3 rounded-full transition-all shadow-lg flex items-center justify-center gap-2">
-          <span>Mode Tranquillité</span>
-          <span className="text-xs font-normal opacity-90">• 0,82€/mois</span>
+          <span>Passer en Mode Tranquillité</span>
         </button>
       </div>
 
