@@ -43,7 +43,10 @@ const QuittanceSuccess = () => {
       // Send feedback to your email via edge function or API
       await fetch('https://jfpbddtdblqakabyjxkq.supabase.co/functions/v1/send-feedback', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmcGJkZHRkYmxxYWthYnlqeGtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY2MjE2ODUsImV4cCI6MjA1MjE5NzY4NX0.LRorMT1dq6sMB1xNMcpvAFl97TCz8c2WnSuKTdwMshY'
+        },
         body: JSON.stringify({
           feedback,
           email: email || 'anonymous',
