@@ -112,13 +112,13 @@ const QuittanceSuccess = () => {
                   onClick={() => handleSatisfactionResponse('yes')}
                   className="px-3 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors"
                 >
-                  Oui 👍
+                  Oui
                 </button>
                 <button
                   onClick={() => handleSatisfactionResponse('no')}
                   className="px-3 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors"
                 >
-                  Bof 😕
+                  Bof
                 </button>
               </div>
             </div>
