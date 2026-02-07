@@ -10,6 +10,9 @@ const QuittanceSuccess = () => {
   const location = useLocation();
   const email = location.state?.email || '';
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [showSatisfaction, setShowSatisfaction] = useState(false);
+  const [satisfactionStep, setSatisfactionStep] = useState<'question' | 'positive' | 'negative' | 'sent'>('question');
+  const [feedback, setFeedback] = useState('');
 
   // Track page view + store email
   useEffect(() => {
@@ -21,7 +24,56 @@ const QuittanceSuccess = () => {
     if (email) {
       localStorage.setItem('captured_email', email);
     }
-  }, [email]);
+
+    // Show satisfaction after scroll
+    const handleScroll = () => {
+      if (window.scrollY > 100 && !showSatisfaction) {
+        setShowSatisfaction(true);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [email, showSatisfaction]);
+
+  const handleSatisfactionResponse = (response: 'yes' | 'no') => {
+    if (response === 'yes') {
+      setSatisfactionStep('positive');
+      trackGA4Event('satisfaction_positive', { page_source: 'quittance_success' });
+    } else {
+      setSatisfactionStep('negative');
+      trackGA4Event('satisfaction_negative', { page_source: 'quittance_success' });
+    }
+  };
+
+  const handleFeedbackSubmit = async () => {
+    if (!feedback.trim()) return;
+
+    try {
+      // Send feedback to your email via edge function or API
+      await fetch('https://jfpbddtdblqakabyjxkq.supabase.co/functions/v1/send-feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          feedback,
+          email: email || 'anonymous',
+          source: 'quittance_success'
+        })
+      });
+
+      setSatisfactionStep('sent');
+      trackGA4Event('feedback_sent', { page_source: 'quittance_success' });
+
+      setTimeout(() => {
+        setShowSatisfaction(false);
+      }, 3000);
+    } catch (error) {
+      console.error('Error sending feedback:', error);
+      // Fallback: open email client
+      window.location.href = `mailto:2speek@gmail.com?subject=Feedback Quittance Simple&body=${encodeURIComponent(feedback)}`;
+      setSatisfactionStep('sent');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -74,7 +126,7 @@ const QuittanceSuccess = () => {
         >
           <div className="mb-3 md:mb-6">
             <p className="text-sm md:text-sm text-[#545454] leading-relaxed max-w-2xl mx-auto">
-              Mais vous devez encore transférer le PDF, chercher l'email, écrire, envoyer, archiver etc. Et le mois prochain&nbsp;? ... Pareil :(
+              Mais vous devez encore transférer le PDF, rédiger un message, trouver l'adresse, archiver etc. Et le mois prochain&nbsp;? ... Pareil :(
             </p>
             <p className="text-sm md:text-base text-[#1a1f20] font-semibold mt-2 md:mt-4 max-w-2xl mx-auto">
               Et si vous arrêtiez de vous infliger ça chaque mois&nbsp;?
@@ -166,6 +218,112 @@ const QuittanceSuccess = () => {
       <footer className="py-6 text-center hidden md:block">
 
       </footer>
+
+      {/* Satisfaction Widget - Appears on scroll */}
+      {showSatisfaction && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
+          className="fixed bottom-20 md:bottom-6 right-4 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 max-w-sm z-40"
+        >
+          {satisfactionStep === 'question' && (
+            <div>
+              <p className="text-sm font-semibold text-[#1a1f20] mb-3">
+                L'outil vous a-t-il été utile ?
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleSatisfactionResponse('yes')}
+                  className="flex-1 bg-[#7CAA89] hover:bg-[#6b9879] text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors"
+                >
+                  Oui 👍
+                </button>
+                <button
+                  onClick={() => handleSatisfactionResponse('no')}
+                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-[#1a1f20] text-sm font-medium py-2 px-4 rounded-lg transition-colors"
+                >
+                  Moyen 😕
+                </button>
+              </div>
+              <button
+                onClick={() => setShowSatisfaction(false)}
+                className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+          )}
+
+          {satisfactionStep === 'positive' && (
+            <div>
+              <p className="text-sm text-[#1a1f20] mb-3 leading-relaxed">
+                Génial ! Un petit avis nous donne un immense coup de pouce pour améliorer notre offre.
+                <span className="block mt-1 text-xs text-[#545454]">(entre bailleurs 😉)</span>
+              </p>
+              <a
+                href="https://g.page/r/CXTzg3vBtXQcEBM/review"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => trackGA4Event('google_review_clicked', { page_source: 'quittance_success' })}
+                className="block w-full bg-[#4285F4] hover:bg-[#3367D6] text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors text-center"
+              >
+                Laisser un avis Google ⭐
+              </a>
+              <button
+                onClick={() => setShowSatisfaction(false)}
+                className="w-full text-xs text-gray-500 hover:text-gray-700 mt-2 underline"
+              >
+                Peut-être plus tard
+              </button>
+            </div>
+          )}
+
+          {satisfactionStep === 'negative' && (
+            <div>
+              <p className="text-sm font-semibold text-[#1a1f20] mb-2">
+                Désolé ! 😔
+              </p>
+              <p className="text-xs text-[#545454] mb-3">
+                Dites-nous ce qui a coincé pour qu'on puisse corriger ça immédiatement.
+              </p>
+              <textarea
+                value={feedback}
+                onChange={(e) => setFeedback(e.target.value)}
+                placeholder="Votre retour nous aide à améliorer..."
+                className="w-full border border-gray-300 rounded-lg p-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#7CAA89] focus:border-transparent"
+                rows={3}
+              />
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={handleFeedbackSubmit}
+                  disabled={!feedback.trim()}
+                  className="flex-1 bg-[#545454] hover:bg-[#1a1f20] disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors"
+                >
+                  Envoyer
+                </button>
+                <button
+                  onClick={() => setShowSatisfaction(false)}
+                  className="px-3 text-gray-500 hover:text-gray-700 text-sm"
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          )}
+
+          {satisfactionStep === 'sent' && (
+            <div className="text-center py-2">
+              <p className="text-sm font-semibold text-[#7CAA89] mb-1">
+                Merci pour votre retour ! 🙏
+              </p>
+              <p className="text-xs text-[#545454]">
+                On va corriger ça au plus vite.
+              </p>
+            </div>
+          )}
+        </motion.div>
+      )}
 
       {/* Payment Modal */}
       <QuickPaymentModal
