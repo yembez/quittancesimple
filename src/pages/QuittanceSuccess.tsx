@@ -216,7 +216,7 @@ const QuittanceSuccess = () => {
               </p>
               <p className="text-xs text-gray-500 mb-4">(entre bailleurs 😉)</p>
               <a
-                href="https://g.page/r/YOUR_GOOGLE_REVIEW_LINK/review"
+                href="https://g.page/r/CXTzg3vBtXQcEBM/review"
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackGA4Event('google_review_clicked', { page_source: 'quittance_success' })}
