@@ -321,7 +321,7 @@ const QuittanceSuccess = () => {
               <div className="flex gap-2">
                 <button
                   onClick={() => handleSatisfactionResponse('yes')}
-                  className="flex-1 bg-[#7CAA89] hover:bg-[#6b9879] text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors"
+                  className="flex-1 bg-[#ed7862] hover:bg-[#ed6a62] text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors"
                 >
                   Oui 👍
                 </button>
@@ -348,7 +348,7 @@ const QuittanceSuccess = () => {
                 <span className="block mt-1 text-xs text-[#545454]">(entre bailleurs 😉)</span>
               </p>
               <a
-                href="https://g.page/r/YOUR_GOOGLE_REVIEW_LINK/review"
+                href="https://g.page/r/CXTzg3vBtXQcEBM/review"
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackGA4Event('google_review_clicked', { page_source: 'quittance_success' })}
