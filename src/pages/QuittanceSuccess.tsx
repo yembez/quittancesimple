@@ -106,17 +106,17 @@ const QuittanceSuccess = () => {
           {/* Ultra discreet satisfaction - replaces subtitle */}
           {satisfactionStep === 'question' && (
             <div className="max-w-xs mx-auto">
-              <p className="text-[10px] md:text-xs text-gray-500 mb-2">Cet outil vous a aidé ?</p>
-              <div className="flex gap-1.5 justify-center">
+              <p className="text-[10px] md:text-xs text-gray-500 mb-1.5">Cet outil vous a aidé ?</p>
+              <div className="flex gap-1.5 justify-center items-start">
                 <button
                   onClick={() => handleSatisfactionResponse('yes')}
-                  className="px-3 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors"
+                  className="px-2.5 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors leading-tight"
                 >
                   Oui
                 </button>
                 <button
                   onClick={() => handleSatisfactionResponse('no')}
-                  className="px-3 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors"
+                  className="px-2.5 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors leading-tight"
                 >
                   Bof
                 </button>
@@ -126,22 +126,22 @@ const QuittanceSuccess = () => {
 
           {satisfactionStep === 'positive' && (
             <div className="max-w-xs mx-auto">
-              <p className="text-[10px] text-gray-600 mb-2">Merci ! Un avis Google nous aiderait énormément 🙏</p>
+              <p className="text-[10px] text-gray-600 mb-1.5">Merci ! Un avis Google nous aiderait énormément 🙏</p>
               <a
                 href="https://g.page/r/CXTzg3vBtXQcEBM/review"
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackGA4Event('google_review_clicked', { page_source: 'quittance_success' })}
-                className="inline-block px-3 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors"
+                className="inline-block px-2.5 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors leading-tight"
               >
-                Laisser un avis ⭐
+                Laisser un avis
               </a>
             </div>
           )}
 
           {satisfactionStep === 'negative' && (
             <div className="max-w-xs mx-auto">
-              <p className="text-[10px] text-gray-600 mb-2">Désolé ! Dites-nous ce qui n'a pas marché :</p>
+              <p className="text-[10px] text-gray-600 mb-1.5">Désolé ! Dites-nous ce qui n'a pas marché :</p>
               <textarea
                 value={feedback}
                 onChange={(e) => setFeedback(e.target.value)}
@@ -149,17 +149,17 @@ const QuittanceSuccess = () => {
                 className="w-full border border-gray-300 rounded-lg p-2 text-[10px] resize-none focus:outline-none focus:ring-1 focus:ring-gray-400 mb-1.5"
                 rows={2}
               />
-              <div className="flex gap-1.5 justify-center">
+              <div className="flex gap-1.5 justify-center items-start">
                 <button
                   onClick={handleFeedbackSubmit}
                   disabled={!feedback.trim()}
-                  className="px-3 py-0.5 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-200 disabled:text-gray-400 text-gray-700 text-[10px] font-medium rounded-full transition-colors"
+                  className="px-2.5 py-0.5 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-200 disabled:text-gray-400 text-gray-700 text-[10px] font-medium rounded-full transition-colors leading-tight"
                 >
                   Envoyer
                 </button>
                 <button
                   onClick={() => setSatisfactionStep('question')}
-                  className="px-3 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors"
+                  className="px-2.5 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors leading-tight"
                 >
                   Annuler
                 </button>
