@@ -74,7 +74,7 @@ const QuittanceSuccess = () => {
         >
           <div className="mb-4 md:mb-6">
             <p className="text-base md:text-sm text-[#545454] leading-relaxed max-w-2xl mx-auto">
-              Mais vous devez encore transférer le pdf, rédiger un message, trouver l'adresse, archiver etc. Et le mois prochain ? ... Pareil :(
+              Mais vous devez encore transférer le pdf, rédiger un message, trouver l'adresse, archiver etc. Et le mois prochain&nbsp;? ... Pareil :(</p>
             <p className="text-base md:text-base text-[#1a1f20] font-semibold mt-3 md:mt-4 max-w-2xl mx-auto">
               Et si vous arretiez de vous infliger çà chaque mois&nbsp;? 
             </p>
