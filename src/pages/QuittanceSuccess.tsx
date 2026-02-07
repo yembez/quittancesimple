@@ -96,15 +96,82 @@ const QuittanceSuccess = () => {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="text-center mb-3 md:mb-6"
         >
-          <div className="flex items-center justify-center gap-2 mb-2 md:mb-4">
+          <div className="flex items-center justify-center gap-2 mb-3 md:mb-4">
             <h1 className="text-lg md:text-2xl font-bold text-[#1a1f20]">
               Quittance envoyée
             </h1>
             <CheckCircle className="w-7 h-7 md:w-8 md:h-8 text-[#7CAA89]" />
           </div>
-          <p className="text-sm md:text-xs text-[#1a1f20] max-w-2xl mx-auto px-2">
-            On espère vous avoir aidé...
-          </p>
+
+          {/* Ultra discreet satisfaction - replaces subtitle */}
+          {satisfactionStep === 'question' && (
+            <div className="max-w-xs mx-auto">
+              <p className="text-[10px] md:text-xs text-gray-500 mb-2">Cet outil vous a aidé ?</p>
+              <div className="flex gap-1.5 justify-center">
+                <button
+                  onClick={() => handleSatisfactionResponse('yes')}
+                  className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors"
+                >
+                  Oui 👍
+                </button>
+                <button
+                  onClick={() => handleSatisfactionResponse('no')}
+                  className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors"
+                >
+                  Bof 😕
+                </button>
+              </div>
+            </div>
+          )}
+
+          {satisfactionStep === 'positive' && (
+            <div className="max-w-xs mx-auto">
+              <p className="text-[10px] text-gray-600 mb-2">Merci ! Un avis Google nous aiderait énormément 🙏</p>
+              <a
+                href="https://g.page/r/CXTzg3vBtXQcEBM/review"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => trackGA4Event('google_review_clicked', { page_source: 'quittance_success' })}
+                className="inline-block px-3 py-1 bg-gray-800 hover:bg-black text-white text-[10px] font-medium rounded-full transition-colors"
+              >
+                Laisser un avis ⭐
+              </a>
+            </div>
+          )}
+
+          {satisfactionStep === 'negative' && (
+            <div className="max-w-xs mx-auto">
+              <p className="text-[10px] text-gray-600 mb-2">Désolé ! Dites-nous ce qui n'a pas marché :</p>
+              <textarea
+                value={feedback}
+                onChange={(e) => setFeedback(e.target.value)}
+                placeholder="Votre retour..."
+                className="w-full border border-gray-300 rounded-lg p-2 text-[10px] resize-none focus:outline-none focus:ring-1 focus:ring-gray-400 mb-1.5"
+                rows={2}
+              />
+              <div className="flex gap-1.5 justify-center">
+                <button
+                  onClick={handleFeedbackSubmit}
+                  disabled={!feedback.trim()}
+                  className="px-3 py-1 bg-gray-800 hover:bg-black disabled:bg-gray-300 text-white text-[10px] font-medium rounded-full transition-colors"
+                >
+                  Envoyer
+                </button>
+                <button
+                  onClick={() => setSatisfactionStep('question')}
+                  className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors"
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          )}
+
+          {satisfactionStep === 'sent' && (
+            <p className="text-[10px] text-gray-600">
+              Merci pour votre retour ! 🙏
+            </p>
+          )}
         </motion.div>
 
         {/* CTA Card - Mode Tranquillité */}
@@ -186,99 +253,6 @@ const QuittanceSuccess = () => {
             </button>
           </div>
         </motion.div>
-
-        {/* Satisfaction Section - In-page, centered, sober - MOVED DOWN MORE */}
-        <div className="mt-12 md:mt-16 pt-6 md:pt-8 border-t border-gray-100 mb-24 md:mb-6">
-          {satisfactionStep === 'question' && (
-            <div className="text-center max-w-sm mx-auto">
-              <p className="text-xs md:text-sm text-gray-600 mb-3">
-                L'outil gratuit vous a-t-il été utile ?
-              </p>
-              <div className="flex gap-2 justify-center">
-                <button
-                  onClick={() => handleSatisfactionResponse('yes')}
-                  className="px-4 py-2 bg-[#ed7862] hover:bg-[#ed6a62] text-white text-xs font-medium rounded-full transition-colors"
-                >
-                  Oui 👍
-                </button>
-                <button
-                  onClick={() => handleSatisfactionResponse('no')}
-                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-900 text-xs font-medium rounded-full transition-colors"
-                >
-                  Moyen 😕
-                </button>
-              </div>
-            </div>
-          )}
-
-          {satisfactionStep === 'positive' && (
-            <div className="text-center max-w-sm mx-auto">
-              <p className="text-xs md:text-sm text-gray-700 mb-2">
-                Génial ! Un petit avis nous donne un immense coup de pouce.
-              </p>
-              <p className="text-[10px] text-gray-500 mb-3">(entre bailleurs 😉)</p>
-              <a
-                href="https://g.page/r/CXTzg3vBtXQcEBM/review"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => trackGA4Event('google_review_clicked', { page_source: 'quittance_success' })}
-                className="inline-block px-4 py-2 bg-gray-900 hover:bg-black text-white text-xs font-medium rounded-full transition-colors mb-2"
-              >
-                Laisser un avis Google ⭐
-              </a>
-              <button
-                onClick={() => setSatisfactionStep('question')}
-                className="block w-full text-[10px] text-gray-500 hover:text-gray-700 underline"
-              >
-                Retour
-              </button>
-            </div>
-          )}
-
-          {satisfactionStep === 'negative' && (
-            <div className="text-center max-w-sm mx-auto">
-              <p className="text-xs md:text-sm font-medium text-gray-900 mb-1">
-                Désolé ! 😔
-              </p>
-              <p className="text-[10px] md:text-xs text-gray-600 mb-3">
-                Dites-nous ce qui a coincé pour qu'on puisse corriger ça.
-              </p>
-              <textarea
-                value={feedback}
-                onChange={(e) => setFeedback(e.target.value)}
-                placeholder="Votre retour nous aide à améliorer..."
-                className="w-full border border-gray-300 rounded-lg p-2 text-xs resize-none focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent mb-2"
-                rows={3}
-              />
-              <div className="flex gap-2 justify-center">
-                <button
-                  onClick={handleFeedbackSubmit}
-                  disabled={!feedback.trim()}
-                  className="px-4 py-2 bg-gray-900 hover:bg-black disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-xs font-medium rounded-full transition-colors"
-                >
-                  Envoyer
-                </button>
-                <button
-                  onClick={() => setSatisfactionStep('question')}
-                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-900 text-xs font-medium rounded-full transition-colors"
-                >
-                  Annuler
-                </button>
-              </div>
-            </div>
-          )}
-
-          {satisfactionStep === 'sent' && (
-            <div className="text-center max-w-sm mx-auto py-3">
-              <p className="text-xs md:text-sm font-medium text-gray-900 mb-1">
-                Merci pour votre retour ! 🙏
-              </p>
-              <p className="text-[10px] text-gray-600">
-                On va corriger ça au plus vite.
-              </p>
-            </div>
-          )}
-        </div>
       </main>
 
       {/* Fixed Mobile CTA - Only on mobile - COMPACT VERSION */}
