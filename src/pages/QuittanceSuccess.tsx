@@ -105,8 +105,8 @@ const QuittanceSuccess = () => {
             </h1>
             <CheckCircle className="w-7 h-7 md:w-8 md:h-8 text-[#7CAA89]" />
           </div>
-          <p className="text-sm md:text-lg font-semibold text-[#1a1f20] max-w-2xl mx-auto px-2">
-            On espère vous avoir bien aidé...
+          <p className="text-sm md:text-xs text-[#1a1f20] max-w-2xl mx-auto px-2">
+            On espère vous avoir aidé...
           </p>
         </motion.div>
 
@@ -118,11 +118,11 @@ const QuittanceSuccess = () => {
           className="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-3 md:p-8 border border-gray-200 shadow-lg"
         >
           <div className="mb-3 md:mb-6">
-            <p className="text-sm md:text-sm text-[#545454] leading-relaxed max-w-2xl mx-auto">
-              Mais vous devez encore transférer le PDF, rédiger un message, trouver l'adresse, archiver etc. Et le mois prochain&nbsp;? ... Pareil :(
+            <p className="text-xs md:text-sm text-[#545454] leading-relaxed max-w-2xl mx-auto">
+              Mais vous devrez recommencer les mois prochains : chercher e-mail et loyer, transférer le PDF, rédiger l'email, archiver… :(
             </p>
             <p className="text-sm md:text-base text-[#1a1f20] font-semibold mt-2 md:mt-4 max-w-2xl mx-auto">
-              Et si vous arrêtiez de vous infliger ça chaque mois&nbsp;?
+              Et si vous stoppiez ces corvées maintenant&nbsp;? Créé par des bailleurs, pour des bailleurs :
             </p>
           </div>
 
