@@ -137,7 +137,7 @@ const QuittanceSuccess = () => {
             </div>
             <div className="flex items-start gap-2 md:gap-3">
               <span className="text-[#7CAA89] font-bold text-base md:text-lg flex-shrink-0">✓</span>
-              <span><strong>Zéro perte :</strong> Révision IRL automatique pour ne plus oublier d'augmenter votre loye</strong></span>
+              <span><strong>Zéro perte :</strong> Révision IRL automatique pour ne plus oublier d'augmenter votre loyer</span>
             </div>
             <div className="flex items-start gap-2 md:gap-3">
               <span className="text-[#7CAA89] font-bold text-base md:text-lg flex-shrink-0">✓</span>
