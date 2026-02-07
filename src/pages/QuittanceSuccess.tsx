@@ -46,7 +46,7 @@ const QuittanceSuccess = () => {
       </header>
 
       {/* Content - DESKTOP 40% SMALLER */}
-      <main className="flex-1 px-4 py-3 md:py-8 max-w-3xl md:max-w-2xl mx-auto w-full pb-32 md:pb-6">
+      <main className="flex-1 px-4 py-3 md:py-8 max-w-3xl md:max-w-2xl mx-auto w-full pb-20 md:pb-6">
         {/* Success message */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -144,8 +144,8 @@ const QuittanceSuccess = () => {
         </motion.div>
       </main>
 
-      {/* Fixed Mobile CTA - Only on mobile */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 shadow-lg z-50">
+      {/* Fixed Mobile CTA - Only on mobile - COMPACT VERSION */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-3 py-2 shadow-lg z-50">
         <button
           onClick={() => {
             trackCtaClick('mode_tranquillite_success_page', 'quittance_success', 'payment_modal');
@@ -156,22 +156,9 @@ const QuittanceSuccess = () => {
             });
             setIsPaymentModalOpen(true);
           }}
-          className="w-full bg-[#545454] hover:bg-[#1a1f20] text-white font-bold text-base py-3.5 rounded-full transition-all shadow-lg">
-          Passer en Mode Tranquillité
-        </button>
-        <p className="text-center text-xs text-[#545454] mt-2">
-          <strong>0,82 € / mois</strong> • Sans engagement
-        </p>
-        <button
-          onClick={() => {
-            trackGA4Event('skip_automation_clicked', {
-              page_source: 'quittance_success',
-              action: 'continue_without_automation',
-            });
-            navigate('/');
-          }}
-          className="w-full text-center text-xs text-[#545454] hover:text-[#1a1f20] transition-colors underline mt-1">
-          Retour
+          className="w-full bg-[#545454] hover:bg-[#1a1f20] text-white font-bold text-sm py-3 rounded-full transition-all shadow-lg flex items-center justify-center gap-2">
+          <span>Mode Tranquillité</span>
+          <span className="text-xs font-normal opacity-90">• 0,82€/mois</span>
         </button>
       </div>
 
