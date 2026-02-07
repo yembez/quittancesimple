@@ -24,17 +24,7 @@ const QuittanceSuccess = () => {
     if (email) {
       localStorage.setItem('captured_email', email);
     }
-
-    // Show satisfaction after scroll
-    const handleScroll = () => {
-      if (window.scrollY > 50 && !showSatisfaction) {
-        setShowSatisfaction(true);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [email, showSatisfaction]);
+  }, [email]);
 
   const handleSatisfactionResponse = (response: 'yes' | 'no') => {
     if (response === 'yes') {
@@ -98,7 +88,7 @@ const QuittanceSuccess = () => {
       </header>
 
       {/* Content - DESKTOP 40% SMALLER */}
-      <main className="flex-1 px-4 py-3 md:py-8 max-w-3xl md:max-w-2xl mx-auto w-full pb-96 md:pb-64">
+      <main className="flex-1 px-4 py-3 md:py-8 max-w-3xl md:max-w-2xl mx-auto w-full pb-20 md:pb-6">
         {/* Success message */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -194,6 +184,99 @@ const QuittanceSuccess = () => {
             </button>
           </div>
         </motion.div>
+
+        {/* Satisfaction Section - In-page, centered, sober */}
+        <div className="mt-8 md:mt-12 pt-8 md:pt-10 border-t border-gray-200">
+          {satisfactionStep === 'question' && (
+            <div className="text-center max-w-md mx-auto">
+              <p className="text-sm md:text-base text-gray-700 mb-4">
+                L'outil vous a-t-il été utile ?
+              </p>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => handleSatisfactionResponse('yes')}
+                  className="px-6 py-2.5 bg-gray-900 hover:bg-black text-white text-sm font-medium rounded-full transition-colors"
+                >
+                  Oui 👍
+                </button>
+                <button
+                  onClick={() => handleSatisfactionResponse('no')}
+                  className="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-900 text-sm font-medium rounded-full transition-colors"
+                >
+                  Moyen 😕
+                </button>
+              </div>
+            </div>
+          )}
+
+          {satisfactionStep === 'positive' && (
+            <div className="text-center max-w-md mx-auto">
+              <p className="text-sm md:text-base text-gray-700 mb-2">
+                Génial ! Un petit avis nous donne un immense coup de pouce pour améliorer notre offre.
+              </p>
+              <p className="text-xs text-gray-500 mb-4">(entre bailleurs 😉)</p>
+              <a
+                href="https://g.page/r/YOUR_GOOGLE_REVIEW_LINK/review"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => trackGA4Event('google_review_clicked', { page_source: 'quittance_success' })}
+                className="inline-block px-6 py-2.5 bg-gray-900 hover:bg-black text-white text-sm font-medium rounded-full transition-colors mb-3"
+              >
+                Laisser un avis Google ⭐
+              </a>
+              <button
+                onClick={() => setSatisfactionStep('question')}
+                className="block w-full text-xs text-gray-500 hover:text-gray-700 underline"
+              >
+                Retour
+              </button>
+            </div>
+          )}
+
+          {satisfactionStep === 'negative' && (
+            <div className="text-center max-w-md mx-auto">
+              <p className="text-sm md:text-base font-medium text-gray-900 mb-2">
+                Désolé ! 😔
+              </p>
+              <p className="text-xs md:text-sm text-gray-600 mb-4">
+                Dites-nous ce qui a coincé pour qu'on puisse corriger ça immédiatement.
+              </p>
+              <textarea
+                value={feedback}
+                onChange={(e) => setFeedback(e.target.value)}
+                placeholder="Votre retour nous aide à améliorer..."
+                className="w-full border border-gray-300 rounded-lg p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent mb-3"
+                rows={3}
+              />
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={handleFeedbackSubmit}
+                  disabled={!feedback.trim()}
+                  className="px-6 py-2.5 bg-gray-900 hover:bg-black disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-medium rounded-full transition-colors"
+                >
+                  Envoyer
+                </button>
+                <button
+                  onClick={() => setSatisfactionStep('question')}
+                  className="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-900 text-sm font-medium rounded-full transition-colors"
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          )}
+
+          {satisfactionStep === 'sent' && (
+            <div className="text-center max-w-md mx-auto py-4">
+              <p className="text-sm md:text-base font-medium text-gray-900 mb-1">
+                Merci pour votre retour ! 🙏
+              </p>
+              <p className="text-xs text-gray-600">
+                On va corriger ça au plus vite.
+              </p>
+            </div>
+          )}
+        </div>
       </main>
 
       {/* Fixed Mobile CTA - Only on mobile - COMPACT VERSION */}
