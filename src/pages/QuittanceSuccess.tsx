@@ -27,7 +27,7 @@ const QuittanceSuccess = () => {
 
     // Show satisfaction after scroll
     const handleScroll = () => {
-      if (window.scrollY > 100 && !showSatisfaction) {
+      if (window.scrollY > 50 && !showSatisfaction) {
         setShowSatisfaction(true);
       }
     };
@@ -98,7 +98,7 @@ const QuittanceSuccess = () => {
       </header>
 
       {/* Content - DESKTOP 40% SMALLER */}
-      <main className="flex-1 px-4 py-3 md:py-8 max-w-3xl md:max-w-2xl mx-auto w-full pb-20 md:pb-6">
+      <main className="flex-1 px-4 py-3 md:py-8 max-w-3xl md:max-w-2xl mx-auto w-full pb-96 md:pb-64">
         {/* Success message */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -219,7 +219,7 @@ const QuittanceSuccess = () => {
 
       </footer>
 
-      {/* Satisfaction Widget - Appears on scroll */}
+      {/* Satisfaction Widget - Appears on scroll - DESKTOP + MOBILE */}
       {showSatisfaction && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -262,7 +262,7 @@ const QuittanceSuccess = () => {
                 <span className="block mt-1 text-xs text-[#545454]">(entre bailleurs 😉)</span>
               </p>
               <a
-                href="https://g.page/r/CXTzg3vBtXQcEBM/review"
+                href="https://g.page/r/YOUR_GOOGLE_REVIEW_LINK/review"
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackGA4Event('google_review_clicked', { page_source: 'quittance_success' })}
