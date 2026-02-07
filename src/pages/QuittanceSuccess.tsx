@@ -317,7 +317,7 @@ const QuittanceSuccess = () => {
           className="fixed bottom-30 md:bottom-6 right-4 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 max-w-sm z-40"
         >
           {satisfactionStep === 'question' && (
-            <div><br />
+            <div><br /><br /><br />
               <p className="text-sm font-semibold text-[#1a1f20] mb-3">
                 L'outil gratuit vous a-t-il été utile ?
               </p>
