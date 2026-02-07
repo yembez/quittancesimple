@@ -110,13 +110,13 @@ const QuittanceSuccess = () => {
               <div className="flex gap-1.5 justify-center">
                 <button
                   onClick={() => handleSatisfactionResponse('yes')}
-                  className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors"
+                  className="px-3 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors"
                 >
                   Oui 👍
                 </button>
                 <button
                   onClick={() => handleSatisfactionResponse('no')}
-                  className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors"
+                  className="px-3 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors"
                 >
                   Bof 😕
                 </button>
@@ -132,7 +132,7 @@ const QuittanceSuccess = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackGA4Event('google_review_clicked', { page_source: 'quittance_success' })}
-                className="inline-block px-3 py-1 bg-gray-800 hover:bg-black text-white text-[10px] font-medium rounded-full transition-colors"
+                className="inline-block px-3 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors"
               >
                 Laisser un avis ⭐
               </a>
@@ -153,13 +153,13 @@ const QuittanceSuccess = () => {
                 <button
                   onClick={handleFeedbackSubmit}
                   disabled={!feedback.trim()}
-                  className="px-3 py-1 bg-gray-800 hover:bg-black disabled:bg-gray-300 text-white text-[10px] font-medium rounded-full transition-colors"
+                  className="px-3 py-0.5 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-200 disabled:text-gray-400 text-gray-700 text-[10px] font-medium rounded-full transition-colors"
                 >
                   Envoyer
                 </button>
                 <button
                   onClick={() => setSatisfactionStep('question')}
-                  className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors"
+                  className="px-3 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors"
                 >
                   Annuler
                 </button>
