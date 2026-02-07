@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, FileText, Calculator, Mail, BarChart3, Clock, FolderArchive } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { trackGA4Event, trackCtaClick } from '../utils/analytics';
 import QuickPaymentModal from '../components/QuickPaymentModal';
@@ -10,7 +10,6 @@ const QuittanceSuccess = () => {
   const location = useLocation();
   const email = location.state?.email || '';
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [showSatisfaction, setShowSatisfaction] = useState(false);
   const [satisfactionStep, setSatisfactionStep] = useState<'question' | 'positive' | 'negative' | 'sent'>('question');
   const [feedback, setFeedback] = useState('');
 
@@ -58,7 +57,7 @@ const QuittanceSuccess = () => {
       trackGA4Event('feedback_sent', { page_source: 'quittance_success' });
 
       setTimeout(() => {
-        setShowSatisfaction(false);
+        setSatisfactionStep('question');
       }, 3000);
     } catch (error) {
       console.error('Error sending feedback:', error);
@@ -105,8 +104,8 @@ const QuittanceSuccess = () => {
             </h1>
             <CheckCircle className="w-7 h-7 md:w-8 md:h-8 text-[#7CAA89]" />
           </div>
-          <p className="text-sm md:text-xs text-[#1a1f20] max-w-2xl mx-auto px-2">
-            On espère vous avoir aidé...
+          <p className="text-sm md:text-lg font-semibold text-[#1a1f20] max-w-2xl mx-auto px-2">
+            On espère vous avoir bien aidé...
           </p>
         </motion.div>
 
@@ -118,38 +117,34 @@ const QuittanceSuccess = () => {
           className="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-3 md:p-8 border border-gray-200 shadow-lg"
         >
           <div className="mb-3 md:mb-6">
-            <p className="text-xs md:text-sm text-[#545454] leading-relaxed max-w-2xl mx-auto">
-              Mais vous devrez recommencer les mois prochains : chercher e-mail et loyer, transférer le PDF, rédiger l'email, archiver…😕
+            <p className="text-sm md:text-sm text-[#545454] leading-relaxed max-w-2xl mx-auto">
+              Mais vous devez encore transférer le PDF, rédiger un message, trouver l'adresse, archiver etc. Et le mois prochain&nbsp;? ... Pareil :(
             </p>
             <p className="text-sm md:text-base text-[#1a1f20] font-semibold mt-2 md:mt-4 max-w-2xl mx-auto">
-              Et si vous stoppiez enfin ces corvées&nbsp;?
+              Et si vous arrêtiez de vous infliger ça chaque mois&nbsp;?
             </p>
           </div>
 
           <div className="text-xs md:text-base text-[#545454] mb-3 md:mb-6 space-y-1.5 md:space-y-3 max-w-2xl mx-auto">
             <div className="flex items-start gap-2 md:gap-3">
               <span className="text-[#7CAA89] font-bold text-base md:text-lg flex-shrink-0">✓</span>
-              <span><strong>Zéro oubli :</strong> Quittance et relance auto chaque mois, sous votre contrôle</span>
+              <span>Quittance et relance envoyées automatiquement <strong>sans oubli</strong></span>
             </div>
             <div className="flex items-start gap-2 md:gap-3">
               <span className="text-[#7CAA89] font-bold text-base md:text-lg flex-shrink-0">✓</span>
-              <span><strong>Saisie minimale :</strong> Pas de formulaires sans fin, on a fait vraiment simple</span>
+              <span>Bilan annuel / CA <strong>prêt pour déclaration</strong> (LMNP/Pinel/vide)</span>
             </div>
             <div className="flex items-start gap-2 md:gap-3">
               <span className="text-[#7CAA89] font-bold text-base md:text-lg flex-shrink-0">✓</span>
-              <span><strong>Zéro perte :</strong> Révision IRL automatique pour ne plus oublier d'augmenter votre loyer</span>
+              <span>Calcul révision IRL automatique <strong>au bon moment</strong></span>
             </div>
             <div className="flex items-start gap-2 md:gap-3">
               <span className="text-[#7CAA89] font-bold text-base md:text-lg flex-shrink-0">✓</span>
-              <span><strong>Zéro calcul :</strong> Bilan annuel prêt pour votre déclaration d'impôts</span>
+              <span>Rappel et Courrier IRL prêt, <strong>sans perte d'argent</strong></span>
             </div>
             <div className="flex items-start gap-2 md:gap-3">
               <span className="text-[#7CAA89] font-bold text-base md:text-lg flex-shrink-0">✓</span>
-              <span><strong>Zéro stress :</strong> Tout est archivé accéssible 24h/24</span>
-            </div>
-             <div className="flex items-start gap-2 md:gap-3">
-              <span className="text-[#7CAA89] font-bold text-base md:text-lg flex-shrink-0">✓</span>
-              <span><strong>Prix de lancement :</strong> Dès 0,82€/mois</span>
+              <span>Historique conservé, <strong>bien rangé</strong> 24/24</span>
             </div>
           </div>
 
@@ -202,7 +197,7 @@ const QuittanceSuccess = () => {
               <div className="flex gap-3 justify-center">
                 <button
                   onClick={() => handleSatisfactionResponse('yes')}
-                  className="px-6 py-2.5 bg-[#ed7862] hover:bg-[#ed6a62] text-white text-sm font-medium rounded-full transition-colors"
+                  className="px-6 py-2.5 bg-gray-900 hover:bg-black text-white text-sm font-medium rounded-full transition-colors"
                 >
                   Oui 👍
                 </button>
@@ -223,7 +218,7 @@ const QuittanceSuccess = () => {
               </p>
               <p className="text-xs text-gray-500 mb-4">(entre bailleurs 😉)</p>
               <a
-                href="https://g.page/r/CXTzg3vBtXQcEBM/review"
+                href="https://g.page/r/YOUR_GOOGLE_REVIEW_LINK/review"
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackGA4Event('google_review_clicked', { page_source: 'quittance_success' })}
@@ -299,7 +294,8 @@ const QuittanceSuccess = () => {
             setIsPaymentModalOpen(true);
           }}
           className="w-full bg-[#545454] hover:bg-[#1a1f20] text-white font-bold text-sm py-3 rounded-full transition-all shadow-lg flex items-center justify-center gap-2">
-          <span>Passer en Mode Tranquillité</span>
+          <span>Mode Tranquillité</span>
+          <span className="text-xs font-normal opacity-90">• 0,82€/mois</span>
         </button>
       </div>
 
@@ -314,17 +310,17 @@ const QuittanceSuccess = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
-          className="fixed bottom-30 md:bottom-6 right-4 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 max-w-sm z-40"
+          className="fixed bottom-20 md:bottom-6 right-4 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 max-w-sm z-40"
         >
           {satisfactionStep === 'question' && (
-            <div><br /><br /><br />
+            <div>
               <p className="text-sm font-semibold text-[#1a1f20] mb-3">
-                L'outil gratuit vous a-t-il été utile ?
+                L'outil vous a-t-il été utile ?
               </p>
               <div className="flex gap-2">
                 <button
                   onClick={() => handleSatisfactionResponse('yes')}
-                  className="flex-1 bg-[#ed7862] hover:bg-[#ed6a62] text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors"
+                  className="flex-1 bg-[#7CAA89] hover:bg-[#6b9879] text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors"
                 >
                   Oui 👍
                 </button>
@@ -351,11 +347,11 @@ const QuittanceSuccess = () => {
                 <span className="block mt-1 text-xs text-[#545454]">(entre bailleurs 😉)</span>
               </p>
               <a
-                href="https://g.page/r/CXTzg3vBtXQcEBM/review"
+                href="https://g.page/r/YOUR_GOOGLE_REVIEW_LINK/review"
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackGA4Event('google_review_clicked', { page_source: 'quittance_success' })}
-                className="block w-full bg-[#7caa89] hover:bg-[#70997b] text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors text-center"
+                className="block w-full bg-[#4285F4] hover:bg-[#3367D6] text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors text-center"
               >
                 Laisser un avis Google ⭐
               </a>
