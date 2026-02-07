@@ -61,7 +61,7 @@ const QuittanceSuccess = () => {
             <CheckCircle className="w-8 h-8 md:w-8 md:h-8 text-[#7CAA89]" />
           </div>
           <p className="text-base md:text-lg font-semibold text-[#1a1f20] max-w-2xl mx-auto px-2">
-            Les prochaines ? Vous pouvez les oublier...
+            On éspère vous avoir bien aider...
           </p>
         </motion.div>
 
@@ -73,11 +73,10 @@ const QuittanceSuccess = () => {
           className="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-4 md:p-8 border border-gray-200 shadow-lg"
         >
           <div className="mb-4 md:mb-6">
-            <p className="text-base md:text-base text-[#545454] leading-relaxed max-w-2xl mx-auto">
-              Chaque mois, même contrainte, créer, remplir, copier, télécharger, vérifier, chercher, coller, rédiger, envoyer etc. Un oubli? une erreur? ou un retard? et il faut faire et re-faire...
-               </p>
+            <p className="text-base md:text-sm text-[#545454] leading-relaxed max-w-2xl mx-auto">
+              Mais vous devez encore transférer le pdf, rédiger un message, trouver l'adresse, archiver etc. Et le mois prochain ? ... Pareil :(
             <p className="text-base md:text-base text-[#1a1f20] font-semibold mt-3 md:mt-4 max-w-2xl mx-auto">
-              Et si vous arretiez de vous embeter avec tout çà&nbsp;?
+              Et si vous arretiez de vous infliger çà chaque mois&nbsp;? 
             </p>
           </div>
 
