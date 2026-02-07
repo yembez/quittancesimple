@@ -122,30 +122,30 @@ const QuittanceSuccess = () => {
               Mais vous devrez recommencer les mois prochains : chercher e-mail et loyer, transférer le PDF, rédiger l'email, archiver… :(
             </p>
             <p className="text-sm md:text-base text-[#1a1f20] font-semibold mt-2 md:mt-4 max-w-2xl mx-auto">
-              Et si vous stoppiez ces corvées maintenant&nbsp;? Créé par des bailleurs, pour des bailleurs :
+              Et si vous stoppiez enfin ces corvées&nbsp;?
             </p>
           </div>
 
           <div className="text-xs md:text-base text-[#545454] mb-3 md:mb-6 space-y-1.5 md:space-y-3 max-w-2xl mx-auto">
             <div className="flex items-start gap-2 md:gap-3">
               <span className="text-[#7CAA89] font-bold text-base md:text-lg flex-shrink-0">✓</span>
-              <span>Quittance et relance envoyées automatiquement <strong>sans oubli</strong></span>
+              <span><strong>Zéro oubli :</strong> Quittance et relance auto chaque mois, sous votre contrôle</span>
             </div>
             <div className="flex items-start gap-2 md:gap-3">
               <span className="text-[#7CAA89] font-bold text-base md:text-lg flex-shrink-0">✓</span>
-              <span>Bilan annuel / CA <strong>prêt pour déclaration</strong> (LMNP/Pinel/vide)</span>
+              <span><strong>Saisie minimale :</strong> Pas de formulaires sans fin, on a fait vraiment simple</span>
             </div>
             <div className="flex items-start gap-2 md:gap-3">
               <span className="text-[#7CAA89] font-bold text-base md:text-lg flex-shrink-0">✓</span>
-              <span>Calcul révision IRL automatique <strong>au bon moment</strong></span>
+              <span><strong>Zéro perte :</strong> Révision IRL automatique pour ne plus oublier d'augmenter votre loye</strong></span>
             </div>
             <div className="flex items-start gap-2 md:gap-3">
               <span className="text-[#7CAA89] font-bold text-base md:text-lg flex-shrink-0">✓</span>
-              <span>Rappel et Courrier IRL prêt, <strong>sans perte d'argent</strong></span>
+              <span><strong>Zéro calcul :</strong> Bilan annuel prêt pour votre déclaration d'impôts</span>
             </div>
             <div className="flex items-start gap-2 md:gap-3">
               <span className="text-[#7CAA89] font-bold text-base md:text-lg flex-shrink-0">✓</span>
-              <span>Historique conservé, <strong>bien rangé</strong> 24/24</span>
+              <span><strong>Zéro stress :</strong> Tout est archivé accéssible 24h/24</span>
             </div>
           </div>
 
