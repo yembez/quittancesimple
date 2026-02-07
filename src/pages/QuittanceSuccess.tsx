@@ -311,7 +311,7 @@ const QuittanceSuccess = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
-          className="fixed bottom-20 md:bottom-6 right-4 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 max-w-sm z-40"
+          className="fixed bottom-30 md:bottom-6 right-4 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 max-w-sm z-40"
         >
           {satisfactionStep === 'question' && (
             <div>
