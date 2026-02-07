@@ -198,7 +198,7 @@ const QuittanceSuccess = () => {
               <div className="flex gap-3 justify-center">
                 <button
                   onClick={() => handleSatisfactionResponse('yes')}
-                  className="px-6 py-2.5 bg-gray-900 hover:bg-black text-white text-sm font-medium rounded-full transition-colors"
+                  className="px-6 py-2.5 bg-[#ed7862] hover:bg-[#ed6a62] text-white text-sm font-medium rounded-full transition-colors"
                 >
                   Oui 👍
                 </button>
