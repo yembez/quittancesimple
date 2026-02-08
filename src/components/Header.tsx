@@ -19,7 +19,7 @@ const Header = () => {
 
   const navItems = [
     { path: '/', label: 'Accueil' },
-    { path: '/automation', label: 'Automatisation Simple' },
+    { path: '/automation', label: 'Pack Automatique' },
     { path: '/pricing', label: 'Tarifs' },
     { path: '/about', label: 'À propos' },
   ];
