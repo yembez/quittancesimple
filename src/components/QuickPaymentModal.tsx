@@ -46,7 +46,7 @@ const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
   };
 
   const price = getTierPrice(tenantTier, billingCycle);
-  const planName = 'Mode Tranquillité';
+  const planName = 'Pack Automatique';
   const cycleLabel = billingCycle === 'monthly' ? 'mois' : 'an';
   const monthlyEquivalent = billingCycle === 'yearly' ? (Math.floor(price / 12 * 100) / 100).toFixed(2) : price.toFixed(2);
 
