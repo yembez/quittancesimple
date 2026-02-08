@@ -105,18 +105,32 @@ const QuittanceSuccess = () => {
 
           {/* Ultra discreet satisfaction - replaces subtitle */}
           {satisfactionStep === 'question' && (
-            <div className="max-w-xs mx-auto">
+            <div className="max-w-xs mx-auto text-center">
               <p className="text-[10px] md:text-xs text-gray-500 mb-1.5">Cet outil vous a aidé ?</p>
-              <div className="flex gap-1.5 justify-center items-start">
+              <div className="inline-flex gap-1.5">
                 <button
                   onClick={() => handleSatisfactionResponse('yes')}
-                  className="px-2.5 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors leading-tight"
+                  className="px-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors"
+                  style={{ 
+                    padding: '2px 10px',
+                    lineHeight: '1',
+                    minHeight: 'auto',
+                    height: 'auto',
+                    WebkitAppearance: 'none'
+                  }}
                 >
                   Oui
                 </button>
                 <button
                   onClick={() => handleSatisfactionResponse('no')}
-                  className="px-2.5 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors leading-tight"
+                  className="px-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors"
+                  style={{ 
+                    padding: '2px 10px',
+                    lineHeight: '1',
+                    minHeight: 'auto',
+                    height: 'auto',
+                    WebkitAppearance: 'none'
+                  }}
                 >
                   Bof
                 </button>
@@ -125,14 +139,21 @@ const QuittanceSuccess = () => {
           )}
 
           {satisfactionStep === 'positive' && (
-            <div className="max-w-xs mx-auto">
+            <div className="max-w-xs mx-auto text-center">
               <p className="text-[10px] text-gray-600 mb-1.5">Merci ! Un avis Google nous aiderait énormément 🙏</p>
               <a
                 href="https://g.page/r/CXTzg3vBtXQcEBM/review"
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackGA4Event('google_review_clicked', { page_source: 'quittance_success' })}
-                className="inline-block px-2.5 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors leading-tight"
+                className="inline-block px-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors"
+                style={{ 
+                  padding: '2px 10px',
+                  lineHeight: '1',
+                  minHeight: 'auto',
+                  height: 'auto',
+                  WebkitAppearance: 'none'
+                }}
               >
                 Laisser un avis
               </a>
@@ -140,7 +161,7 @@ const QuittanceSuccess = () => {
           )}
 
           {satisfactionStep === 'negative' && (
-            <div className="max-w-xs mx-auto">
+            <div className="max-w-xs mx-auto text-center">
               <p className="text-[10px] text-gray-600 mb-1.5">Désolé ! Dites-nous ce qui n'a pas marché :</p>
               <textarea
                 value={feedback}
@@ -149,17 +170,31 @@ const QuittanceSuccess = () => {
                 className="w-full border border-gray-300 rounded-lg p-2 text-[10px] resize-none focus:outline-none focus:ring-1 focus:ring-gray-400 mb-1.5"
                 rows={2}
               />
-              <div className="flex gap-1.5 justify-center items-start">
+              <div className="inline-flex gap-1.5">
                 <button
                   onClick={handleFeedbackSubmit}
                   disabled={!feedback.trim()}
-                  className="px-2.5 py-0.5 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-200 disabled:text-gray-400 text-gray-700 text-[10px] font-medium rounded-full transition-colors leading-tight"
+                  className="px-2.5 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-200 disabled:text-gray-400 text-gray-700 text-[10px] font-medium rounded-full transition-colors"
+                  style={{ 
+                    padding: '2px 10px',
+                    lineHeight: '1',
+                    minHeight: 'auto',
+                    height: 'auto',
+                    WebkitAppearance: 'none'
+                  }}
                 >
                   Envoyer
                 </button>
                 <button
                   onClick={() => setSatisfactionStep('question')}
-                  className="px-2.5 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors leading-tight"
+                  className="px-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors"
+                  style={{ 
+                    padding: '2px 10px',
+                    lineHeight: '1',
+                    minHeight: 'auto',
+                    height: 'auto',
+                    WebkitAppearance: 'none'
+                  }}
                 >
                   Annuler
                 </button>
