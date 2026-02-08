@@ -297,7 +297,7 @@ const Header = () => {
                     : 'text-gray-700 hover:text-[#7CAA89]'
                 }`}
               >
-                Automatisation
+                Pack Automatique
               </Link>
 
               <div className="py-1">
