@@ -590,7 +590,7 @@ const Home = () => {
 
             </motion.div>
 
-            {/* Bloc "Mode Tranquillité" - MASQUÉ sur mobile */}
+            {/* Bloc "Pack Automatique" - MASQUÉ sur mobile */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}

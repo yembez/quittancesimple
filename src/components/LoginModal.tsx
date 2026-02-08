@@ -77,7 +77,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, mode = 'login'
           return;
         }
 
-        const planName = selectedPlan === 'plus' ? 'Quittance Connectée+' : 'Mode Tranquillité';
+        const planName = selectedPlan === 'plus' ? 'Quittance Connectée+' : 'Pack Automatique';
 
         const { error: propError } = await supabase
           .from('proprietaires')

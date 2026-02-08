@@ -37,15 +37,15 @@ function corsResponse(body: any, status = 200) {
 
 // Mapping price_id vers plan config
 const PRICE_TO_PLAN: Record<string, { max_locataires: number; plan_actuel: string }> = {
-  // Mode Tranquillité - Mensuels
-  'price_1SpTqEB1aSt8zL1num8XjK2d': { max_locataires: 2, plan_actuel: 'Mode Tranquillité (1-2 locataires)' },
-  'price_1SqivyB1aSt8zL1nIQcsn7bU': { max_locataires: 5, plan_actuel: 'Mode Tranquillité (3-5 locataires)' },
-  'price_1SpTu8B1aSt8zL1nZ7Xx0oZE': { max_locataires: 999, plan_actuel: 'Mode Tranquillité (5+ locataires)' },
+  // Pack Automatique - Mensuels
+  'price_1SpTqEB1aSt8zL1num8XjK2d': { max_locataires: 2, plan_actuel: 'Pack Automatique (1-2 locataires)' },
+  'price_1SqivyB1aSt8zL1nIQcsn7bU': { max_locataires: 5, plan_actuel: 'Pack Automatique (3-5 locataires)' },
+  'price_1SpTu8B1aSt8zL1nZ7Xx0oZE': { max_locataires: 999, plan_actuel: 'Pack Automatique (5+ locataires)' },
 
-  // Mode Tranquillité - Annuels
-  'price_1SqizVB1aSt8zL1nwJdEIzkl': { max_locataires: 2, plan_actuel: 'Mode Tranquillité (1-2 locataires)' },
-  'price_1Sqj1nB1aSt8zL1neyt7IuZp': { max_locataires: 5, plan_actuel: 'Mode Tranquillité (3-5 locataires)' },
-  'price_1Sqj3DB1aSt8zL1nyy6Hf5N7': { max_locataires: 999, plan_actuel: 'Mode Tranquillité (5+ locataires)' },
+  // Pack Automatique - Annuels
+  'price_1SqizVB1aSt8zL1nwJdEIzkl': { max_locataires: 2, plan_actuel: 'Pack Automatique (1-2 locataires)' },
+  'price_1Sqj1nB1aSt8zL1neyt7IuZp': { max_locataires: 5, plan_actuel: 'Pack Automatique (3-5 locataires)' },
+  'price_1Sqj3DB1aSt8zL1nyy6Hf5N7': { max_locataires: 999, plan_actuel: 'Pack Automatique (5+ locataires)' },
 
   // Connectée+ (pour futur)
   'price_1SNhrwB1aSt8zL1nCiVq1dUs': { max_locataires: 1, plan_actuel: 'Quittance Connectée+' },
@@ -134,7 +134,7 @@ Deno.serve(async (req) => {
         const maxLocataires = tierToMaxLocataires[tenantTier] || 2;
         planConfig = {
           max_locataires: maxLocataires,
-          plan_actuel: `Mode Tranquillité (${tenantTier} locataires)`,
+          plan_actuel: `Pack Automatique (${tenantTier} locataires)`,
         };
         
         console.log('✅ Plan config from metadata:', planConfig);

@@ -248,7 +248,7 @@ const LocatairesTable = ({
                                 <span className="text-xs whitespace-nowrap">Modifier</span>
                               </button>
                               <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-normal pointer-events-none z-50 w-64">
-                                Souscrivez à Mode Tranquillité pour programmer vos rappels automatiques !
+                                Souscrivez à Pack Automatique pour programmer vos rappels automatiques !
                               </div>
                             </div>
                           )
@@ -351,7 +351,7 @@ const LocatairesTable = ({
                               Envoi quittance
                             </button>
                             <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-normal pointer-events-none z-50 w-64">
-                              Souscrivez au Mode Tranquillité pour envoyer automatiquement vos quittances !
+                              Souscrivez au Pack Automatique pour envoyer automatiquement vos quittances !
                             </div>
                           </div>
                         )}
@@ -371,7 +371,7 @@ const LocatairesTable = ({
                               Relancer
                             </button>
                             <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-normal pointer-events-none z-50 w-64">
-                              Souscrivez au Mode Tranquillité pour envoyer automatiquement vos relances !
+                              Souscrivez au Pack Automatique pour envoyer automatiquement vos relances !
                             </div>
                           </div>
                         )}
@@ -487,7 +487,7 @@ const LocatairesTable = ({
                             <span className="text-xs">Modifier</span>
                           </button>
                           <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-normal pointer-events-none z-50 w-64">
-                            Souscrivez au Mode Tranquillité pour programmer vos rappels automatiques !
+                            Souscrivez au Pack Automatique pour programmer vos rappels automatiques !
                           </div>
                         </div>
                       )
@@ -575,7 +575,7 @@ const LocatairesTable = ({
                           Envoyer la quittance
                         </button>
                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-normal pointer-events-none z-50 w-64">
-                          Souscrivez au Mode Tranquillité pour envoyer automatiquement vos quittances !
+                          Souscrivez au Pack Automatique pour envoyer automatiquement vos quittances !
                         </div>
                       </div>
                     )}
@@ -595,7 +595,7 @@ const LocatairesTable = ({
                           Envoyer une relance
                         </button>
                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-normal pointer-events-none z-50 w-64">
-                          Souscrivez au Mode Tranquillité pour envoyer automatiquement vos relances !
+                          Souscrivez au Pack Automatique pour envoyer automatiquement vos relances !
                         </div>
                       </div>
                     )}

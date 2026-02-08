@@ -31,7 +31,7 @@ const PaymentCheckout = () => {
 
   const plans = {
     automatique: {
-      name: 'Mode Tranquillité',
+      name: 'Pack Automatique',
       monthly: {
         priceIdTier1: import.meta.env.VITE_STRIPE_PRICE_AUTO_TIER1,
         priceIdTier2: import.meta.env.VITE_STRIPE_PRICE_AUTO_TIER2,
@@ -183,7 +183,7 @@ const PaymentCheckout = () => {
                 : 'border-gray-200 bg-white hover:border-blue-300'
             }`}
           >
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Mode Tranquillité</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Pack Automatique</h3>
             <div className="text-3xl font-bold text-blue-600 mb-2">
               {calculatePrice(numTenants).toFixed(2)}€
               <span className="text-sm text-gray-600">/mois</span>

@@ -218,7 +218,7 @@ const OwnerConfirmation = () => {
   const getMessageForAction = () => {
     if (action === 'send') {
       return {
-        title: 'Mode Tranquillité',
+        title: 'Pack Automatique',
         message: 'Vous avez validé le paiement du loyer, la quittance est générée et envoyée automatiquement.'
       };
     } else if (action === 'remind') {

@@ -849,9 +849,9 @@ setRecentTransactions(txData || []);
       return 'Quittance Connectée+';
     }
 
-    if (count <= 2) return 'Mode Tranquillité (1-2 locataires)';
-    if (count <= 5) return 'Mode Tranquillité (3-5 locataires)';
-    return 'Mode Tranquillité (5+ locataires)';
+    if (count <= 2) return 'Pack Automatique (1-2 locataires)';
+    if (count <= 5) return 'Pack Automatique (3-5 locataires)';
+    return 'Pack Automatique (5+ locataires)';
   };
 
   const getPlanPrice = () => {
@@ -1027,7 +1027,7 @@ const handleResendAccessLink = async () => {
         {proprietaire && !proprietaire.abonnement_actif && (
           <div className="bg-[#616161]/5 border border-[#7CAA89]/20 rounded-xl p-3 sm:p-5 mb-3 sm:mb-6">
             <h2 className="text-base sm:text-xl font-bold text-[#333232] mb-1.5">
-              Bienvenue dans le Mode Tranquillité
+              Bienvenue dans le Pack Automatique
             </h2>
             <p className="text-xs sm:text-sm text-gray-700">
               Tableau de bord, vous pouvez remplir ou modifier vos coordonées et celles de vos locataires et paramétrer vos rappels automatiques.

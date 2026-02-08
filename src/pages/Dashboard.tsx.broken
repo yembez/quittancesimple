@@ -1080,7 +1080,7 @@ const Dashboard = () => {
                     <div>
                       <p className="text-sm text-gray-500">Plan</p>
                       <p className="font-semibold text-[#7CAA89]">
-                        {proprietaire.plan_actuel || 'Mode Tranquillité'}
+                        {proprietaire.plan_actuel || 'Pack Automatique'}
                       </p>
                     </div>
                   </div>

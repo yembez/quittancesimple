@@ -200,7 +200,7 @@ const ManageSubscription = () => {
   const getPlanDetails = (plan: string | undefined) => {
     if (!plan) {
       return {
-        name: 'Mode Tranquillité',
+        name: 'Pack Automatique',
         price: '0,99€ à 2,49€/mois TTC',
         icon: Bell,
         color: '#ed7862',
@@ -231,7 +231,7 @@ const ManageSubscription = () => {
     }
 
     return {
-      name: 'Mode Tranquillité',
+      name: 'Pack Automatique',
       price: '0,99€ à 2,49€/mois TTC',
       icon: Bell,
       color: '#ed7862',

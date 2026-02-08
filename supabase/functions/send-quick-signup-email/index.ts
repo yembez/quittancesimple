@@ -33,7 +33,7 @@ Deno.serve(async (req: Request) => {
     const body: RequestBody = await req.json();
     const { email, password, plan, billingCycle } = body;
 
-    const planName = plan === 'auto' ? 'Mode Tranquillité' : 'Quittance Connectée+';
+    const planName = plan === 'auto' ? 'Pack Automatique' : 'Quittance Connectée+';
     const cycleLabel = billingCycle === 'monthly' ? 'mensuel' : 'annuel';
 
     const htmlContent = `

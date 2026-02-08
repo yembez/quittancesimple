@@ -17,11 +17,11 @@ const FAQ = () => {
   const faqItems = [
     {
       question: "La génération de quittance PDF est-elle vraiment gratuite ?",
-      answer: "Oui, absolument ! Vous pouvez générer autant de quittances PDF que vous le souhaitez, gratuitement et sans limitation. Seul le service d'automatisation est payant à partir de 0,99€/mois pour 1-2 logements avec Mode Tranquillité."
+      answer: "Oui, absolument ! Vous pouvez générer autant de quittances PDF que vous le souhaitez, gratuitement et sans limitation. Seul le service d'automatisation est payant à partir de 0,99€/mois pour 1-2 logements avec Pack Automatique."
     },
     {
       question: "Comment automatiser mes avis d'échéance et quittances ?",
-      answer: "Notre service Mode Tranquillité vous permet d'automatiser complètement l'envoi de vos quittances de loyer. Une fois configuré, vous recevez chaque mois un rappel automatique par SMS et email pour confirmer le paiement. En un clic, la quittance automatique est générée au format PDF conforme et envoyée directement à votre locataire par email. Plus besoin d'y penser chaque mois ! Tarif : à partir de 0,99€/mois pour 1-2 logements. Découvrez tous les détails sur notre page d'automatisation. Vous pouvez également automatiser l'envoi d'avis d'échéance avant la date de paiement pour rappeler à votre locataire l'échéance du loyer."
+      answer: "Notre service Pack Automatique vous permet d'automatiser complètement l'envoi de vos quittances de loyer. Une fois configuré, vous recevez chaque mois un rappel automatique par SMS et email pour confirmer le paiement. En un clic, la quittance automatique est générée au format PDF conforme et envoyée directement à votre locataire par email. Plus besoin d'y penser chaque mois ! Tarif : à partir de 0,99€/mois pour 1-2 logements. Découvrez tous les détails sur notre page d'automatisation. Vous pouvez également automatiser l'envoi d'avis d'échéance avant la date de paiement pour rappeler à votre locataire l'échéance du loyer."
     },
     {
       question: "Comment fonctionne l'automatisation des quittances ?",
@@ -85,7 +85,7 @@ const FAQ = () => {
     <div className="min-h-screen bg-gray-50 pt-24">
       <SEOHead
         title="FAQ – Quittance Simple | Questions fréquentes sur les quittances de loyer"
-        description="Réponses rapides sur la quittance de loyer : conformité, PDF, automatisation, envoi, relance et abonnement Mode Tranquillité."
+        description="Réponses rapides sur la quittance de loyer : conformité, PDF, automatisation, envoi, relance et abonnement Pack Automatique."
         keywords="faq quittance loyer, questions quittances, quittance automatique, automatiser quittances, quittance loyer gratuite"
         canonical="https://www.quittancesimple.fr/faq"
         robots="index, follow"

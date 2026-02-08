@@ -70,7 +70,7 @@ Deno.serve(async (req: Request) => {
     };
 
     const price = getTierPrice(tenantTier, billingCycle);
-    const planName = 'Mode Tranquillité';
+    const planName = 'Pack Automatique';
     const cycleLabel = billingCycle === 'monthly' ? 'Mensuel' : 'Annuel';
 
     const generatedPassword = generateSecurePassword();

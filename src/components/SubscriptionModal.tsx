@@ -28,7 +28,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
 
   const planDetails = {
     auto: {
-      name: 'Mode Tranquillité',
+      name: 'Pack Automatique',
       color: '#ed7862',
       features: [
         'Rappels SMS + e-mail',
@@ -147,7 +147,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
           prenom: prenom,
           adresse: '',
           abonnement_actif: true,
-          plan_actuel: plan === 'auto' ? 'Mode Tranquillité' : 'Quittance Connectée+',
+          plan_actuel: plan === 'auto' ? 'Pack Automatique' : 'Quittance Connectée+',
           date_inscription: new Date().toISOString()
         }, { onConflict: 'email' });
 

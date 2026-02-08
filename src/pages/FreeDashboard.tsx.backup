@@ -352,7 +352,7 @@ const FreeDashboard = () => {
                             <span>🔔 Relancer le locataire</span>
                           </button>
                           <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                            Relance automatique disponible dans Mode Tranquillité dès 1 €/mois
+                            Relance automatique disponible dans Pack Automatique dès 1 €/mois
                             <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
                               <div className="border-4 border-transparent border-t-gray-900"></div>
                             </div>

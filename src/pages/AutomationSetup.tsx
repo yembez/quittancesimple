@@ -204,10 +204,10 @@ const AutomationSetup = () => {
 
         {/* Section processus simplifié */}
         <div className="grid md:grid-cols-2 gap-8 mb-16">
-          {/* Mode Tranquillité */}
+          {/* Pack Automatique */}
           <div className="bg-white rounded-3xl shadow-xl p-8 border-4 border-blue-200">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Mode Tranquillité</h2>
+              <h2 className="text-2xl font-bold text-gray-900">Pack Automatique</h2>
               <CheckCircle className="w-10 h-10 text-blue-600" />
             </div>
             <p className="text-gray-600 mb-6">
@@ -257,7 +257,7 @@ const AutomationSetup = () => {
             </div>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900">
-                Mode Tranquillité<span className="text-4xl text-gray-600">+</span>
+                Pack Automatique<span className="text-4xl text-gray-600">+</span>
               </h2>
               <Sparkles className="w-10 h-10 text-gray-600" />
             </div>
@@ -322,7 +322,7 @@ const AutomationSetup = () => {
                 }`}
               >
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-bold text-gray-900">Mode Tranquillité</h3>
+                  <h3 className="text-lg font-bold text-gray-900">Pack Automatique</h3>
                   {selectedPlan === 'standard' && <CheckCircle className="w-6 h-6 text-blue-600" />}
                 </div>
                 <p className="text-2xl font-bold text-gray-900 mb-2">
@@ -374,7 +374,7 @@ const AutomationSetup = () => {
                   <div className="flex items-center">
                     <Building2 className="w-5 h-5 text-gray-600 mr-2" />
                     <h3 className="text-lg font-bold text-gray-900">
-                      Mode Tranquillité<span className="text-2xl text-gray-600">+</span>
+                      Pack Automatique<span className="text-2xl text-gray-600">+</span>
                     </h3>
                   </div>
                   {selectedPlan === 'premium' && <CheckCircle className="w-6 h-6 text-gray-600" />}

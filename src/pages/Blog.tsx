@@ -25,7 +25,7 @@ const Blog = () => {
 
         <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-left: 4px solid #ed7862; padding: 24px; margin: 32px 0; border-radius: 12px;">
           <h3 style="color: #1a1f20; margin-top: 0; font-size: 1.2em; font-weight: 600;">⏱️ Marre de faire vos quittances manuellement ?</h3>
-          <p style="color: #415052; margin-bottom: 16px;">Découvrez <strong>Mode Tranquillité</strong> : Rappels SMS, envois e-mails et relances en 1 clic pour seulement <strong>0,82€/mois</strong>.</p>
+          <p style="color: #415052; margin-bottom: 16px;">Découvrez <strong>Pack Automatique</strong> : Rappels SMS, envois e-mails et relances en 1 clic pour seulement <strong>0,82€/mois</strong>.</p>
           <p style="color: #415052; font-size: 0.95em; margin: 0;">✓ Plus d'oublis &nbsp;&nbsp; ✓ Plus de retards &nbsp;&nbsp; ✓ Gestion 100% automatisée</p>
         </div>
 
@@ -41,7 +41,7 @@ const Blog = () => {
         </ul>
 
         <p style="background-color: #fff3e0; padding: 16px; border-radius: 8px; margin-top: 24px;">
-          <strong>💡 Bon à savoir :</strong> Avec Mode Tranquillité, vos quittances sont toujours conformes aux obligations légales 2026, mises à jour automatiquement. Vous n'avez plus à vous soucier de rien !
+          <strong>💡 Bon à savoir :</strong> Avec Pack Automatique, vos quittances sont toujours conformes aux obligations légales 2026, mises à jour automatiquement. Vous n'avez plus à vous soucier de rien !
         </p>
       `,
       date: "15 Jan 2026",
@@ -69,7 +69,7 @@ const Blog = () => {
         </ul>
 
         <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-left: 4px solid #ed7862; padding: 24px; margin: 32px 0; border-radius: 12px;">
-          <h3 style="color: #1a1f20; margin-top: 0; font-size: 1.2em; font-weight: 600;">🎯 Passez en mode sérénité avec Mode Tranquillité</h3>
+          <h3 style="color: #1a1f20; margin-top: 0; font-size: 1.2em; font-weight: 600;">🎯 Passez en mode sérénité avec Pack Automatique</h3>
           <p style="color: #415052; margin-bottom: 16px;">Pour <strong>0,82€/mois</strong> seulement, automatisez l'envoi de vos quittances par email, recevez des rappels SMS pour confirmer l'envoi, et relancez vos locataires en 1 clic en cas de retard de paiement.</p>
           <p style="color: #415052; font-size: 0.95em; margin: 0;">📱 Tout depuis votre téléphone &nbsp;&nbsp; ⚡ Envoi instantané &nbsp;&nbsp; 🔔 Rappels automatiques</p>
         </div>
@@ -95,7 +95,7 @@ const Blog = () => {
     },
     {
       id: 3,
-      title: "Bailleurs 2026 : Gérez vos obligations en 1 clic grâce à la Mode Tranquillité",
+      title: "Bailleurs 2026 : Gérez vos obligations en 1 clic grâce à la Pack Automatique",
       excerpt: "Mise à jour complète des obligations légales 2026 et comment l'automatisation vous garantit d'être toujours conforme sans effort.",
       content: `
         <h2>Nouvelles obligations 2026</h2>
@@ -110,7 +110,7 @@ const Blog = () => {
         <p><strong>Le problème ?</strong> Chaque changement législatif vous oblige à mettre à jour manuellement vos modèles de quittances. Un vrai casse-tête juridique qui vous fait perdre du temps et augmente les risques d'erreur.</p>
 
         <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-left: 4px solid #ed7862; padding: 24px; margin: 32px 0; border-radius: 12px;">
-          <h3 style="color: #1a1f20; margin-top: 0; font-size: 1.2em; font-weight: 600;">🛡️ Restez conforme automatiquement avec Mode Tranquillité</h3>
+          <h3 style="color: #1a1f20; margin-top: 0; font-size: 1.2em; font-weight: 600;">🛡️ Restez conforme automatiquement avec Pack Automatique</h3>
           <p style="color: #415052; margin-bottom: 16px;">Vos quittances sont <strong>automatiquement mises à jour</strong> selon les évolutions législatives 2026. Plus de veille juridique, plus de mises à jour manuelles. Tout est géré pour vous.</p>
           <p style="color: #415052; margin-bottom: 16px;">En plus : <strong>Relances locataires en 1 clic</strong> par SMS ou email en cas de retard de paiement.</p>
           <p style="color: #ed7862; font-weight: 600; margin: 0;">Tout ça pour seulement 0,82€/mois</p>
@@ -136,7 +136,7 @@ const Blog = () => {
         </ul>
 
         <p style="background-color: #fff3e0; padding: 16px; border-radius: 8px; margin-top: 24px;">
-          <strong>⚖️ Sécurité juridique :</strong> Avec Mode Tranquillité, vous disposez d'un historique complet et traçable de tous vos envois. En cas de litige, vous avez toutes les preuves nécessaires.
+          <strong>⚖️ Sécurité juridique :</strong> Avec Pack Automatique, vous disposez d'un historique complet et traçable de tous vos envois. En cas de litige, vous avez toutes les preuves nécessaires.
         </p>
 
         <p style="margin-top: 32px; font-size: 1.1em; color: #415052;">
@@ -212,7 +212,7 @@ const Blog = () => {
                 </div>
                 <h3 className="text-2xl font-bold mb-3">Prêt à gagner du temps et dormir serein ?</h3>
                 <p className="text-lg mb-6 opacity-95">
-                  Activez Mode Tranquillité et ne vous souciez plus jamais de vos quittances mensuelles.<br/>
+                  Activez Pack Automatique et ne vous souciez plus jamais de vos quittances mensuelles.<br/>
                   Rappels SMS, envoi automatique et relances en 1 clic pour seulement 0,82€/mois.
                 </p>
                 <button
@@ -220,7 +220,7 @@ const Blog = () => {
                   className="bg-white text-[#ed7862] px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-50 transition-all duration-200 transform hover:scale-105 shadow-lg inline-flex items-center space-x-2"
                 >
                   <Send className="w-5 h-5" />
-                  <span>Activer Mode Tranquillité</span>
+                  <span>Activer Pack Automatique</span>
                 </button>
                 <p className="mt-4 text-sm opacity-90">✓ Sans engagement &nbsp;&nbsp; ✓ Annulation à tout moment &nbsp;&nbsp; ✓ Premiers envois offerts</p>
               </div>

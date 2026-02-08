@@ -205,7 +205,7 @@ const Pricing = () => {
         <div className="relative">
          
 
-          <h2 className="text-xl font-bold text-[#1a1f20] mb-1.5">Mode Tranquillité</h2>
+          <h2 className="text-xl font-bold text-[#1a1f20] mb-1.5">Pack Automatique</h2>
           <p className="text-xs text-[#545454] mb-4"><Link to="/automation" className="text-[#ed7862] hover:underline text-xs font-semibold ml-1">Détail</Link></p>
 
           <AnimatePresence mode="wait">
@@ -289,10 +289,10 @@ const Pricing = () => {
           </ul>
 
           <button
-            onClick={() => openModal('Mode Tranquillité')}
+            onClick={() => openModal('Pack Automatique')}
             className="w-full py-2.5 rounded-full bg-[#ed7862] hover:bg-[#e56651] text-white text-xs font-bold transition-all transform hover:scale-105 shadow-lg"
           >
-            Activer le Mode Tranquillité
+            Activer le Pack Automatique
           </button>
 
           <p className="text-xs text-center text-[#7CAA89] mt-3 font-semibold">
@@ -449,7 +449,7 @@ const Pricing = () => {
                 className="grid md:grid-cols-[1.3fr_1fr] gap-5 mb-6"
               >
                 <div className="bg-white rounded-xl p-5 border-2 border-[#ed7862]/20">
-                  <h3 className="font-bold text-[#1a1f20] mb-3 text-sm">Mode Tranquillité</h3>
+                  <h3 className="font-bold text-[#1a1f20] mb-3 text-sm">Pack Automatique</h3>
                   {billingCycle === 'monthly' ? (
                     <>
                       <div className="text-3xl font-bold text-[#ed7862] mb-1.5">
@@ -579,7 +579,7 @@ const Pricing = () => {
       {(isMobile || isMobileDevice) && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 p-4 shadow-2xl z-40 md:hidden">
           <button
-            onClick={() => openModal('Mode Tranquillité')}
+            onClick={() => openModal('Pack Automatique')}
             className="w-full py-4 rounded-full bg-gradient-to-r from-[#ed7862] to-[#e56651] hover:from-[#e56651] hover:to-[#d85540] text-white font-bold text-base transition-all shadow-lg flex items-center justify-center gap-2"
           >
            

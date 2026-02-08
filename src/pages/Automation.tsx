@@ -25,7 +25,7 @@ const Automation = () => {
     "offers": [
       {
         "@type": "Offer",
-        "name": "Mode Tranquillité",
+        "name": "Pack Automatique",
         "price": "1",
         "priceCurrency": "EUR",
         "description": "Rappels intelligents et envoi en 1 clic"
@@ -101,7 +101,7 @@ const Automation = () => {
             {/* Bloc caché en mobile uniquement */}
             <div className="hidden md:block">
               <h1 className="text-4xl sm:text-5xl lg:text-4xl font-bold text-[#1a1f20] mb-0 leading-tight">
-                <br />Passez en Mode Tranquillité<br /> <span className="text-2xl text-[#545454] font-medium">et oubliez l'administratif locatif</span>
+                <br />Passez en Pack Automatique<br /> <span className="text-2xl text-[#545454] font-medium">et oubliez l'administratif locatif</span>
               </h1>
 
               <p className="text-base text-[#1a1f20] font-bold mb-4 sm:mb-6">
@@ -126,7 +126,7 @@ Créée par des bailleurs, pour des bailleurs.
             </div>
 
             <h3 className="text-xl sm:text-2xl font-bold text-[#1a1f20] mb-2 text-center mt-20 sm:mt-32">
-              Le Mode Tranquillité en détail
+              Le Pack Automatique en détail
             </h3>
             <p className="text-sm text-[#1a1f20] font-semibold text-center mb-8 md:hidden">
               0,82€/mois, offre de lancement
@@ -467,10 +467,10 @@ Créée par des bailleurs, pour des bailleurs.
 
                 {/* Bouton CTA - Visible uniquement sur desktop */}
                 <button
-                  onClick={() => openModal('Mode Tranquillité')}
+                  onClick={() => openModal('Pack Automatique')}
                   className="hidden md:block w-full lg:w-auto px-6 py-3 rounded-full bg-[#ed7862] hover:bg-[#e56651] text-white font-bold text-base transition-all transform hover:scale-105 shadow-lg"
                 >
-                  Passer en Mode Tranquillité
+                  Passer en Pack Automatique
                 </button>
               </div>
             </div>
@@ -848,7 +848,7 @@ Créée par des bailleurs, pour des bailleurs.
           onClick={() => setIsQuickPaymentModalOpen(true)}
           className="w-full px-6 py-3.5 rounded-full bg-[#415052] hover:bg-[#1a1f20] text-white font-bold text-base transition-all transform hover:scale-105 shadow-lg"
         >
-          Passer en Mode Tranquillité
+          Passer en Pack Automatique
         </button>
     
       </div>

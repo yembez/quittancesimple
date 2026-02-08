@@ -21,7 +21,7 @@ const AutomatisationEnvoi = () => {
   return (
     <div className="min-h-screen bg-amber-50">
       <SEOHead
-        title="Automatisation Envoi Quittances | Envoyer Mode Tranquillitément dès 0,99€"
+        title="Automatisation Envoi Quittances | Envoyer Pack Automatiquement dès 0,99€"
         description="Automatisez l'envoi de vos quittances de loyer par email et SMS. Génération automatique, envoi programmé, rappels automatiques. Solution complète dès 0,99€/mois."
         keywords="automatisation envoi quittance, envoyer quittance automatiquement, envoi automatique quittance loyer, automatiser quittances, quittance automatique email, envoi quittance programmé, automatisation gestion locative"
         schema={schema}
