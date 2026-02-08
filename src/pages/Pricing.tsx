@@ -583,7 +583,7 @@ const Pricing = () => {
             className="w-full py-4 rounded-full bg-gradient-to-r from-[#ed7862] to-[#e56651] hover:from-[#e56651] hover:to-[#d85540] text-white font-bold text-base transition-all shadow-lg flex items-center justify-center gap-2"
           >
            
-            Passez en Mode Tranquilité
+            Passez en Pack Automatique
           </button>
         
         </div>

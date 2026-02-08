@@ -682,7 +682,7 @@ Deno.serve(async (req) => {
       </div>
 
       <div class="features-intro">
-        Avec le <strong>Mode Tranquilité</strong> :
+        Avec le <strong>Pack Automatique</strong> :
       </div>
 
       <ul class="feature-list">

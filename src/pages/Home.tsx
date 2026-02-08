@@ -465,7 +465,7 @@ const Home = () => {
                  Votre quittance de <br />loyer, tout de suite.
                 </h1>
                 <h2 className="text-[20px] lg:text-0xl text-[#545454] font-medium leading-snug mt-2 hidden sm:block lg:block">
-                 Générez votre PDF gratuit conforme en quelques secondes <span className="text-base sm:text-xl lg:text-2xl text-[#ed7862] font-medium leading-snug">ou </span> passez au Mode Tranquilité et automatisez votre gestion locative ( dont l'envoi de quittances ) pour <span className="text-base sm:text-xl lg:text-2xl text-[#ed7862] font-medium leading-snug">0,82€/mois</span><span className="text-[20px] lg:text-0xl text-[#545454] font-medium leading-snug"></span>.
+                 Générez votre PDF gratuit conforme en quelques secondes <span className="text-base sm:text-xl lg:text-2xl text-[#ed7862] font-medium leading-snug">ou </span> passez au Pack Automatique et automatisez votre gestion locative ( dont l'envoi de quittances ) pour <span className="text-base sm:text-xl lg:text-2xl text-[#ed7862] font-medium leading-snug">0,82€/mois</span><span className="text-[20px] lg:text-0xl text-[#545454] font-medium leading-snug"></span>.
                 </h2>
               </div>
 
@@ -536,7 +536,7 @@ const Home = () => {
                   onClick={() => trackCtaClick('decouvrir_automatisation_mobile', 'home', '/automation')}
                   className="block w-full rounded-[15px] px-3.5 py-1.5 border-[2px] border-[#5a8167] bg-white hover:bg-gray-50 text-[#2b2b2b] text-center transition-all shadow-[0_6px_18px_rgba(0,0,0,0.08)] hover:shadow-[0_10px_28px_rgba(0,0,0,0.30)]"
                 >
-                  <div className="text-[15px] font-bold leading-tight">Découvrir le Mode Tranquilité</div>
+                  <div className="text-[15px] font-bold leading-tight">Découvrir le Pack Automatique</div>
                   <div className="text-[11px] font-normal opacity-75 mt-0.5">Et ne pensez plus à l'administratif locatif</div>
                 </Link>
               </div>
@@ -546,7 +546,7 @@ const Home = () => {
                 {/* Texte explicatif */}
                 <div className="space-y-4">
                   <p className="text-base text-[#545454] leading-relaxed">
-                    Avec nous outils ultra simples du Mode Tranquilité, on envoie vos quittances (ou vos rappel de loyer), on calcule vos bilans annuels, vos IRL pour vous, et vous n'y pensez plus !<br />
+                    Avec nous outils ultra simples du Pack Automatique, on envoie vos quittances (ou vos rappel de loyer), on calcule vos bilans annuels, vos IRL pour vous, et vous n'y pensez plus !<br />
                     Nous sommes aussi des "petits" bailleurs, notre priorité : nous (vous) simplifier vraiment la vie !
                   </p>
                 </div>
@@ -634,7 +634,7 @@ const Home = () => {
                     </div>
                     <div className="space-y-1 flex-1 min-w-0 text-xs sm:text-sm lg:text-base text-[#2b2b2b] font-medium"> Avec
                       <h4 className="text-sm sm:text-base lg:text-xl font-bold text-[#ed7862] leading-tight">
-                       Le Mode Tranquilité
+                       Le Pack Automatique
                       </h4>
                       <p className="text-xs sm:text-sm lg:text-sm text-[#2b2b2b] font-medium leading-snug">
                         Rien de plus simple, <strong>on s'occupe de tout. </strong>Vos quittances, vos calculs de bilans annuels, votre calcul IRL etc. On s'en charge, avec nos outils c'est automatique, ultra simple mais surtout vous gardez le contrôle.
