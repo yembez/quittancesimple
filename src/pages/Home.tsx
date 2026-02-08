@@ -424,7 +424,7 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-[#2b2b2b] pt-14 max-[480px]:pt-[56px]">
       <SEOHead
-        title="Quittance Simple – Quittance de loyer gratuite ou automatique en 1 clic"
+        title="Quittance Simple – Quittance de loyer gratuite ou automatique"
         description="Générez une quittance de loyer PDF gratuite en qques secondes ou automatisez vos envois mensuels. Ultra simple, conforme et sans engagement."
         keywords="quittance de loyer gratuite, générer quittance PDF, quittance loyer en ligne, modèle quittance, outil quittance propriétaire, quittance automatique"
         canonical="https://www.quittancesimple.fr/"
@@ -546,7 +546,7 @@ const Home = () => {
                 {/* Texte explicatif */}
                 <div className="space-y-4">
                   <p className="text-base text-[#545454] leading-relaxed">
-                    Avec nous outils ultra simples du Pack Automatique, on envoie vos quittances (ou vos rappel de loyer), on calcule vos bilans annuels, vos IRL pour vous, et vous n'y pensez plus !<br />
+                    Avec nos outils ultra simples du Pack Automatique, on envoie vos quittances (ou vos rappel de loyer), on calcule vos bilans annuels, vos IRL pour vous, et vous n'y pensez plus !<br />
                     Nous sommes aussi des "petits" bailleurs, notre priorité : nous (vous) simplifier vraiment la vie !
                   </p>
                 </div>
