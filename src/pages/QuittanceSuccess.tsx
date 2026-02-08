@@ -303,7 +303,7 @@ const QuittanceSuccess = () => {
             setIsPaymentModalOpen(true);
           }}
           className="w-full bg-[#545454] hover:bg-[#1a1f20] text-white font-bold text-sm py-3 rounded-full transition-all shadow-lg flex items-center justify-center gap-2">
-          <span>Passer en Mode Tranquillité</span>
+          <span>Tester Pack Automatique</span>
         </button>
       </div>
 
