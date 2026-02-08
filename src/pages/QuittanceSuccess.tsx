@@ -106,7 +106,7 @@ const QuittanceSuccess = () => {
           {/* Ultra discreet satisfaction - replaces subtitle */}
           {satisfactionStep === 'question' && (
             <div className="max-w-xs mx-auto text-center">
-              <p className="text-[10px] md:text-xs text-gray-500 mb-1.5">Cet outil vous a aidé ?</p>
+              <p className="text-[10px] md:text-xs text-gray-500 mb-1.5">Notre outil vous a plu&nbsp;?</p>
               <div className="inline-flex gap-1.5">
                 <button
                   onClick={() => handleSatisfactionResponse('yes')}
@@ -146,7 +146,7 @@ const QuittanceSuccess = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackGA4Event('google_review_clicked', { page_source: 'quittance_success' })}
-                className="inline-block px-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors"
+                className="inline-block px-2.5 bg-5[#7caa89] hover:bg-[#70997b] text-gray-700 text-[10px] font-medium rounded-full transition-colors"
                 style={{ 
                   padding: '2px 10px',
                   lineHeight: '1',
@@ -218,7 +218,7 @@ const QuittanceSuccess = () => {
         >
           <div className="mb-3 md:mb-6">
             <p className="text-xs md:text-sm text-[#545454] leading-relaxed max-w-2xl mx-auto">
-             Vous devrez recommencer les mois prochains : chercher e-mail et loyer, transférer le PDF, rédiger l'email, archiver…😕
+             Vous devrez recommencer les mois prochains&nbsp;: chercher e-mail et loyer, transférer le PDF, rédiger l'email, archiver…😕
             </p>
             <p className="text-sm md:text-base text-[#1a1f20] font-semibold mt-2 md:mt-4 max-w-2xl mx-auto">
               Et si vous stoppiez enfin ces corvées&nbsp;?
