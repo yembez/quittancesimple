@@ -28,13 +28,17 @@ const QuittanceSuccess = () => {
   const handleSatisfactionResponse = async (response: 'yes' | 'no') => {
     const responseType = response === 'yes' ? 'positive' : 'negative';
     
+    console.log('🔵 Satisfaction click:', responseType, 'Email:', email || 'null');
+    
     // 1. Enregistrer dans Supabase (instantané)
     try {
-      await fetch('https://jfpbddtdblqakabyjxkq.supabase.co/rest/v1/satisfaction_clicks', {
+      console.log('🔵 Envoi vers Supabase...');
+      const supabaseResponse = await fetch('https://jfpbddtdblqakabyjxkq.supabase.co/rest/v1/satisfaction_clicks', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmcGJkZHRkYmxxYWthYnlqeGtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY2MjE2ODUsImV4cCI6MjA1MjE5NzY4NX0.LRorMT1dq6sMB1xNMcpvAFl97TCz8c2WnSuKTdwMshY',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmcGJkZHRkYmxxYWthYnlqeGtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY2MjE2ODUsImV4cCI6MjA1MjE5NzY4NX0.LRorMT1dq6sMB1xNMcpvAFl97TCz8c2WnSuKTdwMshY',
           'Prefer': 'return=minimal'
         },
         body: JSON.stringify({
@@ -43,8 +47,17 @@ const QuittanceSuccess = () => {
           page_source: 'quittance_success'
         })
       });
+      
+      console.log('🔵 Supabase response status:', supabaseResponse.status);
+      
+      if (!supabaseResponse.ok) {
+        const errorText = await supabaseResponse.text();
+        console.error('❌ Supabase error:', supabaseResponse.status, errorText);
+      } else {
+        console.log('✅ Satisfaction click saved to Supabase!');
+      }
     } catch (error) {
-      console.error('Error saving satisfaction click:', error);
+      console.error('❌ Error saving satisfaction click:', error);
     }
 
     // 2. Track GA4 (existant)
