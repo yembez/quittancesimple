@@ -27,8 +27,10 @@ const QuittanceSuccess = () => {
 
   const handleSatisfactionResponse = async (response: 'yes' | 'no') => {
     const responseType = response === 'yes' ? 'positive' : 'negative';
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const device = isMobile ? 'mobile' : 'desktop';
     
-    console.log('🔵 Satisfaction click:', responseType, 'Email:', email || 'null');
+    console.log('🔵 Satisfaction click:', responseType, 'Email:', email || 'null', 'Device:', device);
     
     // 1. Enregistrer dans Supabase (instantané)
     try {
@@ -44,7 +46,8 @@ const QuittanceSuccess = () => {
         body: JSON.stringify({
           email: email || null,
           response: responseType,
-          page_source: 'quittance_success'
+          page_source: 'quittance_success',
+          device: device
         })
       });
       
