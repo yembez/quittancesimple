@@ -25,7 +25,29 @@ const QuittanceSuccess = () => {
     }
   }, [email]);
 
-  const handleSatisfactionResponse = (response: 'yes' | 'no') => {
+  const handleSatisfactionResponse = async (response: 'yes' | 'no') => {
+    const responseType = response === 'yes' ? 'positive' : 'negative';
+    
+    // 1. Enregistrer dans Supabase (instantané)
+    try {
+      await fetch('https://jfpbddtdblqakabyjxkq.supabase.co/rest/v1/satisfaction_clicks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmcGJkZHRkYmxxYWthYnlqeGtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY2MjE2ODUsImV4cCI6MjA1MjE5NzY4NX0.LRorMT1dq6sMB1xNMcpvAFl97TCz8c2WnSuKTdwMshY',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+          email: email || null,
+          response: responseType,
+          page_source: 'quittance_success'
+        })
+      });
+    } catch (error) {
+      console.error('Error saving satisfaction click:', error);
+    }
+
+    // 2. Track GA4 (existant)
     if (response === 'yes') {
       setSatisfactionStep('positive');
       trackGA4Event('satisfaction_positive', { page_source: 'quittance_success' });
@@ -146,7 +168,7 @@ const QuittanceSuccess = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackGA4Event('google_review_clicked', { page_source: 'quittance_success' })}
-                className="inline-block px-2.5 bg-5[#7caa89] hover:bg-[#70997b] text-gray-700 text-[10px] font-medium rounded-full transition-colors"
+                className="inline-block px-2.5 bg-[#7caa89] hover:bg-[#70997b] text-white text-[10px] font-medium rounded-full transition-colors"
                 style={{ 
                   padding: '2px 10px',
                   lineHeight: '1',
