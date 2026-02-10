@@ -37,8 +37,8 @@ const QuittanceSuccess = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmcGJkZHRkYmxxYWthYnlqeGtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY2MjE2ODUsImV4cCI6MjA1MjE5NzY4NX0.LRorMT1dq6sMB1xNMcpvAFl97TCz8c2WnSuKTdwMshY',
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmcGJkZHRkYmxxYWthYnlqeGtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY2MjE2ODUsImV4cCI6MjA1MjE5NzY4NX0.LRorMT1dq6sMB1xNMcpvAFl97TCz8c2WnSuKTdwMshY',
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmcGJkZHRkYmxxYWthYnlqeGtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3MDc4OTUsImV4cCI6MjA3NDI4Mzg5NX0.6RmDCMJRN5lsmaI3H3Jfurs0Idz5-MbQRkV40zbnQIU',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmcGJkZHRkYmxxYWthYnlqeGtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3MDc4OTUsImV4cCI6MjA3NDI4Mzg5NX0.6RmDCMJRN5lsmaI3H3Jfurs0Idz5-MbQRkV40zbnQIU',
           'Prefer': 'return=minimal'
         },
         body: JSON.stringify({
@@ -78,7 +78,7 @@ const QuittanceSuccess = () => {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmcGJkZHRkYmxxYWthYnlqeGtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY2MjE2ODUsImV4cCI6MjA1MjE5NzY4NX0.LRorMT1dq6sMB1xNMcpvAFl97TCz8c2WnSuKTdwMshY'
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmcGJkZHRkYmxxYWthYnlqeGtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3MDc4OTUsImV4cCI6MjA3NDI4Mzg5NX0.6RmDCMJRN5lsmaI3H3Jfurs0Idz5-MbQRkV40zbnQIU'
         },
         body: JSON.stringify({
           feedback,
