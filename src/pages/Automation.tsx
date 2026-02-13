@@ -6,6 +6,7 @@ import LoginModal from '../components/LoginModal';
 import NotifyMeModal from '../components/NotifyMeModal';
 import QuickPaymentModal from '../components/QuickPaymentModal';
 import { supabase } from '../lib/supabase';
+import { trackGA4Event } from '../utils/analytics';
 
 const Automation = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -74,7 +75,6 @@ const Automation = () => {
       return;
     }
 
-    // Le statut QA_1st_interested sera défini lors de l'inscription dans le LoginModal
     setLoginMode('signup');
     setIsModalOpen(true);
   };
@@ -313,64 +313,6 @@ Créée par des bailleurs, pour des bailleurs.
               {/* Contenu à droite */}
               <div className="flex-1 space-y-5">
               
-                {/* Fonctionnalités 
-                <ul className="space-y-2.5">
-                  <li className="flex items-start">
-                    <div className="w-5 h-5 bg-[#ed7862] rounded-full flex items-center justify-center mr-2.5 mt-0.5 flex-shrink-0">
-                      <Check className="w-3.5 h-3.5 text-white" />
-                    </div>
-                    <div>
-                      <strong className="text-sm text-[#415052]">Envoi de quittance automatique</strong>
-                      <p className="text-xs text-[#415052]">Notification automatique, validation</p>
-                    </div>
-                  </li>
-                  <li className="flex items-start">
-                    <div className="w-5 h-5 bg-[#ed7862] rounded-full flex items-center justify-center mr-2.5 mt-0.5 flex-shrink-0">
-                      <Check className="w-3.5 h-3.5 text-white" />
-                    </div>
-                    <div>
-                      <strong className="text-sm text-[#415052]">Relance en cas de retard de loyer</strong>
-                      <p className="text-xs text-[#415052]">Relance prête à envoyer en 1 clic</p>
-                    </div>
-                  </li>
-                  <li className="flex items-start">
-                    <div className="w-5 h-5 bg-[#ed7862] rounded-full flex items-center justify-center mr-2.5 mt-0.5 flex-shrink-0">
-                      <Check className="w-3.5 h-3.5 text-white" />
-                    </div>
-                    <div>
-                      <strong className="text-sm text-[#415052]">Bilan annuel</strong>
-                      <p className="text-xs text-[#415052]">Cumul des loyers et charges par locataire + total</p>
-                    </div>
-                  </li>
-                  <li className="flex items-start">
-                    <div className="w-5 h-5 bg-[#ed7862] rounded-full flex items-center justify-center mr-2.5 mt-0.5 flex-shrink-0">
-                      <Check className="w-3.5 h-3.5 text-white" />
-                    </div>
-                    <div>
-                      <strong className="text-sm text-[#415052]">Calcul révision de loyer (IRL) notifiée au bon moment</strong>
-                      <p className="text-xs text-[#415052]">Plus de perte d'argent</p>
-                    </div>
-                  </li>
-                  <li className="flex items-start">
-                    <div className="w-5 h-5 bg-[#ed7862] rounded-full flex items-center justify-center mr-2.5 mt-0.5 flex-shrink-0">
-                      <Check className="w-3.5 h-3.5 text-white" />
-                    </div>
-                    <div>
-                      <strong className="text-sm text-[#415052]">Lettre de révision prête à être envoyée</strong>
-                      <p className="text-xs text-[#415052]">Générée automatiquement selon le calcul IRL</p>
-                    </div>
-                  </li>
-                   <li className="flex items-start">
-                    <div className="w-5 h-5 bg-[#ed7862] rounded-full flex items-center justify-center mr-2.5 mt-0.5 flex-shrink-0">
-                      <Check className="w-3.5 h-3.5 text-white" />
-                    </div>
-                    <div>
-                      <strong className="text-sm text-[#415052]">Historique illimité</strong>
-                      <p className="text-xs text-[#415052]">Toutes vos quittances accessibles 24/7</p>
-                    </div>
-                  </li>
-                </ul> */}
-
                 {/* Toggle Mensuel/Annuel */}
                 <div className="flex justify-center lg:justify-start items-center gap-4">
                   <motion.div
@@ -465,9 +407,17 @@ Créée par des bailleurs, pour des bailleurs.
                   </motion.div>
                 </AnimatePresence>
 
-                {/* Bouton CTA - Visible uniquement sur desktop */}
+                {/* ✅ Bouton CTA Desktop - AVEC TRACKING */}
                 <button
-                  onClick={() => openModal('Pack Automatique')}
+                  onClick={() => {
+                    trackGA4Event('conversion_cta_clicked', {
+                      cta_name: 'passer_pack_automatique',
+                      page_source: 'automation',
+                      destination: 'login_modal',
+                      device: 'desktop'
+                    });
+                    openModal('Pack Automatique');
+                  }}
                   className="hidden md:block w-full lg:w-auto px-6 py-3 rounded-full bg-[#ed7862] hover:bg-[#e56651] text-white font-bold text-base transition-all transform hover:scale-105 shadow-lg"
                 >
                   Passer en Pack Automatique
@@ -842,10 +792,18 @@ Créée par des bailleurs, pour des bailleurs.
         </div>
       </div>
 
-      {/* CTA fixe en bas de page - UNIQUEMENT MOBILE */}
+      {/* ✅ CTA fixe en bas de page - UNIQUEMENT MOBILE - AVEC TRACKING */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t-0 border-[#7CAA89] shadow-2xl p-4 z-50 md:hidden">
         <button
-          onClick={() => setIsQuickPaymentModalOpen(true)}
+          onClick={() => {
+            trackGA4Event('conversion_cta_clicked', {
+              cta_name: 'passer_pack_automatique',
+              page_source: 'automation',
+              destination: 'payment_modal',
+              device: 'mobile'
+            });
+            setIsQuickPaymentModalOpen(true);
+          }}
           className="w-full px-6 py-3.5 rounded-full bg-[#415052] hover:bg-[#1a1f20] text-white font-bold text-base transition-all transform hover:scale-105 shadow-lg"
         >
           Passer en Pack Automatique
