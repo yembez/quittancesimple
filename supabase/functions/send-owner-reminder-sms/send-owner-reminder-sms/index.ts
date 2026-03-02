@@ -28,10 +28,14 @@ Deno.serve(async (req: Request) => {
 
     console.log('📱 SMS request received:', { telephone, proprietaireName, locataireName });
 
-    const appUrl = 'https://quittancesimple.vercel.app';
+    // Toujours utiliser l'URL réelle du site (jamais localhost)
+    const rawAppUrl = (Deno.env.get('APP_URL') || 'https://quittancesimple.fr').trim().replace(/\/$/, '');
+    const appUrl = rawAppUrl.startsWith('http') ? rawAppUrl : `https://${rawAppUrl}`;
+    const isProduction = !appUrl.includes('localhost') && !appUrl.includes('127.0.0.1');
+    const baseUrl = isProduction ? appUrl : 'https://quittancesimple.fr';
     const annee = new Date().getFullYear();
 
-    const confirmationLink = `${appUrl}/sms-confirm?action=send&proprietaireId=${proprietaireId}&locataireId=${locataireId}&mois=${encodeURIComponent(mois)}&annee=${annee}&source=sms`;
+    const confirmationLink = `${baseUrl}/sms-confirm?action=send&proprietaireId=${proprietaireId}&locataireId=${locataireId}&mois=${encodeURIComponent(mois)}&annee=${annee}&source=sms`;
 
     const message = `🔔 Quittance Simple - Rappel ${mois}\n\nBonjour ${proprietaireName},\n\nLe loyer de ${locataireName} (${montantTotal}€) devrait être reçu.\n\nAvez-vous reçu le paiement ?\n→ ${confirmationLink}`;
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 import {
   User,
   Mail,
@@ -92,26 +93,65 @@ const AutomationSetup = () => {
       }
 
       setExistingData(data);
-    } else {
-      setProprietaire({
-        nom: 'Dupont',
-        prenom: 'Jean',
-        email: 'jean.dupont@email.com',
-        telephone: '06 12 34 56 78',
-        adresse: '123 rue de la République, 75001 Paris'
-      });
-
-      setLocataires([{
-        nom: 'Martin',
-        prenom: 'Marie',
-        email: 'marie.martin@email.com',
-        telephone: '06 98 76 54 32',
-        adresse_logement: '45 avenue des Champs, 75008 Paris',
-        loyer_mensuel: '800',
-        charges_mensuelles: '100',
-        date_rappel: '5'
-      }]);
+      return;
     }
+
+    // Si connecté, préremplir depuis l'espace bailleur (Supabase)
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.email) {
+      const { data: prop } = await supabase
+        .from('proprietaires')
+        .select('id, nom, prenom, email, telephone, adresse')
+        .eq('email', user.email)
+        .maybeSingle();
+      if (prop) {
+        setProprietaire({
+          nom: prop.nom || '',
+          prenom: prop.prenom || '',
+          email: prop.email || '',
+          telephone: prop.telephone || '',
+          adresse: prop.adresse || ''
+        });
+        const { data: locs } = await supabase
+          .from('locataires')
+          .select('nom, prenom, email, telephone, adresse_logement, loyer_mensuel, charges_mensuelles')
+          .eq('proprietaire_id', prop.id)
+          .order('created_at', { ascending: true });
+        if (locs?.length) {
+          setLocataires(locs.map((l: { nom: string; prenom?: string; email?: string; telephone?: string; adresse_logement: string; loyer_mensuel: number; charges_mensuelles: number }) => ({
+            nom: l.nom || '',
+            prenom: l.prenom || '',
+            email: l.email || '',
+            telephone: l.telephone || '',
+            adresse_logement: l.adresse_logement || '',
+            loyer_mensuel: String(l.loyer_mensuel ?? ''),
+            charges_mensuelles: String(l.charges_mensuelles ?? ''),
+            date_rappel: '1'
+          })));
+        }
+        setExistingData({ fromSupabase: true });
+        return;
+      }
+    }
+
+    setProprietaire({
+      nom: 'Dupont',
+      prenom: 'Jean',
+      email: 'jean.dupont@email.com',
+      telephone: '06 12 34 56 78',
+      adresse: '123 rue de la République, 75001 Paris'
+    });
+
+    setLocataires([{
+      nom: 'Martin',
+      prenom: 'Marie',
+      email: 'marie.martin@email.com',
+      telephone: '06 98 76 54 32',
+      adresse_logement: '45 avenue des Champs, 75008 Paris',
+      loyer_mensuel: '800',
+      charges_mensuelles: '100',
+      date_rappel: '5'
+    }]);
   };
 
   const handleProprietaireChange = (field: keyof ProprietaireData, value: string) => {
@@ -326,10 +366,10 @@ const AutomationSetup = () => {
                   {selectedPlan === 'standard' && <CheckCircle className="w-6 h-6 text-blue-600" />}
                 </div>
                 <p className="text-2xl font-bold text-gray-900 mb-2">
-                  0,99€<span className="text-base font-normal text-gray-600">/mois</span>
+                  3,90€<span className="text-base font-normal text-gray-600">/mois</span>
                 </p>
                 <p className="text-sm text-gray-600 mb-4">
-                  1-2 locataires : 0,99€ · 3-4 : 1,49€ · 5+ : 2,49€/mois
+                  1-2 locataires : 3,90€ · 3-5 : 5,90€ · 6+ : 8,90€/mois
                 </p>
                 <ul className="text-sm text-gray-700 space-y-2">
                   <li className="flex items-start">
@@ -732,15 +772,15 @@ const AutomationSetup = () => {
                   <div className="mb-4">
                     <div className="flex items-baseline gap-1">
                       <span className="text-3xl font-bold text-gray-900">
-                        {locataires.length <= 2 ? '0,82' : locataires.length <= 5 ? '1,24' : '2,07'} €
+                        {locataires.length <= 2 ? '3,25' : locataires.length <= 5 ? '4,92' : '7,42'} €
                       </span>
                       <span className="text-gray-600">/mois</span>
                     </div>
                     <p className="text-sm text-gray-500 mt-1">
-                      ({locataires.length <= 2 ? '9,90' : locataires.length <= 5 ? '14,90' : '24,90'} €/an)
+                      ({locataires.length <= 2 ? '39' : locataires.length <= 5 ? '59' : '89'} €/an)
                     </p>
                     <p className="text-sm text-green-600 font-semibold mt-1">
-                      Économisez {locataires.length <= 2 ? '1,98' : locataires.length <= 5 ? '2,98' : '4,98'} € par an
+                      Économisez {locataires.length <= 2 ? '7,80' : locataires.length <= 5 ? '11,80' : '17,80'} € par an
                     </p>
                   </div>
                   <p className="text-sm text-gray-600">Paiement unique annuel</p>

@@ -224,7 +224,7 @@ Deno.serve(async (req: Request) => {
                 👉 <a href="https://quittancesimple.fr/generator" style="color: #22c55e; font-weight: bold; text-decoration: none;">https://quittancesimple.fr/generator</a>
               </p>
               <p style="margin: 10px 0; color: #1f2937;">
-                🔄 <strong>Quittance Automatique (0,82€/mois)</strong> : Automatisez l'envoi de vos quittances par email et SMS<br>
+                🔄 <strong>Quittance Automatique (3,90€/mois)</strong> : Automatisez l'envoi de vos quittances par email et SMS<br>
                 👉 <a href="https://quittancesimple.fr/pricing" style="color: #22c55e; font-weight: bold; text-decoration: none;">https://quittancesimple.fr/pricing</a>
               </p>
             </div>

@@ -26,7 +26,7 @@ const Blog = () => {
 
         <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-left: 4px solid #ed7862; padding: 24px; margin: 32px 0; border-radius: 12px;">
           <h3 style="color: #1a1f20; margin-top: 0; font-size: 1.2em; font-weight: 600;">⏱️ Marre de faire vos quittances manuellement ?</h3>
-          <p style="color: #415052; margin-bottom: 16px;">Découvrez <strong>Pack Automatique</strong> : Rappels SMS, envois e-mails et relances en 1 clic pour seulement <strong>0,82€/mois</strong>.</p>
+          <p style="color: #415052; margin-bottom: 16px;">Découvrez <strong>Pack Automatique</strong> : Rappels SMS, envois e-mails et relances en 1 clic pour seulement <strong>3,90€/mois</strong>.</p>
           <p style="color: #415052; font-size: 0.95em; margin: 0;">✓ Plus d'oublis &nbsp;&nbsp; ✓ Plus de retards &nbsp;&nbsp; ✓ Gestion 100% automatisée</p>
         </div>
 
@@ -71,7 +71,7 @@ const Blog = () => {
 
         <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-left: 4px solid #ed7862; padding: 24px; margin: 32px 0; border-radius: 12px;">
           <h3 style="color: #1a1f20; margin-top: 0; font-size: 1.2em; font-weight: 600;">🎯 Passez en mode sérénité avec Pack Automatique</h3>
-          <p style="color: #415052; margin-bottom: 16px;">Pour <strong>0,82€/mois</strong> seulement, automatisez l'envoi de vos quittances par email, recevez des rappels SMS pour confirmer l'envoi, et relancez vos locataires en 1 clic en cas de retard de paiement.</p>
+          <p style="color: #415052; margin-bottom: 16px;">Pour <strong>3,90€/mois</strong> seulement, automatisez l'envoi de vos quittances par email, recevez des rappels SMS pour confirmer l'envoi, et relancez vos locataires en 1 clic en cas de retard de paiement.</p>
           <p style="color: #415052; font-size: 0.95em; margin: 0;">📱 Tout depuis votre téléphone &nbsp;&nbsp; ⚡ Envoi instantané &nbsp;&nbsp; 🔔 Rappels automatiques</p>
         </div>
 
@@ -114,7 +114,7 @@ const Blog = () => {
           <h3 style="color: #1a1f20; margin-top: 0; font-size: 1.2em; font-weight: 600;">🛡️ Restez conforme automatiquement avec Pack Automatique</h3>
           <p style="color: #415052; margin-bottom: 16px;">Vos quittances sont <strong>automatiquement mises à jour</strong> selon les évolutions législatives 2026. Plus de veille juridique, plus de mises à jour manuelles. Tout est géré pour vous.</p>
           <p style="color: #415052; margin-bottom: 16px;">En plus : <strong>Relances locataires en 1 clic</strong> par SMS ou email en cas de retard de paiement.</p>
-          <p style="color: #ed7862; font-weight: 600; margin: 0;">Tout ça pour seulement 0,82€/mois</p>
+          <p style="color: #ed7862; font-weight: 600; margin: 0;">Tout ça pour seulement 3,90€/mois</p>
         </div>
 
         <h2>Rappel des obligations permanentes</h2>
@@ -214,7 +214,7 @@ const Blog = () => {
                 <h3 className="text-2xl font-bold mb-3">Prêt à gagner du temps et dormir serein ?</h3>
                 <p className="text-lg mb-6 opacity-95">
                   Activez Pack Automatique et ne vous souciez plus jamais de vos quittances mensuelles.<br/>
-                  Rappels SMS, envoi automatique et relances en 1 clic pour seulement 0,82€/mois.
+                  Rappels SMS, envoi automatique et relances en 1 clic pour seulement 3,90€/mois.
                 </p>
                 <button
                   onClick={() => {

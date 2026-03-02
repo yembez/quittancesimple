@@ -408,6 +408,7 @@ const Generator = () => {
           state: {
             email: formData.baillorEmail,
             nom: formData.baillorName,
+            baillorAddress: formData.baillorAddress,
             locataireName: formData.locataireName,
             locataireAddress: formData.logementAddress,
             loyer: formData.loyer,
@@ -925,7 +926,7 @@ const Generator = () => {
                   <div className="text-sm text-left">
                     <span className="font-semibold text-[#212a3e]">Ne plus jamais y penser ?</span>
                     <span className="hidden sm:inline text-[#5e6478]"> — </span>
-                    <span className="block sm:inline text-[#5e6478]">Automatisez tout pour <strong className="text-[#E65F3F]">0,82€/mois</strong></span>
+                    <span className="block sm:inline text-[#5e6478]">Automatisez tout pour <strong className="text-[#E65F3F]">3,90€/mois</strong></span>
                   </div>
                 </div>
                 <div className="flex-shrink-0">

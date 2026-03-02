@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
-import { X, Mail, Lock, Eye, EyeOff, CheckCircle, ArrowRight, User, Home } from 'lucide-react';
+import { X, Mail, Lock, Eye, EyeOff, CheckCircle, ArrowRight } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { validateEmail } from '../utils/validation';
@@ -384,109 +384,6 @@ const PackActivationFlow: React.FC<PackActivationFlowProps> = ({
                     className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-3 sm:py-3.5 text-sm sm:text-base rounded-xl border border-[#e8e7ef] focus:border-[#E65F3F] focus:ring-2 focus:ring-[#E65F3F]/20 transition-all bg-white"
                     placeholder="••••••••"
                     required
-                  />
-                </div>
-              </div>
-
-              {/* Vos informations (propriétaire) — pré-remplies si fournies */}
-              <div className="space-y-3 pt-1 border-t border-[#e8e7ef]">
-                <p className="text-xs font-semibold text-[#5e6478] flex items-center gap-1.5">
-                  <User className="w-3.5 h-3.5" />
-                  Vos informations (optionnel)
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="text"
-                    value={proprietaireData.prenom}
-                    onChange={(e) => setProprietaireData(prev => ({ ...prev, prenom: e.target.value }))}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-[#e8e7ef] focus:border-[#E65F3F] focus:ring-1 focus:ring-[#E65F3F]/20"
-                    placeholder="Prénom"
-                  />
-                  <input
-                    type="text"
-                    value={proprietaireData.nom}
-                    onChange={(e) => setProprietaireData(prev => ({ ...prev, nom: e.target.value }))}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-[#e8e7ef] focus:border-[#E65F3F] focus:ring-1 focus:ring-[#E65F3F]/20"
-                    placeholder="Nom"
-                  />
-                </div>
-                <input
-                  type="text"
-                  value={proprietaireData.adresse}
-                  onChange={(e) => setProprietaireData(prev => ({ ...prev, adresse: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-[#e8e7ef] focus:border-[#E65F3F] focus:ring-1 focus:ring-[#E65F3F]/20"
-                  placeholder="Adresse postale"
-                />
-                <input
-                  type="tel"
-                  value={proprietaireData.telephone}
-                  onChange={(e) => setProprietaireData(prev => ({ ...prev, telephone: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-[#e8e7ef] focus:border-[#E65F3F] focus:ring-1 focus:ring-[#E65F3F]/20"
-                  placeholder="Téléphone"
-                />
-              </div>
-
-              {/* Premier locataire (optionnel) */}
-              <div className="space-y-3 pt-1 border-t border-[#e8e7ef]">
-                <p className="text-xs font-semibold text-[#5e6478] flex items-center gap-1.5">
-                  <Home className="w-3.5 h-3.5" />
-                  Premier locataire (optionnel)
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="text"
-                    value={locataireData.prenom}
-                    onChange={(e) => setLocataireData(prev => ({ ...prev, prenom: e.target.value }))}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-[#e8e7ef] focus:border-[#E65F3F] focus:ring-1 focus:ring-[#E65F3F]/20"
-                    placeholder="Prénom locataire"
-                  />
-                  <input
-                    type="text"
-                    value={locataireData.nom}
-                    onChange={(e) => setLocataireData(prev => ({ ...prev, nom: e.target.value }))}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-[#e8e7ef] focus:border-[#E65F3F] focus:ring-1 focus:ring-[#E65F3F]/20"
-                    placeholder="Nom locataire"
-                  />
-                </div>
-                <input
-                  type="email"
-                  value={locataireData.email}
-                  onChange={(e) => setLocataireData(prev => ({ ...prev, email: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-[#e8e7ef] focus:border-[#E65F3F] focus:ring-1 focus:ring-[#E65F3F]/20"
-                  placeholder="Email locataire"
-                />
-                <input
-                  type="tel"
-                  value={locataireData.telephone}
-                  onChange={(e) => setLocataireData(prev => ({ ...prev, telephone: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-[#e8e7ef] focus:border-[#E65F3F] focus:ring-1 focus:ring-[#E65F3F]/20"
-                  placeholder="Téléphone locataire"
-                />
-                <input
-                  type="text"
-                  value={locataireData.adresse_logement}
-                  onChange={(e) => setLocataireData(prev => ({ ...prev, adresse_logement: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-[#e8e7ef] focus:border-[#E65F3F] focus:ring-1 focus:ring-[#E65F3F]/20"
-                  placeholder="Adresse du logement *"
-                />
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    value={locataireData.loyer_mensuel === '' ? '' : locataireData.loyer_mensuel}
-                    onChange={(e) => setLocataireData(prev => ({ ...prev, loyer_mensuel: e.target.value === '' ? '' : parseFloat(e.target.value) || 0 }))}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-[#e8e7ef] focus:border-[#E65F3F] focus:ring-1 focus:ring-[#E65F3F]/20"
-                    placeholder="Loyer (€)"
-                  />
-                  <input
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    value={locataireData.charges_mensuelles === '' ? '' : locataireData.charges_mensuelles}
-                    onChange={(e) => setLocataireData(prev => ({ ...prev, charges_mensuelles: e.target.value === '' ? '' : parseFloat(e.target.value) || 0 }))}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-[#e8e7ef] focus:border-[#E65F3F] focus:ring-1 focus:ring-[#E65F3F]/20"
-                    placeholder="Charges (€)"
                   />
                 </div>
               </div>

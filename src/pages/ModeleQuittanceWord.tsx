@@ -306,7 +306,7 @@ const ModeleQuittanceWord = () => {
                 Le générateur Quittance Simple est-il vraiment gratuit ?
               </summary>
               <p className="text-xs sm:text-sm text-gray-700 mt-3 leading-relaxed">
-                <strong>Oui, totalement gratuit !</strong> Vous pouvez générer autant de quittances que vous voulez sans payer. Si vous souhaitez automatiser l'envoi mensuel, des options payantes existent à partir de 0,99€/mois, mais le générateur manuel reste gratuit à vie.
+                <strong>Oui, totalement gratuit !</strong> Vous pouvez générer autant de quittances que vous voulez sans payer. Si vous souhaitez automatiser l'envoi mensuel, des options payantes existent à partir de 3,90€/mois (voir page Tarifs), mais le générateur manuel reste gratuit à vie.
               </p>
             </details>
 

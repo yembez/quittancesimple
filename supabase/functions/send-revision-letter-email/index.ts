@@ -136,7 +136,7 @@ Deno.serve(async (req: Request) => {
                         <td style="padding: 20px; text-align: center;">
                           <div style="font-size: 32px; margin-bottom: 10px;">🔄</div>
                           <h3 style="margin: 0 0 8px 0; color: #ffffff; font-size: 16px; font-weight: 600;">Quittance Automatique</h3>
-                          <p style="margin: 0 0 12px 0; color: #e8f4ee; font-size: 20px; font-weight: 700;">0,82€/mois</p>
+                          <p style="margin: 0 0 12px 0; color: #e8f4ee; font-size: 20px; font-weight: 700;">3,90€/mois</p>
                           <p style="margin: 0 0 15px 0; color: #e8f4ee; font-size: 13px; line-height: 1.5;">
                             Automatisez l'envoi par email et SMS
                           </p>
@@ -207,7 +207,7 @@ Simplifiez la gestion de vos quittances
 Générez vos quittances manuellement en quelques clics
 → https://quittancesimple.fr/generator
 
-🔄 Quittance Automatique (0,82€/mois)
+🔄 Quittance Automatique (3,90€/mois)
 Automatisez l'envoi par email et SMS
 → https://quittancesimple.fr/pricing
 

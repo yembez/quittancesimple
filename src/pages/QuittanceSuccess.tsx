@@ -11,10 +11,28 @@ const STAGGER_MS = 90;
 const OVERSHOOT_DURATION_MS = 280;
 const BUBBLE_APPEAR_MS = 680; // apparition progressive depuis le téléphone
 
+// Découpe "Prénom Nom" en { prenom, nom } (ou tout en nom si un seul mot)
+function splitFullName(fullName: string): { prenom: string; nom: string } {
+  const t = (fullName || '').trim();
+  if (!t) return { prenom: '', nom: '' };
+  const parts = t.split(/\s+/);
+  if (parts.length === 1) return { prenom: '', nom: parts[0] };
+  return { prenom: parts[0], nom: parts.slice(1).join(' ') };
+}
+
 const QuittanceSuccess = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const email = location.state?.email || '';
+  const state = (location.state || {}) as {
+    email?: string;
+    nom?: string;
+    baillorAddress?: string;
+    locataireName?: string;
+    locataireAddress?: string;
+    loyer?: string;
+    charges?: string;
+  };
+  const email = state.email || '';
   const [isPackActivationFlowOpen, setIsPackActivationFlowOpen] = useState(false);
   const [satisfactionStep, setSatisfactionStep] = useState<'question' | 'positive' | 'negative' | 'sent'>('question');
   const [feedback, setFeedback] = useState('');
@@ -406,7 +424,7 @@ const QuittanceSuccess = () => {
             Compris dans l'essai gratuit :
           </p>
           <p className="text-[15px] text-[#4b5563] leading-relaxed my-4 mx-0">
-            Les Quittances Automatiques, <span className="font-semibold text-[#1e3a5f]">plus la boîte à outils intelligents :</span>
+            L'automate <span className="font-semibold text-[#1e3a5f]">Quittance Express, plus la boîte à outils intelligents :</span>
           </p>
           <ul className="space-y-1.5 mb-5 pl-0">
             <li className="flex items-start gap-2 text-[15px] text-[#4b5563]">
@@ -461,11 +479,24 @@ const QuittanceSuccess = () => {
         </button>
       </div>
 
-      {/* Pack Activation Flow Modal */}
+      {/* Pack Activation Flow Modal — préremplissage depuis le formulaire quittance gratuite */}
       <PackActivationFlow
         isOpen={isPackActivationFlowOpen}
         onClose={() => setIsPackActivationFlowOpen(false)}
         prefillEmail={email}
+        prefillProprietaire={email || state.nom || state.baillorAddress ? {
+          ...splitFullName(state.nom || ''),
+          adresse: state.baillorAddress || '',
+          telephone: ''
+        } : undefined}
+        prefillLocataire={state.locataireName && state.locataireAddress ? {
+          ...splitFullName(state.locataireName),
+          adresse_logement: state.locataireAddress || '',
+          loyer_mensuel: state.loyer ? parseFloat(state.loyer) || 0 : 0,
+          charges_mensuelles: state.charges ? parseFloat(state.charges) || 0 : 0,
+          email: '',
+          telephone: ''
+        } : undefined}
       />
     </div>
   );

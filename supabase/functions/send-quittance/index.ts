@@ -508,14 +508,15 @@ Deno.serve(async (req) => {
 
     await supabase.from('proprietaires').upsert(proprietaireData, { onConflict: 'email' });
 
-    // Récupérer le nom complet du locataire depuis la DB si locataireId est présent
+    // Récupérer nom, email et adresse du logement du locataire depuis la DB si locataireId est présent
     let locataireEmailFromPayload = (data.locataireEmail ?? data.locataire_email ?? '').toString().trim();
     let locataireNameFromDb = '';
+    let logementAddressFromDb = '';
     if (data.locataireId || data.locataire_id) {
       const lid = data.locataireId ?? data.locataire_id;
       const { data: locataireRow } = await supabase
         .from('locataires')
-        .select('email, nom, prenom')
+        .select('email, nom, prenom, adresse_logement')
         .eq('id', lid)
         .maybeSingle();
       if (locataireRow) {
@@ -524,6 +525,10 @@ Deno.serve(async (req) => {
         // Récupérer l'email si absent du payload
         if (!locataireEmailFromPayload && locataireRow.email) {
           locataireEmailFromPayload = String(locataireRow.email).trim();
+        }
+        // Adresse du logement loué pour le PDF (souvent absente du payload SMS/e-mail)
+        if (locataireRow.adresse_logement && String(locataireRow.adresse_logement).trim()) {
+          logementAddressFromDb = String(locataireRow.adresse_logement).trim();
         }
       }
     }
@@ -543,6 +548,14 @@ Deno.serve(async (req) => {
     const locataireNameFinal = locataireNameFromDb || (data.locataireName ?? data.locataire_name) || '';
     if (locataireNameFinal) {
       data.locataireName = locataireNameFinal;
+    }
+
+    // Adresse du logement loué : compléter depuis la DB si absente du payload (flux SMS / e-mail)
+    const payloadLogement = (data.logementAddress ?? data.logement_address ?? '').toString().trim();
+    if (!payloadLogement && logementAddressFromDb) {
+      data.logementAddress = logementAddressFromDb;
+    } else if (payloadLogement) {
+      data.logementAddress = payloadLogement;
     }
     
     const pdfBuffer = generateProfessionalPDF(data);
@@ -639,6 +652,56 @@ Deno.serve(async (req) => {
     }
 
     const result = await response.json();
+
+    // Copie au bailleur : envoyer une copie de la quittance PDF au bailleur quand on envoie au locataire
+    const bailleurEmail = (data.baillorEmail ?? '').toString().trim();
+    if (isToTenant && bailleurEmail && bailleurEmail !== recipientEmail) {
+      const htmlEmailBailleurCopy = buildEmailHtml({
+        title: 'QS- Espace Bailleur',
+        bodyHtml: `
+          <p>Bonjour ${prenom},</p>
+          <p>Ceci est une copie de la quittance de loyer envoyée à <strong>${locataireName}</strong> pour la période <strong>${data.periode}</strong>.</p>
+          <ul style="padding-left: 20px;">
+            <li>Loyer : ${loyer.toFixed(2)} €</li>
+            <li>Charges : ${charges.toFixed(2)} €</li>
+            <li>Total : ${total.toFixed(2)} €</li>
+          </ul>
+          <p>La quittance en pièce jointe est identique à celle reçue par votre locataire.</p>
+        `,
+        ctaText: 'Accéder à mon espace',
+        ctaUrl: dashboardUrl,
+        closingHtml: `Cordialement,<br><strong>L'équipe Quittance Simple</strong>`,
+        footerReason: 'Vous recevez cet e-mail car vous avez envoyé une quittance via le lien de confirmation (SMS ou e-mail).',
+      });
+      const copyToBailleur = {
+        from: 'Quittance Simple <noreply@quittancesimple.fr>',
+        to: [bailleurEmail],
+        subject: `Copie – Quittance envoyée à ${locataireName} – ${data.periode}`,
+        html: htmlEmailBailleurCopy,
+        attachments: [{
+          filename: `quittance-${data.periode.replace(/\s+/g, '-')}.pdf`,
+          content: encodeBase64(pdfBuffer),
+          type: 'application/pdf'
+        }]
+      };
+      try {
+        const copyResponse = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${resendKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(copyToBailleur)
+        });
+        if (copyResponse.ok) {
+          console.log('📧 Copie quittance envoyée au bailleur:', bailleurEmail.slice(0, 8) + '…');
+        } else {
+          console.warn('⚠️ Échec envoi copie au bailleur:', await copyResponse.text());
+        }
+      } catch (copyErr) {
+        console.warn('⚠️ Erreur envoi copie au bailleur:', copyErr);
+      }
+    }
 
     if (data.locataireId) {
       console.log('📝 [BEFORE STATUS UPDATE] ID:', data.locataireId);

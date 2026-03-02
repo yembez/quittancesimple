@@ -98,7 +98,7 @@ const SMSConfirm = () => {
         locataireEmail: locataire?.email,
         locataireName: nomCompletLocataire,
         locataireDomicileAddress: locataire?.detail_adresse || '',
-        logementAddress: locataire?.adresse,
+        logementAddress: locataire?.adresse_logement || locataire?.adresse || '',
         baillorEmail: proprietaire?.email,
         baillorName: nomCompletProprietaire,
         baillorAddress: proprietaire?.adresse || '',

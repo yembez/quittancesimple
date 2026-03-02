@@ -17,11 +17,11 @@ const FAQ = () => {
   const faqItems = [
     {
       question: "La génération de quittance PDF est-elle vraiment gratuite ?",
-      answer: "Oui, absolument ! Vous pouvez générer autant de quittances PDF que vous le souhaitez, gratuitement et sans limitation. Seul le service d'automatisation est payant à partir de 0,99€/mois pour 1-2 logements avec Pack Automatique."
+      answer: "Oui, absolument ! Vous pouvez générer autant de quittances PDF que vous le souhaitez, gratuitement et sans limitation. Seul le service d'automatisation est payant à partir de 3,90€/mois pour 1-2 logements avec Pack Automatique."
     },
     {
       question: "Comment automatiser mes avis d'échéance et quittances ?",
-      answer: "Notre service Pack Automatique vous permet d'automatiser complètement l'envoi de vos quittances de loyer. Une fois configuré, vous recevez chaque mois un rappel automatique par SMS et email pour confirmer le paiement. En un clic, la quittance automatique est générée au format PDF conforme et envoyée directement à votre locataire par email. Plus besoin d'y penser chaque mois ! Tarif : à partir de 0,99€/mois pour 1-2 logements. Découvrez tous les détails sur notre page d'automatisation. Vous pouvez également automatiser l'envoi d'avis d'échéance avant la date de paiement pour rappeler à votre locataire l'échéance du loyer."
+      answer: "Notre service Pack Automatique vous permet d'automatiser complètement l'envoi de vos quittances de loyer. Une fois configuré, vous recevez chaque mois un rappel automatique par SMS et email pour confirmer le paiement. En un clic, la quittance automatique est générée au format PDF conforme et envoyée directement à votre locataire par email. Plus besoin d'y penser chaque mois ! Tarif : à partir de 3,90€/mois pour 1-2 logements, 5,90€ pour 3-5, 8,90€ pour 6+ locataires. Découvrez tous les détails sur notre page Tarifs. Vous pouvez également automatiser l'envoi d'avis d'échéance avant la date de paiement pour rappeler à votre locataire l'échéance du loyer."
     },
     {
       question: "Comment fonctionne l'automatisation des quittances ?",
@@ -45,7 +45,7 @@ const FAQ = () => {
     },
     {
       question: "Puis-je gérer plusieurs locataires ?",
-      answer: "Bien sûr ! Vous pouvez gérer autant de locataires que vous le souhaitez. Pour le service gratuit, il n'y a aucune limite. Pour l'automatisation, le tarif est de 0,99€/mois par locataire."
+      answer: "Bien sûr ! Vous pouvez gérer autant de locataires que vous le souhaitez. Pour le service gratuit, il n'y a aucune limite. Pour l'automatisation, le tarif est de 3,90€/mois pour 1-2 locataires, 5,90€ pour 3-5, 8,90€ pour 6+ (voir la page Tarifs)."
     },
     {
       question: "Y a-t-il un engagement ?",

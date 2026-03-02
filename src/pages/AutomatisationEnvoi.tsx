@@ -21,8 +21,8 @@ const AutomatisationEnvoi = () => {
   return (
     <div className="min-h-screen bg-amber-50">
       <SEOHead
-        title="Automatisation Envoi Quittances | Envoyer Pack Automatiquement dès 0,99€"
-        description="Automatisez l'envoi de vos quittances de loyer par email et SMS. Génération automatique, envoi programmé, rappels automatiques. Solution complète dès 0,99€/mois."
+        title="Automatisation Envoi Quittances | Envoyer Pack Automatiquement dès 3,90€"
+        description="Automatisez l'envoi de vos quittances de loyer par email et SMS. Génération automatique, envoi programmé, rappels automatiques. Solution complète dès 3,90€/mois (1-2 locataires)."
         keywords="automatisation envoi quittance, envoyer quittance automatiquement, envoi automatique quittance loyer, automatiser quittances, quittance automatique email, envoi quittance programmé, automatisation gestion locative"
         schema={schema}
         canonical="https://quittance-simple.fr/automatisation-envoi-quittances"
@@ -38,7 +38,7 @@ const AutomatisationEnvoi = () => {
           >
             <div className="inline-flex items-center bg-white rounded-full px-4 py-2 shadow-sm mb-6">
               <Zap className="w-4 h-4 text-[#FFD76F] mr-2" />
-              <span className="text-sm font-medium text-gray-700">Automatisation complète · Dès 0,99€/mois</span>
+              <span className="text-sm font-medium text-gray-700">Automatisation complète · Dès 3,90€/mois</span>
             </div>
 
             <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
@@ -296,7 +296,7 @@ const AutomatisationEnvoi = () => {
                 Comment activer l'envoi automatique de quittances ?
               </summary>
               <p className="text-gray-700 mt-4 leading-relaxed">
-                Il suffit de vous inscrire au plan Automatique (0,99€/mois pour 1-2 locataires, 1,49€/mois pour 3-4, 2,49€/mois pour 5+), d'enregistrer les informations de vos locataires, et de configurer la date d'envoi mensuelle. Le système s'occupe du reste automatiquement.
+                Il suffit de vous inscrire au plan Automatique (3,90€/mois pour 1-2 locataires, 5,90€ pour 3-5, 8,90€ pour 6+), d'enregistrer les informations de vos locataires, et de configurer la date d'envoi mensuelle. Le système s'occupe du reste automatiquement.
               </p>
             </details>
 
@@ -332,7 +332,7 @@ const AutomatisationEnvoi = () => {
                 Puis-je automatiser pour plusieurs locataires ?
               </summary>
               <p className="text-gray-700 mt-4 leading-relaxed">
-                Oui ! Le prix est de 0,99€/mois pour 1-2 locataires, 1,49€/mois pour 3-4 locataires, et 2,49€/mois pour 5 locataires et plus. Vous pouvez gérer autant de locataires que nécessaire avec l'automatisation.
+                Oui ! Le prix est de 3,90€/mois pour 1-2 locataires, 5,90€ pour 3-5, 8,90€ pour 6+ (voir page Tarifs). Vous pouvez gérer autant de locataires que nécessaire avec l'automatisation.
               </p>
             </details>
           </div>

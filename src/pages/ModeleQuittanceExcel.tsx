@@ -336,7 +336,7 @@ const ModeleQuittanceExcel = () => {
                 Puis-je automatiser mes quittances depuis Excel ?
               </summary>
               <p className="text-xs sm:text-sm text-gray-700 mt-3 leading-relaxed">
-                <strong>Non, Excel ne peut pas envoyer automatiquement des emails</strong> avec les quittances. Vous devez exporter en PDF puis envoyer manuellement chaque mois. Avec Quittance Simple, l'envoi automatique mensuel est possible à partir de 0,99€/mois.
+                <strong>Non, Excel ne peut pas envoyer automatiquement des emails</strong> avec les quittances. Vous devez exporter en PDF puis envoyer manuellement chaque mois. Avec Quittance Simple, l'envoi automatique mensuel est possible à partir de 3,90€/mois (voir page Tarifs).
               </p>
             </details>
 

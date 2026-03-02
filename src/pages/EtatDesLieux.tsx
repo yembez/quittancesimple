@@ -231,8 +231,35 @@ export default function EtatDesLieux() {
       telephone: proprietaire.telephone || prev.telephone,
       email: proprietaire.email || prev.email,
     }));
-    setAdresseLogement((prev) => prev || proprietaire.adresse || '');
+    // Ne pas préremplir l'adresse des locaux avec l'adresse du bailleur : elle vient du locataire (adresse_logement)
   }, [proprietaire]);
+
+  // Préremplir adresse du logement et locataire depuis le premier locataire (espace bailleur)
+  useEffect(() => {
+    if (!proprietaire?.id) return;
+    let cancelled = false;
+    (async () => {
+      const { data: locs } = await supabase
+        .from('locataires')
+        .select('nom, prenom, email, telephone, adresse_logement')
+        .eq('proprietaire_id', proprietaire.id)
+        .order('created_at', { ascending: true })
+        .limit(1);
+      if (cancelled || !locs?.length) return;
+      const first = locs[0];
+      setAdresseLogement((prev) => prev || first.adresse_logement || '');
+      setLocataireNomComplet((prev) => prev || [first.prenom, first.nom].filter(Boolean).join(' '));
+      setLocataire((prev) => ({
+        ...prev,
+        nom: prev.nom || first.nom || '',
+        prenom: prev.prenom || first.prenom || '',
+        adresse: prev.adresse || first.adresse_logement || '',
+        telephone: prev.telephone || first.telephone || '',
+        email: prev.email || first.email || '',
+      }));
+    })();
+    return () => { cancelled = true; };
+  }, [proprietaire?.id]);
 
   useEffect(() => {
     try {

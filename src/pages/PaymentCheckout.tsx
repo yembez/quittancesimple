@@ -246,9 +246,9 @@ const PaymentCheckout = () => {
               <span className="text-sm text-gray-600">/mois</span>
             </div>
             <p className="text-sm text-gray-600">
-              1-2 logements : 0,99€/mois<br/>
-              3-4 logements : 1,49€/mois<br/>
-              5+ logements : 2,49€/mois
+              1-2 logements : 3,90€/mois<br/>
+              3-5 logements : 5,90€/mois<br/>
+              6+ logements : 8,90€/mois
             </p>
           </button>
 
@@ -266,9 +266,9 @@ const PaymentCheckout = () => {
               <span className="text-sm text-gray-600">/mois</span>
             </div>
             <p className="text-sm text-gray-600">
-              1-2 logements : 0,99€/mois<br/>
-              3-4 logements : 1,49€/mois<br/>
-              5+ logements : 2,49€/mois
+              1-2 logements : 3,90€/mois<br/>
+              3-5 logements : 5,90€/mois<br/>
+              6+ logements : 8,90€/mois
             </p>
           </button>
         </div>

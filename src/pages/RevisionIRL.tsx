@@ -71,6 +71,26 @@ export default function RevisionIRL() {
     }
   }, [proprietaireId]);
 
+  // Préremplir le loyer actuel depuis le premier locataire (éditable)
+  useEffect(() => {
+    if (!proprietaireId) return;
+    let cancelled = false;
+    (async () => {
+      const { data: locs } = await supabase
+        .from('locataires')
+        .select('loyer_mensuel')
+        .eq('proprietaire_id', proprietaireId)
+        .order('created_at', { ascending: true })
+        .limit(1);
+      if (cancelled || !locs?.length) return;
+      const loyer = locs[0].loyer_mensuel;
+      if (loyer != null && loyer > 0) {
+        setLoyerActuel((prev) => (prev === '' ? String(loyer) : prev));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [proprietaireId]);
+
   const loadIRLIndices = async () => {
     const { data, error } = await supabase
       .from('indices_irl')

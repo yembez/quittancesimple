@@ -221,7 +221,7 @@ const LocatairesTable = ({
                       <div className="group relative">
                         <p className="text-[#64748b] text-[13px] cursor-help whitespace-nowrap">Non disponible</p>
                         <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-                          Automatisez l'envoi dès 0,99€/mois !<br />(1,49€ pour 3-4 locataires, 2,49€ pour 5+)
+                          Automatisez l'envoi dès 3,90€/mois !<br />(5,90€ pour 3-5 locataires, 8,90€ pour 6+)
                         </div>
                       </div>
                     ) : (
@@ -262,7 +262,7 @@ const LocatairesTable = ({
                     <div className="group relative">
                       <p className="text-[#64748b] text-[13px] cursor-help whitespace-nowrap">Non disponible</p>
                       <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-                        Automatisez l'envoi dès 0,99€/mois !<br />(1,49€ pour 3-4 locataires, 2,49€ pour 5+)
+                        Automatisez l'envoi dès 3,90€/mois !<br />(5,90€ pour 3-5 locataires, 8,90€ pour 6+)
                       </div>
                     </div>
                     ) : (

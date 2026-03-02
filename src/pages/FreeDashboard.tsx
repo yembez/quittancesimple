@@ -527,7 +527,7 @@ const FreeDashboard = () => {
                       </button>
                       <div className="absolute right-0 top-full mt-2 w-80 bg-gray-900 text-white text-sm rounded-lg p-3 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                         <p className="leading-relaxed">
-                          Pour profiter de l'ajout de plusieurs locataires et de l'envoi automatique, essayez <span className="font-semibold">Pack Automatique</span> dès <span className="font-semibold">0,99€/mois</span> (1,49€/mois pour 3-4 locataires, 2,49€/mois pour 5+)
+                          Pour profiter de l'ajout de plusieurs locataires et de l'envoi automatique, essayez <span className="font-semibold">Pack Automatique</span> dès <span className="font-semibold">3,90€/mois</span> (5,90€ pour 3-5 locataires, 8,90€ pour 6+)
                         </p>
                         <div className="absolute -top-2 right-4 w-4 h-4 bg-gray-900 transform rotate-45"></div>
                       </div>

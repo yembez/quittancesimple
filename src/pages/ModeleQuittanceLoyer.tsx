@@ -385,7 +385,7 @@ const ModeleQuittanceLoyer = () => {
                 Combien coûte votre modèle de quittance ?
               </summary>
               <p className="text-gray-700 mt-4 leading-relaxed">
-                <strong>0€, totalement gratuit !</strong> Vous pouvez générer autant de quittances que vous voulez sans payer un centime. Si vous souhaitez automatiser l'envoi, des options payantes existent à partir de 0,99€/mois, mais le générateur reste gratuit à vie.
+                <strong>0€, totalement gratuit !</strong> Vous pouvez générer autant de quittances que vous voulez sans payer un centime. Si vous souhaitez automatiser l'envoi, des options payantes existent à partir de 3,90€/mois (voir page Tarifs), mais le générateur reste gratuit à vie.
               </p>
             </details>
 

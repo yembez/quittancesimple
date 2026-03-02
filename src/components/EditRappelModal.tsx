@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { X, Calendar } from 'lucide-react';
+import { X, Calendar, AlertTriangle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface Locataire {
   id: string;
   nom: string;
   prenom?: string;
+  email?: string;
   date_rappel: number;
   heure_rappel?: number;
   minute_rappel?: number;
@@ -24,6 +25,10 @@ const EditRappelModal = ({ locataire, onClose, onSave }: Props) => {
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
+    const hasNoEmail = !locataire.email || !String(locataire.email).trim();
+    if (hasNoEmail && !window.confirm('Sans e-mail du locataire, le rappel et l\'envoi de la quittance ne pourront pas fonctionner. Enregistrer quand même ?')) {
+      return;
+    }
     setSaving(true);
     try {
       const { error } = await supabase
@@ -73,6 +78,15 @@ const EditRappelModal = ({ locataire, onClose, onSave }: Props) => {
               <strong>Locataire:</strong> {locataire.nom} {locataire.prenom}
             </p>
           </div>
+
+          {(!locataire.email || !String(locataire.email).trim()) && (
+            <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 flex gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-amber-800">
+                <strong>E-mail du locataire manquant.</strong> Pour que le rappel fonctionne et que la quittance soit envoyée au locataire, renseignez son adresse e-mail dans la fiche locataire (modifier le locataire).
+              </p>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">

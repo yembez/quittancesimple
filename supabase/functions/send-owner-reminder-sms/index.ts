@@ -168,10 +168,12 @@ Deno.serve(async (req: Request) => {
 
     console.log('📱 SMS request received:', { telephone, shortCode });
 
-    // Lien sans https:// pour whitelist SMS provider
-    // Utilise APP_URL depuis env ou quittancesimple.fr par défaut
-    const appUrl = (Deno.env.get('APP_URL') || 'quittancesimple.fr').replace(/^https?:\/\//, '');
-    const shortLink = `${appUrl}/c/${shortCode}`;
+    // Toujours utiliser l'URL réelle du site pour le lien (jamais localhost)
+    const rawAppUrl = (Deno.env.get('APP_URL') || 'https://quittancesimple.fr').trim().replace(/\/$/, '');
+    const appUrl = rawAppUrl.startsWith('http') ? rawAppUrl : `https://${rawAppUrl}`;
+    const isProduction = !appUrl.includes('localhost') && !appUrl.includes('127.0.0.1');
+    const baseUrl = isProduction ? appUrl : 'https://quittancesimple.fr';
+    const shortLink = `${baseUrl}/c/${shortCode}`;
 
     const message = `Loyer ${locataireName} ${montantTotal}EUR recu ?\n${shortLink}`;
 

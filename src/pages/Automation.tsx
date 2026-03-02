@@ -10,6 +10,12 @@ import { supabase } from '../lib/supabase';
 import { trackCtaClick } from '../utils/analytics';
 import { getPricing, formatPrice } from '../utils/pricing';
 
+const AVIS_MOBILE = [
+  { text: "J'ai automatisé mes quittances, je ne m'en occupe plus ! C'est trop bien :)", author: 'Julie, propriétaire coloc 5 chambres' },
+  { text: "Yes, Enfin un outil simple ! On automatise hyper facilement", author: 'Thomas, bailleur' },
+  { text: "L'idée est super, c'est automatisé mais j'ai le contrôle ", author: 'Marie, propriétaire' },
+];
+
 const Automation = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loginMode, setLoginMode] = useState<'login' | 'signup'>('signup');
@@ -23,6 +29,13 @@ const Automation = () => {
   const [proprietaireInfo, setProprietaireInfo] = useState<any>(null);
   const [locatairesCount, setLocatairesCount] = useState(0);
   const [enlargedImage, setEnlargedImage] = useState<{ src: string; alt: string } | null>(null);
+  const [avisIndex, setAvisIndex] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => {
+      setAvisIndex((i) => (i + 1) % AVIS_MOBILE.length);
+    }, 4500);
+    return () => clearInterval(t);
+  }, []);
   const schema = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -124,7 +137,7 @@ const Automation = () => {
               className="order-2 lg:order-1 text-center sm:text-left"
             >
               <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-[#212a3e] leading-tight">
-              La dernière quittance faite à la main
+              La dernière quittance faite à la main avec Quittance Express
               </h1>
               <p className="mt-3 sm:mt-2 text-sm sm:text-base md:text-lg text-[#5e6478] leading-relaxed">
               Vous recevez un SMS (+ email). Vous cliquez. La quittance est envoyée automatiquement à votre locataire. C'est tout ! <br /> Temps de génération et envoi de quittance : entre 3 et 5 secondes.
@@ -157,7 +170,7 @@ const Automation = () => {
                 {/* Photo avec arrondis (overflow uniquement sur l'image) */}
                 <div className="overflow-hidden rounded-2xl lg:rounded-3xl">
                   <img
-                    src="https://jfpbddtdblqakabyjxkq.supabase.co/storage/v1/object/public/website-images/femme_rue_mobile_2.png"
+                    src="https://jfpbddtdblqakabyjxkq.supabase.co/storage/v1/object/public/website-images/femme_bulle_2.jpg"
                     alt="Pack Automatique"
                     className="w-full h-auto object-contain"
                   />
@@ -194,6 +207,26 @@ const Automation = () => {
               Adopté par 250+ propriétaires — 4 000+ quittances générées
             </p>
           </motion.div>
+          {/* Messages défilants (comme sur la Home version mobile) */}
+          <div className="mt-4 max-w-xl mx-auto">
+            <div className="w-full min-h-[68px] bg-white/90 backdrop-blur-sm border border-[#e8e7ef] rounded-2xl px-4 py-3 shadow-[0_2px_8px_rgba(15,23,42,0.08)] overflow-hidden relative flex items-center">
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={avisIndex}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.3 }}
+                  className="absolute inset-0 px-4 py-3 flex flex-col justify-center"
+                >
+                  <p className="text-xs sm:text-sm leading-snug text-[#212a3e] italic line-clamp-2">
+                    « {AVIS_MOBILE[avisIndex].text} »
+                  </p>
+                  <span className="text-[10px] sm:text-xs text-[#8b90a3] mt-1 shrink-0">{AVIS_MOBILE[avisIndex].author}</span>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -670,9 +703,9 @@ const Automation = () => {
                 Un clic sur « Ajouter locataire » ouvre un formulaire clair : coordonées, puis loyer et charges. L'envoi automatique des quittances se fait selon la date d'échéance que vous définissez. Aucune usine à gaz — juste l'essentiel.
               </p>
             </div>
-            <div className="relative group cursor-pointer" onClick={() => setEnlargedImage({ src: "/images/automation/etape2-formulaire.png", alt: "Formulaire Ajouter un locataire : informations personnelles, logement et montants" })}>
+            <div className="relative group cursor-pointer" onClick={() => setEnlargedImage({ src: "/images/automation/locataire_add_screen_2.png", alt: "Formulaire Ajouter un locataire : informations personnelles, logement et montants" })}>
               <img
-                src="/images/automation/etape2-formulaire.png"
+                src="/images/automation/locataire_add_screen_2.png"
                 alt="Formulaire Ajouter un locataire : informations personnelles, logement et montants"
                 className="w-full rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.3)] border border-white/20 object-cover transition-transform group-hover:scale-105"
                 loading="lazy"
@@ -695,9 +728,9 @@ const Automation = () => {
             viewport={{ once: true, margin: '-50px' }}
             className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center"
           >
-            <div className="relative order-2 lg:order-1 group cursor-pointer" onClick={() => setEnlargedImage({ src: "/images/automation/etape3-overview.png", alt: "Vue d'ensemble : révision IRL, révision des charges, bilan annuel" })}>
+            <div className="relative order-2 lg:order-1 group cursor-pointer" onClick={() => setEnlargedImage({ src: "/images/automation/overview_screen_2.png", alt: "Vue d'ensemble : révision IRL, révision des charges, bilan annuel" })}>
               <img
-                src="/images/automation/etape3-overview.png"
+                src="/images/automation/overview_screen_2.png"
                 alt="Vue d'ensemble : révision IRL, révision des charges, bilan annuel"
                 className="w-full rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.3)] border border-white/20 object-cover transition-transform group-hover:scale-105"
                 loading="lazy"

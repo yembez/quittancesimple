@@ -677,10 +677,10 @@ const Home = () => {
                 Simplifiez votre gestion locative<br className="hidden sm:block" /> avec le Pack Automatique
               </h2>
               <p className="text-sm sm:text-base text-[#212a3e]">
-                À partir de <span className="font-bold text-[20px] sm:text-[22px]">0,82&nbsp;€/mois</span>
+                À partir de <span className="font-bold text-[20px] sm:text-[22px]">3,90&nbsp;€/mois</span>
               </p>
               <p className="text-sm sm:text-base text-[#5e6478] max-w-xl">
-                Le Pack Automatique automatise l’envoi de vos quittances, calcule vos IRL au bon moment, crée le courrier pour vos locataires, calcule votre reporting fiscal. Fini l’administratif locatif oublié ou en retard.
+                Le Pack Automatique automatise l’envoi de vos quittances, calcule vos IRL au bon moment, crée le courrier pour vos locataires, crée vos annonces avec IA, vous aide à remplir vos baux et état des lieux, vous donne accès à la signature électronique simplifiée de vos baux, calcule votre reporting fiscal, etc. Fini l’administratif locatif compliqué, oublié ou en retard.
               </p>
               <div className="flex flex-wrap items-center gap-3">
                 <Link
@@ -1135,7 +1135,7 @@ const Home = () => {
                   <div className="text-sm text-slate-700">
                     <span className="block sm:inline text-[#212a3e] font-semibold">Fatigué de perdre du temps ? Essayez le pack automatique.</span>
                     <span className="hidden sm:inline"> </span>
-                    <span className="block sm:inline text-slate-600">À partir de <strong className="text-[#E65F3F]">0,82&nbsp;€/mois</strong>, les quittances sont automatiques.</span>
+                    <span className="block sm:inline text-slate-600">À partir de <strong className="text-[#E65F3F]">3,90&nbsp;€/mois</strong>, les quittances sont automatiques.</span>
                   </div>
                 </div>
                 <div className="flex-shrink-0">
