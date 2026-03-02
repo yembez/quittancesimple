@@ -72,6 +72,29 @@ function quartierSansVille(ville: string, quartier: string): string {
   return quartier;
 }
 
+/** Article contracté "d'un" / "d'une" selon le genre de l'équipement (accord correct en français). */
+const EQUIPEMENT_ARTICLE: Record<string, 'un' | 'une'> = {
+  parking: 'un',
+  cave: 'une',
+  terrasse: 'une',
+  balcon: 'un',
+  jardin: 'un',
+};
+
+function phraseEquipement(equipement: string): string {
+  const article = EQUIPEMENT_ARTICLE[equipement.toLowerCase()] ?? 'un';
+  return `d'${article} ${equipement}`;
+}
+
+/** Forme "Le/La/L'" selon le type de bien (accord et élision). */
+function articleTypeBien(typeBien: string): string {
+  const t = typeBien.toLowerCase();
+  if (t.startsWith('appartement') || t.startsWith('étage')) return "L'";
+  if (t.startsWith('maison') || t.startsWith('chambre')) return 'La ';
+  if (t.startsWith('studio')) return 'Le ';
+  return "L'";
+}
+
 export function generateTemplateAnnonce(data: AnnonceData): AnnonceResult {
   const typeAppartement = getTypeAppartement(data.pieces);
   const totalCC = data.loyer + data.charges;
@@ -150,15 +173,19 @@ export function generateTemplateAnnonce(data: AnnonceData): AnnonceResult {
   
   if (equipements.length > 0) {
     if (equipements.includes('jardin')) {
-      description += 'Vous disposez aussi d\'un agréable jardin';
+      description += "Vous disposez aussi d'un agréable jardin";
     } else if (equipements.includes('terrasse')) {
-      description += 'Vous disposez aussi d\'une agréable terrasse';
+      description += "Vous disposez aussi d'une agréable terrasse";
     } else if (equipements.includes('balcon')) {
-      description += 'Vous disposez aussi d\'un agréable balcon';
+      description += "Vous disposez aussi d'un agréable balcon";
     } else {
-      description += `Il dispose d'${equipements.length === 1 ? 'un' : 'un'} ${equipements[0]}`;
-      if (equipements.length > 1) {
-        description += ` et d'${equipements.slice(1).join(', ')}`;
+      const phrases = equipements.map((e) => phraseEquipement(e));
+      if (phrases.length === 1) {
+        description += `Il dispose ${phrases[0]}`;
+      } else if (phrases.length === 2) {
+        description += `Il dispose ${phrases[0]} et ${phrases[1]}`;
+      } else {
+        description += `Il dispose ${phrases.slice(0, -1).join(', ')} et ${phrases[phrases.length - 1]}`;
       }
     }
     description += '.\n\n';
@@ -170,7 +197,9 @@ export function generateTemplateAnnonce(data: AnnonceData): AnnonceResult {
     if (data.pointsForts.includes('Calme')) ambiance.push('calme');
     if (data.pointsForts.includes('Lumineux')) ambiance.push('lumineux');
     if (ambiance.length > 0) {
-      description += `L'${typeBien} est ${ambiance.join(' et ')}.\n\n`;
+      const article = articleTypeBien(typeBien);
+      const sujet = article === "L'" ? `${article}${typeBien}` : `${article}${typeBien}`.trim();
+      description += `${sujet} est ${ambiance.join(' et ')}.\n\n`;
     }
   }
   

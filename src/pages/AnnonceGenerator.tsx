@@ -1477,16 +1477,43 @@ const AnnonceGenerator = () => {
           {/* Modal Sauver l'annonce */}
           {showSaveModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-              <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-xl">
+              <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-xl max-h-[90vh] overflow-y-auto">
                 <h3 className="text-lg font-semibold text-[#111827] mb-2">Sauver l'annonce</h3>
-                <p className="text-sm text-[#6b7280] mb-4">Donnez un titre à cette annonce pour la retrouver dans « Annonces sauvegardées ».</p>
-                <input
-                  type="text"
-                  value={saveTitre}
-                  onChange={(e) => setSaveTitre(e.target.value)}
-                  placeholder="Ex. T2 Lyon 3, Appartement rénové..."
-                  className="w-full px-4 py-2 border border-[#d1d5db] rounded-lg focus:ring-2 focus:ring-[#ef6e03] outline-none mb-4"
-                />
+                <p className="text-sm text-[#6b7280] mb-3">Choisissez un titre pour retrouver cette annonce dans « Annonces sauvegardées ».</p>
+                {titres.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-xs font-medium text-[#6b7280] mb-2">Titres proposés par le générateur :</p>
+                    <div className="space-y-2">
+                      {titres.slice(0, 3).map((t, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => setSaveTitre(t)}
+                          className={`w-full text-left px-3 py-2 rounded-lg border text-sm transition-colors ${
+                            saveTitre === t
+                              ? 'border-[#ef6e03] bg-[#fff5f0] text-[#111827]'
+                              : 'border-[#d1d5db] bg-white text-[#374151] hover:border-[#ef6e03]/50 hover:bg-[#fef7f5]'
+                          }`}
+                        >
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-[#6b7280] mt-2">Ou saisir un titre personnalisé ci-dessous.</p>
+                  </div>
+                )}
+                <div className={titres.length > 0 ? 'mb-4' : 'mb-4'}>
+                  <label className="block text-xs font-medium text-[#6b7280] mb-1">
+                    {titres.length > 0 ? 'Titre personnalisé :' : 'Titre de l\'annonce :'}
+                  </label>
+                  <input
+                    type="text"
+                    value={saveTitre}
+                    onChange={(e) => setSaveTitre(e.target.value)}
+                    placeholder="Ex. T2 Lyon 3, Appartement rénové..."
+                    className="w-full px-4 py-2 border border-[#d1d5db] rounded-lg focus:ring-2 focus:ring-[#ef6e03] outline-none"
+                  />
+                </div>
                 <div className="flex gap-3 justify-end">
                   <button
                     type="button"
