@@ -137,10 +137,10 @@ const Automation = () => {
               className="order-2 lg:order-1 text-center sm:text-left"
             >
               <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-[#212a3e] leading-tight">
-              La dernière quittance faite à la main avec Quittance Express
+              Fini les quittances faites à la main avec Quittance Express
               </h1>
               <p className="mt-3 sm:mt-2 text-sm sm:text-base md:text-lg text-[#5e6478] leading-relaxed">
-              Vous recevez un SMS (+ email). Vous cliquez. La quittance est envoyée automatiquement à votre locataire. C'est tout ! <br /> Temps de génération et envoi de quittance : entre 3 et 5 secondes.
+              Vous recevez un SMS (+ email). Vous cliquez. La quittance est générée et envoyée automatiquement à votre locataire. C'est tout&nbsp;! <br /> Temps de génération et envoi de quittance : entre 3 et 5 secondes.
               </p>
               <p className="mt-4 sm:mt-4 text-xs sm:text-sm text-[#5e6478] max-w-xl mx-auto sm:mx-0 leading-relaxed">
               Créée par des bailleurs, pour des bailleurs. Ultra simple, ultra fluide.

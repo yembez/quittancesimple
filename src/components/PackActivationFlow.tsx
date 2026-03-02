@@ -252,6 +252,18 @@ const PackActivationFlow: React.FC<PackActivationFlowProps> = ({
         if (locError) console.warn('Création locataire reportée (possible depuis l’espace après connexion):', locError.message);
       }
 
+      try {
+        await supabase.functions.invoke('send-welcome-email', {
+          body: {
+            email: formData.email,
+            nom: (proprietaireData.nom || '').trim() || undefined,
+            prenom: (proprietaireData.prenom || '').trim() || undefined,
+          },
+        });
+      } catch (e) {
+        console.warn('Envoi email de bienvenue (non bloquant):', e);
+      }
+
       localStorage.setItem('proprietaireEmail', formData.email);
       setIsLoading(false);
       onClose();

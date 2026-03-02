@@ -33,7 +33,7 @@ export interface EmailTemplateOptions {
 }
 
 const DEFAULT_CONTACT_URL = 'mailto:contact@quittancesimple.fr';
-const DEFAULT_FOOTER_REASON = "Vous recevez cet e-mail car vous avez créé un compte sur Quittance Simple.";
+const DEFAULT_FOOTER_REASON = "Vous recevez cet e-mail car vous avez créé un compte Espace Bailleur sur Quittance Simple. Des questions ? Des suggestions ? Nous serions ravis d'avoir vos retours :";
 
 /**
  * Génère le HTML complet d'un e-mail selon le modèle design commun.

@@ -11,6 +11,7 @@ const Header = () => {
   const [isMobileToolsOpen, setIsMobileToolsOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginMode, setLoginMode] = useState<'login' | 'signup'>('login');
+  const [loginPrefilledEmail, setLoginPrefilledEmail] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const toolsMenuRef = useRef<HTMLDivElement>(null);
@@ -37,6 +38,19 @@ const Header = () => {
     const email = localStorage.getItem('proprietaireEmail');
     setUserEmail(email);
   }, [location]);
+
+  useEffect(() => {
+    const state = location.state as { openLogin?: boolean; prefilledEmail?: string } | null;
+    if (state?.openLogin) {
+      if (state.prefilledEmail) {
+        setLoginPrefilledEmail(state.prefilledEmail);
+      }
+      setLoginMode('login');
+      setIsLoginModalOpen(true);
+      // Nettoyer le state pour éviter de rouvrir le modal au prochain rendu
+      navigate(location.pathname || '/', { replace: true, state: {} });
+    }
+  }, [location.state, location.pathname, navigate]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -407,9 +421,10 @@ const Header = () => {
 
       <LoginModal
         isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
+        onClose={() => { setIsLoginModalOpen(false); setLoginPrefilledEmail(null); }}
         mode={loginMode}
         onModeChange={setLoginMode}
+        initialEmail={loginPrefilledEmail ?? undefined}
       />
     </header>
   );

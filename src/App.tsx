@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { Analytics } from '@vercel/analytics/react';
 import Header from './components/Header';
 import UserSpaceHeader from './components/UserSpaceHeader';
@@ -76,7 +76,29 @@ const EspaceBailleurLayoutElement = <EspaceBailleurLayout />;
 
 function App() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isMobile, setIsMobile] = React.useState(window.innerWidth < 768);
+
+  // Rediriger vers la page set-password "lien expiré" si Supabase renvoie une erreur dans le hash (ex: otp_expired)
+  const checkAuthErrorHash = React.useCallback(() => {
+    const hash = window.location.hash;
+    if (!hash || hash.length < 10) return false;
+    try {
+      const params = new URLSearchParams(hash.slice(1));
+      const errorCode = params.get('error_code') || '';
+      const errorDesc = (params.get('error_description') || '').toLowerCase();
+      if (errorCode === 'otp_expired' || errorDesc.includes('expired') || errorDesc.includes('invalid') || errorDesc.includes('has expired')) {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search || '/');
+        navigate('/set-password?type=recovery&expired=1', { replace: true });
+        return true;
+      }
+    } catch (_) { /* ignore */ }
+    return false;
+  }, [navigate]);
+
+  React.useEffect(() => {
+    checkAuthErrorHash();
+  }, [checkAuthErrorHash, location.pathname]);
 
   React.useEffect(() => {
     const handleResize = () => {

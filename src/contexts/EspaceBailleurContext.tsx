@@ -43,7 +43,30 @@ export function EspaceBailleurProvider({
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError) throw authError;
       if (!user) {
-        navigate('/');
+        // Utilisateur non connecté : retour à l'accueil avec ouverture du modal de connexion
+        // Si on arrive depuis un lien (email) contenant #loginEmail=..., on pré-remplit l'email.
+        let prefilledEmail: string | undefined;
+        try {
+          const hash = typeof window !== 'undefined' ? window.location.hash : '';
+          if (hash && hash.toLowerCase().includes('loginemail=')) {
+            const params = new URLSearchParams(hash.slice(1));
+            const v = (params.get('loginEmail') || '').trim();
+            if (v) prefilledEmail = v;
+          }
+        } catch (_) {
+          // ignore
+        }
+
+        // Nettoyer le hash pour ne pas le laisser traîner dans l'URL
+        try {
+          if (typeof window !== 'undefined' && window.location.hash) {
+            window.history.replaceState(null, '', window.location.pathname + window.location.search);
+          }
+        } catch (_) {
+          // ignore
+        }
+
+        navigate('/', { state: { openLogin: true, prefilledEmail }, replace: true });
         return;
       }
       const { data, error: propError } = await supabase
