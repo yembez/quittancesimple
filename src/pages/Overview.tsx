@@ -511,8 +511,8 @@ const Overview = () => {
             <section className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-5">
               {/* Carte Propriétaire — sobre, bordure légère */}
               {proprietaire && (
-                <div className="lg:col-span-4 bg-white rounded-xl border border-[#e2e8f0] p-4 sm:p-5 shadow-sm overflow-hidden">
-                  <div className="flex items-start justify-between gap-2 pb-3 mb-3 border-b border-[#e2e8f0] bg-[#f8fafc] -mx-4 -mt-4 px-4 pt-4 sm:-mx-5 sm:-mt-5 sm:px-5 sm:pt-5 rounded-t-xl">
+                <div className="lg:col-span-4 bg-white rounded-xl border border-[#e2e8f0] shadow-sm overflow-hidden">
+                  <div className="px-4 sm:px-5 py-3 border-b border-[#1e3a5f]/50 bg-[#1e3a5f]/10 flex items-center justify-between gap-2">
                     <h2 className="text-[13px] font-semibold text-[#1e3a5f] uppercase tracking-wider">Propriétaire</h2>
                     {!isProprietaireInfoComplete(proprietaire) ? (
                       <button onClick={() => setShowEditProprietaire(true)} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#1e3a5f] hover:bg-[#1a2f4d] text-white text-xs font-medium transition-colors">
@@ -524,7 +524,7 @@ const Overview = () => {
                       </button>
                     )}
                   </div>
-                  <div className="space-y-2 text-[14px]">
+                  <div className="p-4 sm:p-5 space-y-2 text-[14px]">
                     <p className="font-medium text-[#0f172a]">{proprietaire.nom} {proprietaire.prenom || ''}</p>
                     <p className="text-[#64748b] truncate">{proprietaire.email}</p>
                     {proprietaire.adresse && <p className="text-[#64748b] line-clamp-2">{proprietaire.adresse}</p>}
@@ -534,14 +534,14 @@ const Overview = () => {
               )}
 
               {/* Bilan annuel — KPI mis en avant, style Stripe */}
-              <div className="lg:col-span-8 bg-white rounded-xl border border-[#e2e8f0] p-4 sm:p-5 shadow-sm flex flex-col justify-between overflow-hidden">
-                <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#e2e8f0] bg-[#f8fafc] -mx-4 -mt-4 px-4 pt-4 sm:-mx-5 sm:-mt-5 sm:px-5 sm:pt-5 rounded-t-xl">
+              <div className="lg:col-span-8 bg-white rounded-xl border border-[#e2e8f0] shadow-sm flex flex-col justify-between overflow-hidden">
+                <div className="px-4 sm:px-5 py-3 border-b border-[#1e3a5f]/50 bg-[#1e3a5f]/10 flex items-center justify-between gap-2">
                   <h2 className="text-[13px] font-semibold text-[#1e3a5f] uppercase tracking-wider">Bilan annuel</h2>
                   <button onClick={() => navigate('/dashboard?tab=bilan-annuel')} className="text-[13px] text-[#0f172a] hover:text-[#475569] font-medium inline-flex items-center gap-1 transition-colors">
                     Détail <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
-                <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
+                <div className="p-4 sm:p-5 flex flex-wrap items-baseline gap-x-6 gap-y-1">
                   <div>
                     <p className="text-[12px] text-[#64748b]">Loyers</p>
                     <p className="text-lg font-semibold text-[#0f172a]">{bilanAnnuel.loyers.toFixed(0)} €</p>
@@ -561,7 +561,7 @@ const Overview = () => {
             {/* Section Locataires + Statut quittances — une seule carte large */}
             <section className="mb-5">
               <div className="bg-white rounded-xl border border-[#e2e8f0] shadow-sm overflow-hidden">
-                <div className="px-4 sm:px-5 py-3 border-b border-[#e2e8f0] bg-[#f8fafc] flex items-center justify-between">
+                <div className="px-4 sm:px-5 py-3 border-b border-[#1e3a5f]/50 bg-[#1e3a5f]/10 flex items-center justify-between">
                   <h2 className="text-[13px] font-semibold text-[#1e3a5f] uppercase tracking-wider">Locataires & Quittances</h2>
                   <button onClick={() => navigate('/dashboard')} className="text-[13px] text-[#0f172a] hover:text-[#475569] font-medium inline-flex items-center gap-1 transition-colors">
                     Tableau de bord <ArrowRight className="w-3.5 h-3.5" />
@@ -625,11 +625,12 @@ const Overview = () => {
             <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 shrink-0">
               {/* Révision IRL */}
               {(irlReminder && !showIRLForm) ? (
-                <div className="bg-white rounded-xl border border-[#e2e8f0] p-4 sm:p-5 shadow-sm overflow-hidden">
-                  <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#e2e8f0] bg-[#f8fafc] -mx-4 -mt-4 px-4 pt-4 sm:-mx-5 sm:-mt-5 sm:px-5 sm:pt-5 rounded-t-xl">
+                <div className="bg-white rounded-xl border border-[#e2e8f0] shadow-sm overflow-hidden">
+                  <div className="px-4 sm:px-5 py-3 border-b border-[#1e3a5f]/50 bg-[#1e3a5f]/10 flex items-center justify-between gap-2">
                     <h2 className="text-[13px] font-semibold text-[#1e3a5f] uppercase tracking-wider">Révision IRL</h2>
                     <button onClick={() => navigate('/revision-irl')} className="p-1 rounded-lg text-[#64748b] hover:bg-[#f1f5f9] hover:text-[#0f172a]" title="Configurer"><Settings className="w-3.5 h-3.5" /></button>
                   </div>
+                  <div className="p-4 sm:p-5">
                   <p className="text-[13px] text-[#64748b] mb-3">Rappel prévu le <span className="font-medium text-[#0f172a]">{formatDate(irlReminder.reminder_date)}</span></p>
                   <div className="bg-[#f8fafc] rounded-lg py-3 px-3 mb-3 text-center">
                     <p className="text-[10px] text-[#64748b] uppercase tracking-wider mb-0.5">Jours restants</p>
@@ -638,12 +639,14 @@ const Overview = () => {
                     </p>
                   </div>
                   <button onClick={handleOpenIRLFormToEdit} className="inline-flex px-5 py-2 rounded-lg text-[13px] font-medium bg-[#1e3a5f] hover:bg-[#1a2f4d] text-white transition-colors">Gérer le rappel</button>
+                  </div>
                 </div>
               ) : showIRLForm ? (
-                <div className="bg-white rounded-xl border border-[#e2e8f0] p-4 sm:p-5 shadow-sm overflow-hidden">
-                  <div className="pb-3 mb-3 border-b border-[#e2e8f0] bg-[#f8fafc] -mx-4 -mt-4 px-4 pt-4 sm:-mx-5 sm:-mt-5 sm:px-5 sm:pt-5 rounded-t-xl">
+                <div className="bg-white rounded-xl border border-[#e2e8f0] shadow-sm overflow-hidden">
+                  <div className="px-4 sm:px-5 py-3 border-b border-[#1e3a5f]/50 bg-[#1e3a5f]/10 flex items-center gap-2">
                     <h2 className="text-[13px] font-semibold text-[#1e3a5f] uppercase tracking-wider">Révision IRL</h2>
                   </div>
+                  <div className="p-4 sm:p-5">
                   <p className="text-[13px] text-[#64748b] mb-3">Rappel pour la révision des loyers (indice IRL).</p>
                   <label htmlFor="irl-reminder-date" className="block text-[12px] font-medium text-[#0f172a] mb-1">Date du rappel</label>
                   <input id="irl-reminder-date" type="date" min={getTodayISO()} value={irlReminderDate} onChange={(e) => setIRLReminderDate(e.target.value)} className="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg text-[13px] focus:ring-2 focus:ring-[#0f172a]/10 focus:border-[#0f172a]" />
@@ -652,12 +655,14 @@ const Overview = () => {
                     <button onClick={handleSaveIRLReminder} disabled={irlSaving} className="inline-flex px-5 py-2 rounded-lg text-[13px] font-medium bg-[#1e3a5f] hover:bg-[#1a2f4d] text-white disabled:opacity-50 transition-colors">Enregistrer</button>
                     <button onClick={() => { setShowIRLForm(false); setIRLReminderDate(''); setIRLError(''); }} disabled={irlSaving} className="px-3 py-2 rounded-lg text-[13px] font-medium text-[#64748b] hover:bg-[#f1f5f9] transition-colors">Annuler</button>
                   </div>
+                  </div>
                 </div>
               ) : (
-                <div className="bg-white rounded-xl border border-[#e2e8f0] p-4 sm:p-5 shadow-sm overflow-hidden">
-                  <div className="pb-3 mb-3 border-b border-[#e2e8f0] bg-[#f8fafc] -mx-4 -mt-4 px-4 pt-4 sm:-mx-5 sm:-mt-5 sm:px-5 sm:pt-5 rounded-t-xl">
+                <div className="bg-white rounded-xl border border-[#e2e8f0] shadow-sm overflow-hidden">
+                  <div className="px-4 sm:px-5 py-3 border-b border-[#1e3a5f]/50 bg-[#1e3a5f]/10 flex items-center gap-2">
                     <h2 className="text-[13px] font-semibold text-[#1e3a5f] uppercase tracking-wider">Révision IRL</h2>
                   </div>
+                  <div className="p-4 sm:p-5">
                   <p className="text-[13px] text-[#64748b] mb-3">Rappel pour la révision des loyers (indice IRL).</p>
                   <label htmlFor="irl-reminder-date-new" className="block text-[12px] font-medium text-[#0f172a] mb-1">Date du rappel</label>
                   <input id="irl-reminder-date-new" type="date" min={getTodayISO()} value={irlReminderDate} onChange={(e) => setIRLReminderDate(e.target.value)} className="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg text-[13px] focus:ring-2 focus:ring-[#0f172a]/10 focus:border-[#0f172a]" />
@@ -666,15 +671,17 @@ const Overview = () => {
                     <button onClick={handleSaveIRLReminder} disabled={irlSaving} className="inline-flex px-5 py-2 rounded-lg text-[13px] font-medium bg-[#1e3a5f] hover:bg-[#1a2f4d] text-white disabled:opacity-50 transition-colors">Enregistrer</button>
                     <button onClick={() => { setIRLReminderDate(''); setIRLError(''); }} disabled={irlSaving} className="px-3 py-2 rounded-lg text-[13px] font-medium text-[#64748b] hover:bg-[#f1f5f9] transition-colors">Annuler</button>
                   </div>
+                  </div>
                 </div>
               )}
 
               {/* Révision des charges */}
               {(chargesRevision && !showChargesForm) ? (
-                <div className="bg-white rounded-xl border border-[#e2e8f0] p-4 sm:p-5 shadow-sm overflow-hidden">
-                  <div className="pb-3 mb-3 border-b border-[#e2e8f0] bg-[#f8fafc] -mx-4 -mt-4 px-4 pt-4 sm:-mx-5 sm:-mt-5 sm:px-5 sm:pt-5 rounded-t-xl">
+                <div className="bg-white rounded-xl border border-[#e2e8f0] shadow-sm overflow-hidden">
+                  <div className="px-4 sm:px-5 py-3 border-b border-[#1e3a5f]/50 bg-[#1e3a5f]/10 flex items-center gap-2">
                     <h2 className="text-[13px] font-semibold text-[#1e3a5f] uppercase tracking-wider">Révision des charges</h2>
                   </div>
+                  <div className="p-4 sm:p-5">
                   <p className="text-[13px] text-[#64748b] mb-3">Rappel prévu le <span className="font-medium text-[#0f172a]">{formatDate(chargesRevision.reminder_date)}</span></p>
                   <div className="bg-[#f8fafc] rounded-lg py-3 px-3 mb-3 text-center">
                     <p className="text-[10px] text-[#64748b] uppercase tracking-wider mb-0.5">Jours restants</p>
@@ -683,12 +690,14 @@ const Overview = () => {
                     </p>
                   </div>
                   <button onClick={handleOpenChargesFormToEdit} className="inline-flex px-5 py-2 rounded-lg text-[13px] font-medium bg-[#1e3a5f] hover:bg-[#1a2f4d] text-white transition-colors">Gérer le rappel</button>
+                  </div>
                 </div>
               ) : (
-                <div className="bg-white rounded-xl border border-[#e2e8f0] p-4 sm:p-5 shadow-sm overflow-hidden">
-                  <div className="pb-3 mb-3 border-b border-[#e2e8f0] bg-[#f8fafc] -mx-4 -mt-4 px-4 pt-4 sm:-mx-5 sm:-mt-5 sm:px-5 sm:pt-5 rounded-t-xl">
+                <div className="bg-white rounded-xl border border-[#e2e8f0] shadow-sm overflow-hidden">
+                  <div className="px-4 sm:px-5 py-3 border-b border-[#1e3a5f]/50 bg-[#1e3a5f]/10 flex items-center gap-2">
                     <h2 className="text-[13px] font-semibold text-[#1e3a5f] uppercase tracking-wider">Révision des charges</h2>
                   </div>
+                  <div className="p-4 sm:p-5">
                   <p className="text-[13px] text-[#64748b] mb-3">Rappel pour la régularisation annuelle des charges.</p>
                   <label htmlFor="charges-reminder-date" className="block text-[12px] font-medium text-[#0f172a] mb-1">Date du rappel</label>
                   <input id="charges-reminder-date" type="date" min={getTodayISO()} value={chargesReminderDate} onChange={(e) => setChargesReminderDate(e.target.value)} className="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg text-[13px] focus:ring-2 focus:ring-[#0f172a]/10 focus:border-[#0f172a]" />
@@ -696,6 +705,7 @@ const Overview = () => {
                   <div className="flex gap-2 mt-3">
                     <button onClick={handleSaveChargesReminder} disabled={chargesSaving} className="inline-flex px-5 py-2 rounded-lg text-[13px] font-medium bg-[#1e3a5f] hover:bg-[#1a2f4d] text-white disabled:opacity-50 transition-colors">Enregistrer</button>
                     <button onClick={() => { setShowChargesForm(false); setChargesReminderDate(''); setChargesError(''); }} disabled={chargesSaving} className="px-3 py-2 rounded-lg text-[13px] font-medium text-[#64748b] hover:bg-[#f1f5f9] transition-colors">Annuler</button>
+                  </div>
                   </div>
                 </div>
               )}

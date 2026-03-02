@@ -1129,16 +1129,16 @@ const handleResendAccessLink = async () => {
 
             {activeTab === 'dashboard' && (
               <div className="space-y-4 min-w-0">
-                {/* Section Informations propriétaire — style Overview */}
+                {/* Section Informations propriétaire — bandeau charte */}
                 <div className="bg-white rounded-xl border border-[#e2e8f0] shadow-sm overflow-hidden min-w-0">
-                  <div className="px-4 sm:px-5 py-3 border-b border-[#e2e8f0] bg-[#f8fafc] flex items-center gap-2">
+                  <div className="px-4 sm:px-5 py-3 border-b border-[#1e3a5f]/50 bg-[#1e3a5f]/10 flex items-center gap-2">
                     <h2 className="text-[13px] font-semibold text-[#1e3a5f] uppercase tracking-wider">
                       Informations propriétaire
                     </h2>
                     {!isProprietaireInfoComplete(proprietaire) ? (
                       <button
                         onClick={() => setShowEditProprietaire(true)}
-                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#1e3a5f] hover:bg-[#1a2f4d] text-white text-xs font-medium transition-colors"
+                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#E65F3F] hover:bg-[#d95530] text-white text-xs font-medium transition-colors"
                       >
                         <Edit2 className="w-3 h-3" />
                         <span>Compléter</span>
@@ -1165,11 +1165,23 @@ const handleResendAccessLink = async () => {
                     </div>
                     <div className="min-w-0 overflow-hidden sm:col-span-2">
                       <span className="text-[#64748b]">Adresse</span>
-                      <p className="font-medium text-[#0f172a] break-words">{proprietaire?.adresse}</p>
+                      <p className="font-medium text-[#0f172a] break-words whitespace-normal">
+                        {proprietaire?.adresse}
+                      </p>
                     </div>
                     <div className="min-w-0 overflow-hidden">
                       <span className="text-[#64748b]">Téléphone</span>
-                      <p className="font-medium text-[#0f172a] break-words">{proprietaire?.telephone || 'Non renseigné'}</p>
+                      {proprietaire?.telephone?.trim() ? (
+                        <p className="font-medium text-[#0f172a] break-words">
+                          {proprietaire.telephone}
+                        </p>
+                      ) : (
+                        <p className="font-medium break-words">
+                          <span className="inline-block bg-amber-50 border border-amber-200 rounded px-2 py-0.5 text-amber-700">
+                            Non renseigné
+                          </span>
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -1332,9 +1344,9 @@ const handleResendAccessLink = async () => {
                   </div>
                 </div>
 
-                {/* Section Mes locataires — style Overview */}
+                {/* Section Mes locataires — bandeau charte */}
                 <div className="bg-white rounded-xl border border-[#e2e8f0] shadow-sm overflow-hidden min-w-0">
-                  <div className="px-4 sm:px-5 py-3 border-b border-[#e2e8f0] bg-[#f8fafc] flex items-center gap-2">
+                  <div className="px-4 sm:px-5 py-3 border-b border-[#1e3a5f]/50 bg-[#1e3a5f]/10 flex items-center gap-2">
                     <h2 className="text-[13px] font-semibold text-[#1e3a5f] uppercase tracking-wider">Mes locataires</h2>
                     {locataires.length > 0 && (
                       <button

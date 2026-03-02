@@ -2614,7 +2614,7 @@ export default function BailMeubleWeb() {
                   <button
                     type="button"
                     onClick={handleFinalizeForSignature}
-                    className="rounded-lg bg-[#1e3a5f] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#1a2f4d]"
+                    className="rounded-lg bg-[#E65F3F] hover:bg-[#d95530] px-4 py-2 text-sm font-medium text-white transition"
                   >
                     Finaliser pour signature
                   </button>

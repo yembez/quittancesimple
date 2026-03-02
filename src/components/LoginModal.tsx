@@ -77,32 +77,64 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, mode = 'login'
           return;
         }
 
-        const planName = selectedPlan === 'plus' ? 'Quittance Connectée+' : 'Pack Automatique';
+        // Créer le propriétaire avec essai gratuit de 30 jours (même logique que PackActivationFlow)
+        const dateFinEssai = new Date();
+        dateFinEssai.setDate(dateFinEssai.getDate() + 30);
+
+        const proprietairePayload: any = {
+          user_id: authData.user.id,
+          email: formData.email,
+          nom: '',
+          prenom: '',
+          adresse: '',
+          telephone: '',
+          nombre_locataires: 0,
+          abonnement_actif: true, // actif pendant l'essai
+          plan_actuel: 'Pack Automatique',
+          plan_type: 'auto',
+          date_inscription: new Date().toISOString(),
+          lead_statut: 'QA_1st_interested',
+          source: 'website'
+        };
+
+        // Ajouter date_fin_essai si la colonne existe (fallback comme dans PackActivationFlow)
+        try {
+          proprietairePayload.date_fin_essai = dateFinEssai.toISOString();
+        } catch (e) {
+          // colonne absente : on continue sans bloquer la création
+        }
 
         const { error: propError } = await supabase
           .from('proprietaires')
-          .upsert({
-            user_id: authData.user.id,
-            email: formData.email,
-            nom: '',
-            prenom: '',
-            adresse: '',
-            telephone: '',
-            nombre_locataires: 0,
-            abonnement_actif: false,
-            plan_actuel: planName,
-            lead_statut: 'QA_1st_interested',
-            source: 'website'
-          }, {
+          .upsert(proprietairePayload, {
             onConflict: 'email',
             ignoreDuplicates: false
           });
 
         if (propError) {
-          console.error('Erreur création propriétaire:', propError);
-          setError('Erreur lors de la création du compte');
-          setIsLoading(false);
-          return;
+          // Si l'erreur concerne date_fin_essai, réessayer sans cette colonne
+          if (propError.message && propError.message.includes('date_fin_essai')) {
+            delete proprietairePayload.date_fin_essai;
+
+            const { error: retryError } = await supabase
+              .from('proprietaires')
+              .upsert(proprietairePayload, {
+                onConflict: 'email',
+                ignoreDuplicates: false
+              });
+
+            if (retryError) {
+              console.error('Erreur création propriétaire (retry):', retryError);
+              setError('Erreur lors de la création du profil');
+              setIsLoading(false);
+              return;
+            }
+          } else {
+            console.error('Erreur création propriétaire:', propError);
+            setError('Erreur lors de la création du profil');
+            setIsLoading(false);
+            return;
+          }
         }
 
         localStorage.setItem('proprietaireEmail', formData.email);

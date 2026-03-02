@@ -134,9 +134,20 @@ const LocatairesTable = ({
   };
 
   const formatRappelDate = (jour?: number, heure?: number, minute?: number) => {
-    if (!jour) return 'Non configuré';
-    const heureStr = heure !== undefined ? `${heure.toString().padStart(2, '0')}:${(minute || 0).toString().padStart(2, '0')}` : '';
-    return `Le ${jour} ${heureStr}`;
+    if (!jour) {
+      return <span>Non configuré</span>;
+    }
+    const heureStr =
+      heure !== undefined
+        ? `${heure.toString().padStart(2, '0')}:${(minute || 0).toString().padStart(2, '0')}`
+        : '';
+
+    return (
+      <span className="inline-flex flex-col leading-tight">
+        <span>{`Le ${jour} du mois`}</span>
+        {heureStr && <span>{`à ${heureStr}`}</span>}
+      </span>
+    );
   };
 
   // Vérifier si toutes les dates de rappel sont configurées
@@ -153,7 +164,7 @@ const LocatairesTable = ({
   return (
     <>
       {/* Desktop Table View - Hidden on Mobile */}
-      <div className="hidden lg:block overflow-x-auto">
+      <div className="hidden lg:block min-w-0 overflow-hidden">
         {/* Message pour configurer les rappels */}
         {showReminderSetupMessage && (
           <div className="mb-2 px-4">
@@ -168,46 +179,53 @@ const LocatairesTable = ({
         <table className="w-full table-fixed text-[13px] sm:text-[14px]">
           <thead className="bg-[#f8fafc] border-b border-[#f1f5f9]">
             <tr>
-              <th className="px-4 py-2.5 text-left font-medium text-[#64748b] w-[32%]">Locataire</th>
-              <th className="px-4 py-2.5 text-left font-medium text-[#64748b] w-[24%]">Loyer + Charges</th>
+              <th className="px-2 py-2.5 text-left font-medium text-[#64748b] w-[32%] min-w-0">Locataire</th>
+              <th className="px-2 py-2.5 text-left font-medium text-[#64748b] w-[16%] min-w-0">Loyer + Charges</th>
               {planType !== 'connectee_plus' && (
-                <th className="px-4 py-2.5 text-left font-medium text-[#64748b] w-[18%]">Date de rappel / échéance</th>
+                <th className="px-2 py-2.5 text-left font-medium text-[#64748b] w-[20%] min-w-0 whitespace-nowrap">Date de rappel / échéance</th>
               )}
-              <th className="px-4 py-2.5 text-left font-medium text-[#64748b] w-[18%]">Statut</th>
+              <th className="px-2 py-2.5 text-left font-medium text-[#64748b] w-[12%] min-w-0">Statut</th>
               {planType === 'connectee_plus' && (
-                <th className="px-4 py-2.5 text-left font-medium text-[#64748b] w-[15%]">Synchronisation</th>
+                <th className="px-2 py-2.5 text-left font-medium text-[#64748b] w-[14%] min-w-0">Synchronisation</th>
               )}
-              <th className="px-4 py-2.5 text-center font-medium text-[#64748b] w-[20%]">Actions manuelles</th>
-              <th className="px-2 py-2.5 text-center font-medium text-[#64748b] w-[6%]"></th>
+              <th className="px-2 py-2.5 text-center font-medium text-[#64748b] w-[14%] min-w-0">Actions manuelles</th>
+              <th className="px-1 py-2.5 text-center font-medium text-[#64748b] w-[6%] min-w-0"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#f1f5f9]">
             {locataires.map((locataire, index) => (
               <tr key={locataire.id} className="hover:bg-[#f8fafc] transition-colors">
-                <td className="px-4 py-2.5 align-top w-[32%]">
-                  <div className="flex items-center space-x-2">
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <p className="font-medium text-[#0f172a] text-[14px] whitespace-nowrap">
-                          {locataire.nom} {locataire.prenom}
-                        </p>
-                        <button
-                          onClick={() => onEditLocataire(locataire)}
-                          className="flex items-center space-x-1 text-[#64748b] hover:text-[#0f172a] transition-colors"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                          <span className="text-xs whitespace-nowrap">Modifier</span>
-                        </button>
-                      </div>
-                      <p className="text-[13px] text-[#64748b]">{locataire.email || 'Pas d\'email'}</p>
-                      {locataire.telephone && (
-                        <p className="text-[13px] text-[#64748b]">{locataire.telephone}</p>
-                      )}
-                      <p className="text-[13px] text-[#64748b]">{locataire.adresse_logement}</p>
+                <td className="px-2 py-2.5 align-top w-[32%] min-w-0 overflow-hidden">
+                  <div className="min-w-0">
+                    <div className="flex items-center flex-wrap gap-x-2 gap-y-0.5">
+                      <p className="font-medium text-[#0f172a] text-[14px] whitespace-nowrap">
+                        {locataire.nom} {locataire.prenom}
+                      </p>
+                      <button
+                        onClick={() => onEditLocataire(locataire)}
+                        className="flex items-center space-x-1 text-[#64748b] hover:text-[#0f172a] transition-colors flex-shrink-0"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                        <span className="text-xs whitespace-nowrap">Modifier</span>
+                      </button>
                     </div>
+                    <p className="text-[13px] text-[#64748b] break-words">
+                      <span className="text-[#64748b]">E-mail : </span>
+                      {locataire.email?.trim() ? (
+                        <span className="text-[#64748b] break-all">{locataire.email}</span>
+                      ) : (
+                        <span className="inline-block text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-0.5 ml-1">
+                          Non renseigné
+                        </span>
+                      )}
+                    </p>
+                    {locataire.telephone && (
+                      <p className="text-[13px] text-[#64748b] break-words">{locataire.telephone}</p>
+                    )}
+                    <p className="text-[13px] text-[#64748b] break-words">{locataire.adresse_logement}</p>
                   </div>
                 </td>
-                <td className="px-4 py-2.5 align-top w-[24%]">
+                <td className="px-2 py-2.5 align-top w-[16%] min-w-0">
                   <p className="font-medium text-[#0f172a] text-[14px] whitespace-nowrap">
                     Total: {((locataire.loyer_mensuel || 0) + (locataire.charges_mensuelles || 0)).toFixed(2)} €
                   </p>
@@ -216,7 +234,7 @@ const LocatairesTable = ({
                   </p>
                 </td>
                 {planType !== 'connectee_plus' && (
-                  <td className="px-4 py-2.5 align-top w-[18%]">
+                  <td className="px-2 py-2.5 align-top w-[20%] min-w-0">
                     {planType === 'free' ? (
                       <div className="group relative">
                         <p className="text-[#64748b] text-[13px] cursor-help whitespace-nowrap">Non disponible</p>
@@ -257,9 +275,9 @@ const LocatairesTable = ({
                     )}
                   </td>
                 )}
-                <td className="px-4 py-2.5 align-top w-[18%]">
+<td className="px-2 py-2.5 align-top w-[12%] min-w-0">
                   {planType === 'free' ? (
-                    <div className="group relative">
+                      <div className="group relative">
                       <p className="text-[#64748b] text-[13px] cursor-help whitespace-nowrap">Non disponible</p>
                       <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
                         Automatisez l'envoi dès 3,90€/mois !<br />(5,90€ pour 3-5 locataires, 8,90€ pour 6+)
@@ -270,7 +288,7 @@ const LocatairesTable = ({
                     )}
                 </td>
                 {planType === 'connectee_plus' && (
-                  <td className="px-4 py-2.5 align-top w-[15%]">
+                  <td className="px-2 py-2.5 align-top w-[14%] min-w-0">
                   {!bankConnection ? (
                     <div className="text-[13px] text-[#64748b]">
                       Connectez votre banque d'abord
@@ -298,8 +316,8 @@ const LocatairesTable = ({
                     ) : null}
                   </td>
                 )}
-                <td className="px-4 py-2.5 align-top w-[20%]">
-                  <div className="flex flex-col gap-1 items-center min-w-[120px]">
+                <td className="px-2 py-2.5 align-top w-[14%] min-w-0">
+                  <div className="flex flex-col gap-1 items-center min-w-0">
                     {planType === 'free' && onDownloadQuittance && (
                       <button
                         onClick={() => onDownloadQuittance(locataire)}
@@ -328,7 +346,7 @@ const LocatairesTable = ({
                         {isSubscriptionActive ? (
                           <button
                             onClick={() => onSendQuittance(locataire)}
-                            className="w-full px-2 py-1 rounded-lg text-[11px] font-medium transition-colors whitespace-nowrap bg-[#1e3a5f] hover:bg-[#1a2f4d] text-white"
+                            className="w-full px-2 py-1 rounded-lg text-[11px] font-medium transition-colors whitespace-nowrap border border-[#1e3a5f] text-[#1e3a5f] hover:bg-[#e5edf7]"
                           >
                             Envoi quittance
                           </button>
@@ -343,7 +361,7 @@ const LocatairesTable = ({
                         {isSubscriptionActive ? (
                           <button
                             onClick={() => onSendReminder(locataire)}
-                            className="w-full px-2 py-1 rounded-lg text-[11px] font-medium transition-colors whitespace-nowrap bg-[#1e3a5f] hover:bg-[#1a2f4d] text-white"
+                            className="w-full px-2 py-1 rounded-lg text-[11px] font-medium transition-colors whitespace-nowrap border border-[#1e3a5f] text-[#1e3a5f] hover:bg-[#e5edf7]"
                           >
                             Relancer
                           </button>
@@ -359,13 +377,13 @@ const LocatairesTable = ({
                     )}
                   </div>
                 </td>
-                <td className="px-2 py-2.5 align-top text-right w-[40px]">
+                <td className="px-1 py-2.5 align-top text-center w-[6%] min-w-0">
                   <button
                     onClick={() => onDeleteLocataire(locataire)}
-                    className="p-1 rounded-lg text-red-600 hover:bg-[#fef2f2] hover:text-red-700 transition-colors"
+                    className="p-1 rounded-lg text-red-600 hover:bg-[#fef2f2] hover:text-red-700 transition-colors inline-flex"
                     title="Supprimer le locataire"
                   >
-                    <Trash2 size={18} />
+                    <Trash2 size={16} />
                   </button>
                 </td>
               </tr>
@@ -405,7 +423,16 @@ const LocatairesTable = ({
                       <span className="text-xs">Modifier</span>
                     </button>
                   </div>
-                  <p className="text-[13px] text-[#64748b] mt-0.5 break-all">{locataire.email || 'Pas d\'email'}</p>
+                  <p className="text-[13px] text-[#64748b] mt-0.5 break-all">
+                    <span className="text-[#64748b]">E-mail : </span>
+                    {locataire.email?.trim() ? (
+                      <span className="text-[#64748b]">{locataire.email}</span>
+                    ) : (
+                      <span className="inline-block text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-0.5 ml-1">
+                        Non renseigné
+                      </span>
+                    )}
+                  </p>
                   {locataire.telephone && (
                     <p className="text-[13px] text-[#64748b] mt-0.5 break-words">{locataire.telephone}</p>
                   )}
