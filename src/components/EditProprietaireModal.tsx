@@ -8,9 +8,9 @@ interface Proprietaire {
   email: string;
   nom: string;
   prenom?: string;
-  adresse: string;
+  adresse?: string;
   telephone?: string;
-  plan_type: string;
+  plan_type?: string;
 }
 
 interface Props {
@@ -25,7 +25,7 @@ const EditProprietaireModal = ({ proprietaire, onClose, onSave }: Props) => {
   const [errors, setErrors] = useState<{ telephone?: string }>({});
 
   const handleSave = async () => {
-    if (!formData.nom || !formData.adresse) {
+    if (!formData.nom || !formData.adresse || !formData.adresse.trim()) {
       alert('Le nom et l\'adresse sont obligatoires');
       return;
     }

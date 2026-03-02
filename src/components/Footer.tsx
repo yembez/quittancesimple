@@ -39,12 +39,12 @@ const Footer = () => {
   };
 
   return (
-    <footer className="bg-[#2D3436] text-white">
+    <footer className="bg-[#2c3444] text-white">
       <div className="max-w-7xl mx-auto px-5 lg:px-7 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-10">
           <div className="lg:col-span-2">
             <Link to="/" className="flex items-center space-x-2 mb-5">
-              <div className="w-8 h-8 bg-[#ed7862] rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-8 h-8 bg-[#E65F3F] rounded-lg flex items-center justify-center shadow-lg">
                 <FileText className="w-4 h-4 text-white" />
               </div>
               <span className="text-lg font-bold">Quittance Simple</span>
@@ -54,7 +54,7 @@ const Footer = () => {
             </p>
             <Link
               to={isUserConnected ? "/dashboard" : "/generator"}
-              className="inline-flex items-center justify-center bg-[#ed7862] text-white px-5 py-2 rounded-full font-semibold shadow-lg hover:bg-[#e56651] transition-all mb-5 transform hover:scale-105 text-sm"
+              className="inline-flex items-center justify-center bg-[#E65F3F] hover:bg-[#d95530] text-white px-5 py-2.5 rounded-lg font-semibold shadow-lg transition-all mb-5 transform hover:scale-[1.02] text-sm"
             >
               {isUserConnected ? "Accéder au tableau de bord" : "Créer une quittance gratuite"}
             </Link>

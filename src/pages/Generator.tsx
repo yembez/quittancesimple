@@ -432,7 +432,7 @@ const Generator = () => {
   }, [calculateProrata]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#faf9fc]">
       <SEOHead
         title="Générateur de Quittance de Loyer Gratuit | PDF en 30 secondes"
         description="Créez gratuitement vos quittances de loyer conformes à la loi française. Génération PDF instantanée, envoi par email, 100% gratuit. Aucune inscription requise."
@@ -445,15 +445,15 @@ const Generator = () => {
       {/* Hero Section */}
 
 
-      {/* Générateur gratuit intégré */}
-      <section id="generator" className="pt-24 sm:pt-28 pb-12 lg:pb-18 bg-white/80 backdrop-blur-sm">
+      {/* Générateur gratuit intégré - charte Home */}
+      <section id="generator" className="pt-24 sm:pt-28 pb-12 lg:pb-18 bg-[#faf9fc] border-t border-[#e8e7ef]">
         <div className="max-w-7xl mx-auto px-5 lg:px-7">
           {!isMobile && (
             <div className="text-center mb-6">
-              <h2 className="text-lg lg:text-2xl font-bold text-[#2b2b2b] mb-3">
+              <h2 className="text-lg lg:text-2xl font-semibold text-[#212a3e] mb-3">
                 Générateur gratuit de quittances
               </h2>
-              <p className="text-sm lg:text-base text-[#415052] max-w-2xl mx-auto">
+              <p className="text-sm lg:text-base text-[#5e6478] max-w-2xl mx-auto">
                 Remplissez le formulaire ci-dessous et recevez votre quittance PDF conforme.
               </p>
             </div>
@@ -475,17 +475,17 @@ const Generator = () => {
                 validationErrors={validationErrors}
               />
             ) : (
-              <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-xl">
+              <div className="bg-white rounded-2xl border border-[#e8e7ef] p-6 shadow-[0_2px_12px_rgba(15,23,42,0.06)]">
               <form className="space-y-6">
                 {/* Messages d'erreur */}
                 {validationErrors.length > 0 && (
-                  <div id="validation-errors" className="bg-red-50 border-2 border-red-200 rounded-xl p-5">
+                  <div id="validation-errors" className="bg-red-50 border border-red-200 rounded-xl p-5">
                     <div className="flex items-start space-x-2.5">
                       <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
                         <span className="text-white text-xs font-bold">!</span>
                       </div>
                       <div>
-                        <h3 className="text-base font-bold text-red-900 mb-2">
+                        <h3 className="text-base font-semibold text-red-900 mb-2">
                           Veuillez corriger les erreurs suivantes :
                         </h3>
                         <ul className="space-y-1.5">
@@ -502,17 +502,17 @@ const Generator = () => {
                 )}
 
                 {/* Bailleur Section */}
-                <div className="space-y-5 bg-[#7CAA89]/10 rounded-2xl p-5 border border-[#7CAA89]/20">
-                  <div className="flex items-center space-x-2.5 pb-3 border-b border-[#7CAA89]/20">
-                    <div className="w-10 h-10 bg-[#7CAA89] rounded-xl flex items-center justify-center">
-                      <User className="w-5 h-5 text-white" />
+                <div className="space-y-5 bg-slate-50 rounded-2xl p-5 border border-[#e8e7ef]">
+                  <div className="flex items-center space-x-2.5 pb-3 border-b border-[#e8e7ef]">
+                    <div className="w-10 h-10 bg-[#1e3a5f] rounded-xl flex items-center justify-center">
+                      <User className="w-5 h-5 text-white" strokeWidth={2} />
                     </div>
-                    <h3 className="text-lg font-bold text-[#2b2b2b]">Informations Bailleur</h3>
+                    <h3 className="text-base font-semibold text-[#212a3e]">Informations Bailleur</h3>
                   </div>
 
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-xs font-semibold text-[#415052] mb-1.5">Nom complet</label>
+                      <label className="block text-xs font-semibold text-[#5e6478] mb-1.5">Nom complet</label>
                       <input
                         type="text"
                         name="baillorName"
@@ -522,14 +522,14 @@ const Generator = () => {
                         className={`w-full px-3 py-2 rounded-xl border transition-all duration-200 text-sm ${
                           validationErrors.some(error => error.includes('nom du bailleur'))
                             ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-200'
-                            : 'border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20'
+                            : 'border-[#e3e4f0] focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/20'
                         }`}
                         placeholder="Ex: Jean Dupont"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-[#415052] mb-1.5">Adresse complète</label>
+                      <label className="block text-xs font-semibold text-[#5e6478] mb-1.5">Adresse complète</label>
                       <input
                         type="text"
                         name="baillorAddress"
@@ -539,14 +539,14 @@ const Generator = () => {
                         className={`w-full px-3 py-2 rounded-xl border transition-all duration-200 text-sm ${
                           validationErrors.some(error => error.includes('adresse du bailleur'))
                             ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-200'
-                            : 'border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20'
+                            : 'border-[#e3e4f0] focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/20'
                         }`}
                         placeholder="Ex: 123 rue de la République, 75001 Paris"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-[#415052] mb-1.5">Email</label>
+                      <label className="block text-xs font-semibold text-[#5e6478] mb-1.5">Email</label>
                       <input
                         type="email"
                         name="baillorEmail"
@@ -556,7 +556,7 @@ const Generator = () => {
                         className={`w-full px-3 py-2 rounded-xl border transition-all duration-200 text-sm ${
                           validationErrors.some(error => error.includes('email'))
                             ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-200'
-                            : 'border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20'
+                            : 'border-[#e3e4f0] focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/20'
                         }`}
                         placeholder="Ex: jean.dupont@email.com"
                         required
@@ -566,17 +566,17 @@ const Generator = () => {
                 </div>
 
                 {/* Locataire Section */}
-                <div className="space-y-5 bg-[#7CAA89]/10 rounded-2xl p-5 border border-[#7CAA89]/20">
-                  <div className="flex items-center space-x-2.5 pb-3 border-b border-[#7CAA89]/20">
-                    <div className="w-10 h-10 bg-[#7CAA89] rounded-xl flex items-center justify-center">
-                      <HomeIcon className="w-5 h-5 text-white" />
+                <div className="space-y-5 bg-slate-50 rounded-2xl p-5 border border-[#e8e7ef]">
+                  <div className="flex items-center space-x-2.5 pb-3 border-b border-[#e8e7ef]">
+                    <div className="w-10 h-10 bg-[#1e3a5f] rounded-xl flex items-center justify-center">
+                      <HomeIcon className="w-5 h-5 text-white" strokeWidth={2} />
                     </div>
-                    <h3 className="text-lg font-bold text-[#2b2b2b]">Informations Locataire</h3>
+                    <h3 className="text-base font-semibold text-[#212a3e]">Informations Locataire</h3>
                   </div>
 
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-xs font-semibold text-[#415052] mb-1.5">Nom du locataire</label>
+                      <label className="block text-xs font-semibold text-[#5e6478] mb-1.5">Nom du locataire</label>
                       <input
                         type="text"
                         name="locataireName"
@@ -585,14 +585,14 @@ const Generator = () => {
                         className={`w-full px-3 py-2 rounded-xl border transition-all duration-200 text-sm ${
                           validationErrors.some(error => error.includes('nom du locataire'))
                             ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-200'
-                            : 'border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20'
+                            : 'border-[#e3e4f0] focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/20'
                         }`}
                         placeholder="Ex: Marie Martin"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-[#415052] mb-1.5">Adresse du logement</label>
+                      <label className="block text-xs font-semibold text-[#5e6478] mb-1.5">Adresse du logement</label>
                       <input
                         type="text"
                         name="logementAddress"
@@ -601,26 +601,26 @@ const Generator = () => {
                         className={`w-full px-3 py-2 rounded-xl border transition-all duration-200 text-sm ${
                           validationErrors.some(error => error.includes('adresse du logement'))
                             ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-200'
-                            : 'border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20'
+                            : 'border-[#e3e4f0] focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/20'
                         }`}
                         placeholder="Ex: 45 avenue des Champs, 75008 Paris"
                         required
                       />
                     </div>
 
-                    <div className="bg-[#7CAA89]/10 border border-[#7CAA89]/20 rounded-xl p-3">
+                    <div className="bg-slate-50 border border-[#e8e7ef] rounded-xl p-3">
                       <label className="flex items-start space-x-2.5 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={formData.hasDifferentDomicile}
                           onChange={(e) => setFormData(prev => ({ ...prev, hasDifferentDomicile: e.target.checked, locataireDomicileAddress: e.target.checked ? prev.locataireDomicileAddress : '' }))}
-                          className="w-4 h-4 text-[#7CAA89] border-2 border-gray-300 rounded focus:ring-2 focus:ring-[#7CAA89]/20 mt-0.5"
+                          className="w-4 h-4 text-[#1e3a5f] border-2 border-[#e3e4f0] rounded focus:ring-2 focus:ring-[#1e3a5f]/20 mt-0.5"
                         />
                         <div>
-                          <div className="text-sm font-semibold text-[#415052] mb-0.5">
+                          <div className="text-sm font-semibold text-[#5e6478] mb-0.5">
                             Adresse de domicile du locataire différente du bien loué
                           </div>
-                          <div className="text-xs text-[#545454]">
+                          <div className="text-xs text-[#8b90a3]">
                             Cochez si le locataire habite à une autre adresse
                           </div>
                         </div>
@@ -629,13 +629,13 @@ const Generator = () => {
 
                     {formData.hasDifferentDomicile && (
                       <div>
-                        <label className="block text-xs font-semibold text-[#415052] mb-1.5">Adresse du domicile du locataire</label>
+                        <label className="block text-xs font-semibold text-[#5e6478] mb-1.5">Adresse du domicile du locataire</label>
                         <input
                           type="text"
                           name="locataireDomicileAddress"
                           value={formData.locataireDomicileAddress}
                           onChange={handleInputChange}
-                          className="w-full px-3 py-2 rounded-xl border border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20 transition-all duration-200 text-sm"
+                          className="w-full px-3 py-2 rounded-xl border border-[#e3e4f0] focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/20 transition-all duration-200 text-sm"
                           placeholder="Ex: 12 rue Victor Hugo, 75016 Paris"
                         />
                       </div>
@@ -644,17 +644,17 @@ const Generator = () => {
                 </div>
 
                 {/* Montants Section */}
-                <div className="space-y-5 bg-[#7CAA89]/10 rounded-2xl p-5 border border-[#7CAA89]/20">
-                  <div className="flex items-center space-x-2.5 pb-3 border-b border-[#7CAA89]/20">
-                    <div className="w-10 h-10 bg-[#7CAA89] rounded-xl flex items-center justify-center">
-                      <Euro className="w-5 h-5 text-white" />
+                <div className="space-y-5 bg-slate-50 rounded-2xl p-5 border border-[#e8e7ef]">
+                  <div className="flex items-center space-x-2.5 pb-3 border-b border-[#e8e7ef]">
+                    <div className="w-10 h-10 bg-[#1e3a5f] rounded-xl flex items-center justify-center">
+                      <Euro className="w-5 h-5 text-white" strokeWidth={2} />
                     </div>
-                    <h3 className="text-lg font-bold text-[#2b2b2b]">Montants</h3>
+                    <h3 className="text-base font-semibold text-[#212a3e]">Montants</h3>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-[#415052] mb-1.5">Loyer mensuel (€)</label>
+                      <label className="block text-xs font-semibold text-[#5e6478] mb-1.5">Loyer mensuel (€)</label>
                       <input
                         type="number"
                         name="loyer"
@@ -663,7 +663,7 @@ const Generator = () => {
                         className={`w-full px-3 py-2 rounded-xl border transition-all duration-200 text-sm ${
                           validationErrors.some(error => error.includes('loyer'))
                             ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-200'
-                            : 'border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20'
+                            : 'border-[#e3e4f0] focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/20'
                         }`}
                         placeholder="800"
                         min="0"
@@ -672,7 +672,7 @@ const Generator = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-[#415052] mb-1.5">Charges mensuelles (€)</label>
+                      <label className="block text-xs font-semibold text-[#5e6478] mb-1.5">Charges mensuelles (€)</label>
                       <input
                         type="number"
                         name="charges"
@@ -681,7 +681,7 @@ const Generator = () => {
                         className={`w-full px-3 py-2 rounded-xl border transition-all duration-200 text-sm ${
                           validationErrors.some(error => error.includes('charges'))
                             ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-200'
-                            : 'border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20'
+                            : 'border-[#e3e4f0] focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/20'
                         }`}
                         placeholder="100"
                         min="0"
@@ -693,20 +693,20 @@ const Generator = () => {
 
                   {!formData.isProrata && (
                     <div>
-                      <label className="block text-xs font-semibold text-[#415052] mb-1.5">
+                      <label className="block text-xs font-semibold text-[#5e6478] mb-1.5">
                         Période
-                        <span className="ml-2 text-[10px] text-gray-500">
+                        <span className="ml-2 text-[10px] text-[#8b90a3]">
                           (Date système: {new Date().toLocaleDateString('fr-FR')})
                         </span>
                       </label>
 
                       <div className="relative">
-                        <Calendar className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Calendar className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#8b90a3]" />
                         <select
                           name="periode"
                           value={formData.periode}
                           onChange={handleInputChange}
-                          className="w-full pl-10 pr-3 py-2 rounded-xl border border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20 transition-all duration-200 appearance-none bg-white text-sm"
+                          className="w-full pl-10 pr-3 py-2 rounded-xl border border-[#e3e4f0] focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/20 transition-all duration-200 appearance-none bg-white text-sm"
                         >
                           {(() => {
                             const now = new Date();
@@ -730,19 +730,19 @@ const Generator = () => {
                   )}
 
                   {/* Case à cocher pour le prorata */}
-                  <div className="bg-[#7CAA89]/10 border border-[#7CAA89]/20 rounded-xl p-3">
+                  <div className="bg-slate-50 border border-[#e8e7ef] rounded-xl p-3">
                     <label className="flex items-start space-x-2.5 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={formData.isProrata}
                         onChange={(e) => setFormData(prev => ({ ...prev, isProrata: e.target.checked }))}
-                        className="w-4 h-4 text-[#2D3436] border-2 border-gray-300 rounded focus:ring-2 focus:ring-[#7CAA89]/20 mt-0.5"
+                        className="w-4 h-4 text-[#1e3a5f] border-2 border-[#e3e4f0] rounded focus:ring-2 focus:ring-[#1e3a5f]/20 mt-0.5"
                       />
                       <div>
-                        <div className="text-sm font-semibold text-[#415052] mb-0.5">
+                        <div className="text-sm font-semibold text-[#5e6478] mb-0.5">
                           Calculer le prorata pour une période spécifique
                         </div>
-                        <div className="text-xs text-[#415052]">
+                        <div className="text-xs text-[#8b90a3]">
                           Le montant sera ajusté selon la période exacte du séjour
                         </div>
                       </div>
@@ -754,7 +754,7 @@ const Generator = () => {
                 {formData.isProrata && (
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-[#415052] mb-1.5">Date d'entrée</label>
+                      <label className="block text-xs font-semibold text-[#5e6478] mb-1.5">Date d'entrée</label>
                       <input
                         type="date"
                         name="dateDebut"
@@ -763,12 +763,12 @@ const Generator = () => {
                         className={`w-full px-3 py-2 rounded-xl border transition-all duration-200 text-sm ${
                           validationErrors.some(error => error.includes('date de début'))
                             ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-200'
-                            : 'border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20'
+                            : 'border-[#e3e4f0] focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/20'
                         }`}
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-[#415052] mb-1.5">Date de sortie</label>
+                      <label className="block text-xs font-semibold text-[#5e6478] mb-1.5">Date de sortie</label>
                       <input
                         type="date"
                         name="dateFin"
@@ -778,7 +778,7 @@ const Generator = () => {
                         className={`w-full px-3 py-2 rounded-xl border transition-all duration-200 text-sm ${
                           validationErrors.some(error => error.includes('date de fin'))
                             ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-200'
-                            : 'border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20'
+                            : 'border-[#e3e4f0] focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/20'
                         }`}
                       />
                     </div>
@@ -788,10 +788,10 @@ const Generator = () => {
 
                 {/* Affichage du total prorata */}
                 {formData.isProrata && prorataAmounts.total > 0 && (
-                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+                  <div className="bg-slate-50 border border-[#e8e7ef] rounded-xl p-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-[#2b2b2b]">Total prorata calculé:</span>
-                      <span className="text-base font-bold text-gray-600">
+                      <span className="text-sm font-semibold text-[#212a3e]">Total prorata calculé:</span>
+                      <span className="text-base font-bold text-[#5e6478]">
                         {prorataAmounts.loyer.toFixed(2)}€ + {prorataAmounts.charges.toFixed(2)}€ = {prorataAmounts.total.toFixed(2)}€
                       </span>
                     </div>
@@ -799,32 +799,32 @@ const Generator = () => {
                 )}
 
                 {/* Signature électronique */}
-                <div className="space-y-5 bg-[#7CAA89]/10 rounded-2xl p-5 border border-[#7CAA89]/20">
-                  <div className="flex items-center space-x-2.5 pb-3 border-b border-[#7CAA89]/20">
-                    <div className="w-10 h-10 bg-[#7CAA89] rounded-xl flex items-center justify-center">
-                      <Shield className="w-5 h-5 text-white" />
+                <div className="space-y-5 bg-slate-50 rounded-2xl p-5 border border-[#e8e7ef]">
+                  <div className="flex items-center space-x-2.5 pb-3 border-b border-[#e8e7ef]">
+                    <div className="w-10 h-10 bg-[#1e3a5f] rounded-xl flex items-center justify-center">
+                      <Shield className="w-5 h-5 text-white" strokeWidth={2} />
                     </div>
-                    <h3 className="text-lg font-bold text-[#2b2b2b]">Validation</h3>
+                    <h3 className="text-base font-semibold text-[#212a3e]">Validation</h3>
                   </div>
 
-                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                  <div className="bg-white border border-[#e8e7ef] rounded-xl p-4">
                     <label className="flex items-start space-x-3 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={isElectronicSignatureChecked}
                         onChange={(e) => setIsElectronicSignatureChecked(e.target.checked)}
-                        className={`w-4 h-4 text-[#2D3436] border-2 rounded focus:ring-2 mt-0.5 ${
+                        className={`w-4 h-4 text-[#1e3a5f] border-2 rounded focus:ring-2 mt-0.5 ${
                           validationErrors.some(error => error.includes('signature électronique'))
                             ? 'border-red-500 focus:ring-red-200'
-                            : 'border-gray-300 focus:ring-[#7CAA89]/20'
+                            : 'border-[#e3e4f0] focus:ring-[#1e3a5f]/20'
                         }`}
                         required
                       />
                       <div>
-                        <div className="text-base font-bold text-[#2b2b2b] mb-1.5">
+                        <div className="text-base font-semibold text-[#212a3e] mb-1.5">
                           Signature électronique *
                         </div>
-                        <div className="text-xs text-[#415052] leading-relaxed">
+                        <div className="text-xs text-[#5e6478] leading-relaxed">
                           Je certifie que le paiement a été encaissé et j'approuve l'émission de la quittance.
                         </div>
                       </div>
@@ -833,12 +833,12 @@ const Generator = () => {
                 </div>
               </form>
 
-              {/* Actions */}
+              {/* Actions - charte CTA orange + outline */}
               <div className="mt-6 space-y-3">
                 <button
                   onClick={handleDownload}
                   disabled={isLoading}
-                  className="w-full px-5 py-3 rounded-xl font-bold text-base transition-all duration-200 transform shadow-lg flex items-center justify-center space-x-2.5 bg-[#ed7862] hover:bg-[#e56651] text-white hover:-translate-y-1 hover:shadow-xl"
+                  className="w-full px-5 py-3 rounded-xl font-semibold text-base transition-all duration-200 flex items-center justify-center space-x-2.5 bg-[#1e3a5f] hover:bg-[#16304a] text-white shadow-[0_2px_6px_rgba(15,23,42,0.1)]"
                 >
                   {isLoading ? (
                     <>
@@ -856,7 +856,7 @@ const Generator = () => {
                 {hasContent() && (
                   <button
                     onClick={() => setShowPreview(!showPreview)}
-                    className="w-full bg-[#7CAA89] hover:bg-[#6b9378] text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 transform hover:-translate-y-1 flex items-center justify-center space-x-2"
+                    className="w-full bg-white border border-slate-300 hover:border-[#618e82] text-slate-600 hover:text-[#618e82] px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center justify-center space-x-2"
                   >
                     <Eye className="w-4 h-4" />
                     <span>{showPreview ? 'Masquer l\'aperçu' : 'Aperçu de la quittance'}</span>
@@ -880,18 +880,18 @@ const Generator = () => {
                   onClose={() => setShowPreview(false)}
                 />
               ) : (
-                <div className="bg-gradient-to-br bg-[#fefdf9] rounded-3xl p-6 border border-gray-200 shadow-xl">
+                <div className="bg-white rounded-2xl p-6 border border-[#e8e7ef] shadow-[0_2px_12px_rgba(15,23,42,0.06)]">
                   <div className="text-center">
                     <button
                       onClick={() => {
                         setShowPreview(true);
                       }}
-                      className="w-16 h-16 bg-[#ed7862] rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-lg hover:scale-110 transition-transform cursor-pointer"
+                      className="w-14 h-14 bg-[#618e82] rounded-xl flex items-center justify-center mx-auto mb-5 shadow-[0_2px_6px_rgba(15,23,42,0.1)] hover:scale-105 transition-transform cursor-pointer"
                     >
-                      <FileText className="w-8 h-8 text-white" />
+                      <FileText className="w-7 h-7 text-white" />
                     </button>
-                    <h3 className="text-xl font-bold text-[#2b2b2b] mb-3">Quittance conforme</h3>
-                    <p className="text-sm text-[#415052] mb-6 leading-relaxed">
+                    <h3 className="text-lg font-semibold text-[#212a3e] mb-3">Quittance conforme</h3>
+                    <p className="text-sm text-[#5e6478] mb-6 leading-relaxed">
                       Votre quittance sera générée selon les normes légales françaises avec toutes les mentions obligatoires.
                     </p>
 
@@ -899,7 +899,7 @@ const Generator = () => {
                       onClick={() => {
                         setShowPreview(true);
                       }}
-                      className="mb-5 inline-flex items-center justify-center bg-[#7CAA89] hover:bg-[#6b9378] text-white px-3 py-1.5 rounded-lg font-medium text-sm transition-all duration-200 transform hover:-translate-y-1 shadow-lg animate-pulse"
+                      className="mb-5 inline-flex items-center justify-center bg-[#618e82] hover:bg-[#527a70] text-white px-4 py-2 rounded-xl font-medium text-sm transition-all duration-200"
                     >
                       <Eye className="w-3.5 h-3.5 mr-1.5" />
                       <span>Voir l'aperçu</span>
@@ -911,28 +911,28 @@ const Generator = () => {
             )}
           </div>
 
-          {/* Bannière Premium - Conversion */}
-          <div className="hidden md:block mt-4 max-w-4xl mx-auto px-4">
+          {/* Bannière Premium - charte */}
+          <div className="hidden md:block mt-6 max-w-4xl mx-auto px-4">
             <button
               onClick={() => navigate('/pricing')}
-              className="w-full bg-gradient-to-r from-[#ed7862]/10 to-[#e56651]/10 border border-[#ed7862]/20 rounded-xl p-2 hover:shadow-md transition-all duration-200 cursor-pointer group"
+              className="w-full bg-white border border-[#e8e7ef] rounded-xl p-4 hover:shadow-[0_2px_12px_rgba(15,23,42,0.06)] transition-all duration-200 cursor-pointer group"
             >
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-0">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
                 <div className="flex items-center gap-3 flex-1">
-                  <div className="bg-[#ed7862]/20 rounded-lg p-1.5 group-hover:scale-105 transition-transform flex-shrink-0">
-                 
+                  <div className="bg-[#E65F3F]/10 rounded-xl p-2 group-hover:scale-105 transition-transform flex-shrink-0">
+                    <Zap className="w-5 h-5 text-[#E65F3F]" />
                   </div>
-                  <div className="text-sm text-[#2b2b2b] text-left">
-                    <span className="font-semibold">Ne plus jamais y penser ?</span>
-                    <span className="hidden sm:inline"> — </span>
-                    <span className="block sm:inline text-[#545454]">Automatisez tout pour <strong className="text-[#ed7862]">0,82€/mois</strong></span>
+                  <div className="text-sm text-left">
+                    <span className="font-semibold text-[#212a3e]">Ne plus jamais y penser ?</span>
+                    <span className="hidden sm:inline text-[#5e6478]"> — </span>
+                    <span className="block sm:inline text-[#5e6478]">Automatisez tout pour <strong className="text-[#E65F3F]">0,82€/mois</strong></span>
                   </div>
                 </div>
                 <div className="flex-shrink-0">
-                  <div className="bg-[#ed7862] text-white px-4 py-2 rounded-lg font-medium text-sm group-hover:bg-[#e56651] transition-colors flex items-center space-x-1.5">
+                  <span className="inline-flex items-center justify-center bg-[#E65F3F] hover:bg-[#d95530] text-white px-4 py-2 rounded-xl font-medium text-sm transition-colors space-x-1.5">
                     <span>Découvrir</span>
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                  </div>
+                  </span>
                 </div>
               </div>
             </button>

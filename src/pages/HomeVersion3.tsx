@@ -261,13 +261,13 @@ const HomeVersion3 = () => {
                 <span className="text-sm font-medium text-gray-700">Fait par des propriétaires, pour des propriétaires</span>
               </div>
 
-              <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+              <h1 className="text-[40px] md:text-[48px] lg:text-[56px] font-bold text-gray-900 mb-4 leading-[1.1]">
                 Vos quittances,<br />
                 <span className="text-[#FFD76F]">sans galère</span>
               </h1>
 
-              <p className="text-xl text-gray-700 mb-8 leading-relaxed">
-                On sait ce que c'est d'être propriétaire. On a créé la solution qu'on aurait aimé avoir : simple, abordable, et qui marche vraiment.
+              <p className="text-base md:text-lg text-gray-700 mb-8 leading-relaxed max-w-xl">
+                On sait ce que c'est d'être propriétaire. On a créé la solution qu'on aurait aimé avoir&nbsp;: simple, abordable, et qui marche vraiment.
               </p>
 
               <div className="flex items-center mb-8">
@@ -286,16 +286,16 @@ const HomeVersion3 = () => {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative inline-flex flex-col items-start gap-3 mb-10">
                 <button
                   onClick={() => document.getElementById('generator')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="bg-[#FFD76F] text-white px-8 py-4 rounded-2xl font-bold shadow-lg hover:bg-[#d4a03f] transition-all transform hover:scale-105"
+                  className="bg-[#FFD76F] text-gray-900 px-8 py-3 rounded-xl font-bold shadow-lg hover:bg-[#d4a03f] transition-all transform hover:scale-[1.02] text-sm md:text-base"
                 >
                   Créer ma première quittance
                 </button>
                 <Link
                   to="/automation"
-                  className="bg-white text-gray-900 px-8 py-4 rounded-2xl font-bold shadow-md hover:shadow-lg transition-all border-2 border-gray-200"
+                  className="bg-white text-gray-900 px-7 py-3 rounded-xl font-semibold shadow-md hover:shadow-lg transition-all border border-gray-200 -mt-4 ml-10 text-xs md:text-sm"
                 >
                   Découvrir l'automatisation
                 </Link>
@@ -308,25 +308,21 @@ const HomeVersion3 = () => {
               transition={{ duration: 0.8 }}
               className="relative"
             >
-              <div className="rounded-3xl overflow-hidden shadow-2xl">
+              <div className="rounded-3xl overflow-hidden shadow-2xl bg-white">
                 <img
-                  src="/Lucid_Origin_A_relaxed_man_about_45_years_old_lying_on_a_deck__3 copy.jpg"
-                  alt="Propriétaire détendu"
+                  src="https://jfpbddtdblqakabyjxkq.supabase.co/storage/v1/object/public/website-images/Ordinateur_Fleur_HD.png"
+                  alt="Interface de création de quittance sur ordinateur"
                   className="w-full h-full object-cover"
                 />
               </div>
 
-              {/* Badge flottant */}
-              <div className="absolute -bottom-6 -left-6 bg-white rounded-2xl shadow-xl p-6 max-w-xs">
-                <div className="flex items-center space-x-4">
-                  <div className="bg-gray-100 rounded-full p-3">
-                    <ThumbsUp className="w-6 h-6 text-gray-600" />
-                  </div>
-                  <div>
-                    <p className="font-bold text-gray-900 text-lg">98% satisfaits</p>
-                    <p className="text-sm text-gray-600">Propriétaires comme vous</p>
-                  </div>
-                </div>
+              {/* Aperçu de quittance flottant */}
+              <div className="absolute -bottom-8 -right-6 w-40 sm:w-48 md:w-56 rounded-2xl shadow-2xl border border-gray-100 bg-white overflow-hidden">
+                <img
+                  src="https://jfpbddtdblqakabyjxkq.supabase.co/storage/v1/object/public/website-images/image_quittance_UI.png"
+                  alt="Aperçu d'une quittance générée"
+                  className="w-full h-full object-cover"
+                />
               </div>
             </motion.div>
           </div>
@@ -336,16 +332,20 @@ const HomeVersion3 = () => {
       {/* Section Confiance */}
       <section className="py-12 bg-white border-y border-orange-200">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid md:grid-cols-3 gap-8 text-center">
+          <div className="grid md:grid-cols-2 gap-8 text-left md:text-center">
             <div>
               <Coffee className="w-12 h-12 text-[#FFD76F] mx-auto mb-4" />
               <h3 className="font-bold text-gray-900 mb-2">Simple comme bonjour</h3>
-              <p className="text-gray-600">Aucune formation nécessaire. Si vous savez envoyer un email, vous savez utiliser notre service.</p>
+              <p className="text-gray-600 text-sm md:text-base">
+                Aucune formation. Si vous savez envoyer un email, vous savez l&apos;utiliser.
+              </p>
             </div>
             <div>
               <Users className="w-12 h-12 text-[#FFD76F] mx-auto mb-4" />
               <h3 className="font-bold text-gray-900 mb-2">On est là pour vous</h3>
-              <p className="text-gray-600">Une vraie équipe disponible pour répondre à toutes vos questions. Pas de robot, que des humains.</p>
+              <p className="text-gray-600 text-sm md:text-base">
+                Une vraie équipe, pas de robot. On vous répond vraiment.
+              </p>
             </div>
             <div>
               <Heart className="w-12 h-12 mx-auto mb-4 fill-current" style={{
@@ -355,7 +355,9 @@ const HomeVersion3 = () => {
                 backgroundClip: 'text'
               }} />
               <h3 className="font-bold text-gray-900 mb-2">Prix mini, qualité maxi</h3>
-              <p className="text-gray-600">On ne vous prend pas pour un porte-monnaie. Des tarifs honnêtes pour un service qui tient ses promesses.</p>
+              <p className="text-gray-600 text-sm md:text-base">
+                Des tarifs honnêtes, pour un service qui tient ses promesses.
+              </p>
             </div>
           </div>
         </div>

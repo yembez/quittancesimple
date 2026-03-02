@@ -137,7 +137,7 @@ Deno.serve(async (req: Request) => {
 
               <p style="margin: 30px 0 0 0; color: #6B7280; font-size: 14px; line-height: 1.6;">
                 À bientôt,<br>
-                <strong style="color: #7CAA89;">L'équipe Quittance Simple</strong>
+                <strong style="color: #7CAA89;">QS – Espace Bailleur</strong>
               </p>
             </td>
           </tr>
@@ -148,7 +148,9 @@ Deno.serve(async (req: Request) => {
                 Vous recevez cet e-mail car vous avez programmé un rappel IRL sur Quittance Simple.
               </p>
               <p style="margin: 0; color: #6B7280; font-size: 12px;">
-                © 2026 Quittance Simple - Tous droits réservés
+                <strong>QS – Espace Bailleur</strong><br/>
+                Un service édité par Quittance Simple<br/>
+                <a href="https://quittancesimple.fr">quittancesimple.fr</a>
               </p>
             </td>
           </tr>
@@ -168,7 +170,7 @@ Deno.serve(async (req: Request) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from: 'Quittance Simple <noreply@quittance-simple.com>',
+            from: 'QS - Espace Bailleur <noreply@quittancesimple.fr>',
             to: [prop.email],
             subject: 'Rappel : votre révision de loyer (IRL)',
             html: emailHtml,

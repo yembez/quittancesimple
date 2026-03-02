@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -14,7 +15,7 @@
    * Change simplement les valeurs ci-dessous pour ajuster les espacements
    * sur mobile (écran ≤ 480px). Les changements sont instantanés.
    */
-  --mobile-header-spacing: 80px;           /* Espace entre navbar et titre */
+  --mobile-header-spacing: 20px;           /* Espace entre navbar et titre */
   --mobile-section-spacing: 0px;            /* Espace entre sections (flex gap) */
   --mobile-title-bottom-spacing: 20px;       /* Espace sous le titre H1 */
   --mobile-visual-bottom-spacing: 15px;     /* Espace sous le visuel femme */
@@ -28,11 +29,31 @@
     background: linear-gradient(135deg, #fef5e7 0%, #ffffff 50%, #eef7ff 100%);
   }
 
+  /* Annule le preflight Tailwind (font-size: inherit) pour que les classes
+     de taille (text-*, text-[…]) sur les titres s’appliquent correctement. */
   h1, h2, h3, h4, h5, h6 {
     @apply tracking-tight;
     font-family: 'Inter', sans-serif;
     line-height: 1.2;
+    font-size: revert;
+    font-weight: revert;
   }
+}
+
+/* Titre section Pack Automatique : taille forcée (contourne les contraintes h2) */
+.section-pack-title {
+  font-size: clamp(1.875rem, 5.5vw, 2.75rem) !important;
+}
+
+/* Générateur d'annonces : bloc contenu collé à la sidebar (pas de centrage, pas de max-width) */
+.page-annonce-generator .annonce-generator-content {
+  max-width: none !important;
+  margin-left: 0 !important;
+}
+
+/* Page Quittance Success : typo proche Airbnb (Cereal) — DM Sans */
+.quittance-success-page {
+  font-family: 'DM Sans', system-ui, sans-serif;
 }
 
 @layer utilities {
@@ -91,6 +112,265 @@
     }
   }
 
+  /* État des lieux : page A4, paraphe en bas de chaque page */
+  .edl-page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 40px;
+    margin: 0 auto 24px;
+    background: white;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+  }
+  .edl-page-footer {
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(0,0,0,0.08);
+    flex-shrink: 0;
+  }
+  /* Page qui se remplit sans forcer une hauteur min (plusieurs blocs par page) */
+  .edl-page.edl-page-fill {
+    min-height: 0;
+  }
+
+  /* État des lieux – typo charte (Inter), lisibilité */
+  .edl-document-wrapper {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #1a1a1a;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: 0.01em;
+  }
+  .edl-document-wrapper h1,
+  .edl-document-wrapper h2 {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  /* Champs de saisie EDL – bien visibles, cohérents */
+  .edl-document-wrapper .edl-input,
+  .edl-document-wrapper input.edl-input {
+    font-family: inherit;
+    font-size: 0.95em;
+    padding: 6px 10px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    background: #f8fafc;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+  }
+  .edl-document-wrapper .edl-input::placeholder {
+    color: #94a3b8;
+  }
+  .edl-document-wrapper .edl-input:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+  }
+  .edl-document-wrapper .edl-input:focus {
+    border-color: #1e3a5f;
+    box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.15);
+    background: #fff;
+  }
+  .edl-document-wrapper .edl-input-area,
+  .edl-document-wrapper textarea.edl-input-area {
+    font-family: inherit;
+    font-size: 0.95em;
+    padding: 8px 10px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    background: #f8fafc;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+  }
+  .edl-document-wrapper .edl-input-area::placeholder {
+    color: #94a3b8;
+  }
+  .edl-document-wrapper .edl-input-area:focus {
+    border-color: #1e3a5f;
+    box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.15);
+    background: #fff;
+  }
+  .edl-document-wrapper .edl-input-cell {
+    font-family: inherit;
+    font-size: 0.9em;
+    padding: 5px 8px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 6px;
+    background: #f8fafc;
+    outline: none;
+    transition: border-color 0.2s, background-color 0.2s;
+  }
+  .edl-document-wrapper .edl-input-cell:focus {
+    border-color: #1e3a5f;
+    background: #fff;
+  }
+  .edl-document-wrapper .edl-select {
+    font-family: inherit;
+    font-size: 0.9em;
+    padding: 5px 8px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 6px;
+    background: #f8fafc;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s, background-color 0.2s;
+  }
+  .edl-document-wrapper .edl-select:focus {
+    border-color: #1e3a5f;
+    background: #fff;
+  }
+
+  /* Blocs première page État des lieux (maquette) */
+  .edl-block {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.25rem;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+  }
+  .edl-block-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    color: #1e3a5f;
+    font-size: 0.95rem;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.01em;
+  }
+
+  /* Baux (BailWeb / BailMeubleWeb) – même typo titres/sous-titres que État des lieux */
+  .bail-section-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    color: #1e3a5f;
+    font-size: 0.95rem;
+    letter-spacing: -0.01em;
+    border-bottom: 2px solid rgba(30, 58, 95, 0.3);
+    padding-bottom: 0.25rem;
+    margin-bottom: 1rem;
+  }
+  .bail-subsection-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    color: #1e3a5f;
+    font-size: 0.875rem;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Baux – typo lisible partout, hiérarchie respectée */
+  .bail-form-document,
+  .a4-page {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    color: #1a1a1a;
+    -webkit-font-smoothing: antialiased;
+  }
+  .bail-intro-text {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #1f2937;
+  }
+  .bail-body-text {
+    font-size: 1rem;
+    color: #374151;
+  }
+  .bail-legal-note {
+    font-size: 12px;
+    line-height: 1.4;
+    color: #4b5563;
+  }
+  .bail-legal-intro {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #4b5563;
+    font-style: italic;
+  }
+  .bail-form-document .bail-input,
+  .a4-page .bail-input {
+    font-size: 1rem;
+  }
+
+  /* Parcours mobile État des lieux (étapes par écran) : pleine largeur, pas de débordement */
+  .edl-mobile-flow {
+    box-sizing: border-box;
+    -webkit-overflow-scrolling: touch;
+  }
+  .edl-mobile-flow .edl-page {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  .edl-mobile-flow .edl-input,
+  .edl-mobile-flow input.edl-input,
+  .edl-mobile-flow .edl-input-cell,
+  .edl-mobile-flow .edl-select,
+  .edl-mobile-flow select.edl-select {
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 44px;
+    padding: 10px 12px;
+  }
+  .edl-mobile-flow .edl-input-area,
+  .edl-mobile-flow textarea.edl-input-area {
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 88px;
+    padding: 10px 12px;
+  }
+
+  /* Mobile : formulaire État des lieux (vue desktop en petit écran) */
+  @media (max-width: 767px) {
+    .edl-document-wrapper .edl-page {
+      width: 100%;
+      max-width: 100%;
+      min-height: 0;
+      padding: 16px 12px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .edl-document-wrapper .edl-block {
+      padding: 12px 14px;
+      margin-bottom: 1rem;
+      border-radius: 10px;
+    }
+    .edl-document-wrapper .edl-page-footer {
+      padding-top: 0.75rem;
+    }
+    .edl-document-wrapper .edl-input,
+    .edl-document-wrapper input.edl-input,
+    .edl-document-wrapper .edl-input-cell,
+    .edl-document-wrapper .edl-select {
+      min-height: 44px;
+      padding: 10px 12px;
+    }
+    .edl-document-wrapper .edl-input-area,
+    .edl-document-wrapper textarea.edl-input-area {
+      min-height: 88px;
+      padding: 10px 12px;
+    }
+    .edl-table-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin-left: -8px;
+      margin-right: -8px;
+      padding-left: 8px;
+      padding-right: 8px;
+    }
+    .edl-table-scroll .edl-table-hint {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-bottom: 6px;
+    }
+  }
+
   @media (max-width: 767px) {
     button,
     input[type="submit"],
@@ -110,5 +390,22 @@
       min-height: 44px;
       font-size: 16px;
     }
+  }
+}
+
+/* Impression : masquer sidebar, header et barre d’actions des pages Bail / État des lieux */
+/* Sidebar espace bailleur : fond bleu plus foncé (compense l’effet d’optique) */
+[data-sidebar="dashboard"] {
+  background-color: #142840 !important;
+  isolation: isolate;
+}
+
+@media print {
+  aside.print\:hidden,
+  .print\:hidden {
+    display: none !important;
+  }
+  .lg\:pl-64 {
+    padding-left: 0 !important;
   }
 }

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Download, ArrowLeft } from 'lucide-react';
+import { FileText, Download, CheckCircle, Clock, Mail } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useEspaceBailleur } from '../contexts/EspaceBailleurContext';
 
 interface Quittance {
   id: string;
@@ -27,22 +28,14 @@ interface Locataire {
   detail_adresse?: string;
   loyer_mensuel: number;
   charges_mensuelles: number;
-}
-
-interface Proprietaire {
-  id: string;
-  email: string;
-  nom: string;
-  prenom?: string;
-  adresse: string;
-  telephone?: string;
+  statut?: 'en_attente' | 'paye';
 }
 
 export default function Historique() {
   const navigate = useNavigate();
+  const { proprietaire } = useEspaceBailleur();
   const [quittances, setQuittances] = useState<Quittance[]>([]);
   const [locataires, setLocataires] = useState<Locataire[]>([]);
-  const [proprietaire, setProprietaire] = useState<Proprietaire | null>(null);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState<string | null>(null);
 
@@ -55,41 +48,26 @@ export default function Historique() {
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (proprietaire?.id) loadData();
+  }, [proprietaire?.id]);
 
   const loadData = async () => {
+    if (!proprietaire) return;
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate('/');
-        return;
-      }
-
-      const { data: proprietaireData } = await supabase
-        .from('proprietaires')
+      const { data: quittancesData } = await supabase
+        .from('quittances')
         .select('*')
-        .eq('email', user.email)
-        .maybeSingle();
+        .eq('proprietaire_id', proprietaire.id)
+        .order('date_generation', { ascending: false });
 
-      if (proprietaireData) {
-        setProprietaire(proprietaireData);
+      setQuittances(quittancesData || []);
 
-        const { data: quittancesData } = await supabase
-          .from('quittances')
-          .select('*')
-          .eq('proprietaire_id', proprietaireData.id)
-          .order('date_generation', { ascending: false });
+      const { data: locatairesData } = await supabase
+        .from('locataires')
+        .select('*')
+        .eq('proprietaire_id', proprietaire.id);
 
-        setQuittances(quittancesData || []);
-
-        const { data: locatairesData } = await supabase
-          .from('locataires')
-          .select('*')
-          .eq('proprietaire_id', proprietaireData.id);
-
-        setLocataires(locatairesData || []);
-      }
+      setLocataires(locatairesData || []);
     } catch (error) {
       console.error('Erreur chargement:', error);
     } finally {
@@ -147,90 +125,104 @@ export default function Historique() {
     }
   };
 
+  if (!proprietaire) return null;
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 pt-24 pb-12">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="text-center">
-            <p className="text-gray-600">Chargement...</p>
-          </div>
-        </div>
-      </div>
+      <main className="flex-1 px-4 sm:px-6 py-4 overflow-auto flex flex-col min-h-0 flex items-center justify-center">
+        <p className="text-[13px] text-[#5e6478]">Chargement...</p>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 pt-24 pb-12">
-      <div className="max-w-6xl mx-auto px-4">
-        <button
-          onClick={() => navigate('/dashboard')}
-          className="flex items-center gap-2 text-[#7CAA89] hover:text-[#6a9875] font-semibold mb-6 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Retour au tableau de bord
-        </button>
-
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h1 className="text-3xl font-bold text-[#2b2b2b] mb-2">Historique des quittances</h1>
-          <p className="text-gray-600 mb-6">Consultez et téléchargez toutes vos quittances générées</p>
-
-          {quittances.length === 0 ? (
-            <div className="text-center py-16">
-              <FileText className="w-20 h-20 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-600 mb-2 text-lg font-semibold">Aucune quittance générée</p>
-              <p className="text-gray-500">
-                Les quittances que vous générerez apparaîtront ici.
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-4 px-4 font-semibold text-gray-900">Locataire</th>
-                    <th className="text-left py-4 px-4 font-semibold text-gray-900">Période</th>
-                    <th className="text-left py-4 px-4 font-semibold text-gray-900">Date de génération</th>
-                    <th className="text-right py-4 px-4 font-semibold text-gray-900">Montant</th>
-                    <th className="text-center py-4 px-4 font-semibold text-gray-900">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {quittances.map((q) => {
-                    const locataire = locataires.find(l => l.id === q.locataire_id);
-                    const periode = formatPeriode(q.periode_debut, q.periode_fin);
-                    return (
-                      <tr key={q.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                        <td className="py-4 px-4">
-                          <p className="font-semibold text-gray-900">
-                            {locataire?.prenom} {locataire?.nom}
-                          </p>
-                        </td>
-                        <td className="py-4 px-4 text-gray-700">{periode}</td>
-                        <td className="py-4 px-4 text-gray-600 text-sm">
-                          {new Date(q.date_generation).toLocaleDateString('fr-FR')}
-                        </td>
-                        <td className="py-4 px-4 text-right">
-                          <p className="font-bold text-[#7CAA89]">{q.total.toFixed(2)} €</p>
-                        </td>
-                        <td className="py-4 px-4 text-center">
-                          <button
-                            onClick={() => downloadQuittance(q)}
-                            disabled={downloading === q.id}
-                            className="inline-flex items-center gap-2 bg-[#7CAA89] hover:bg-[#6a9875] text-white px-4 py-2 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <Download className="w-4 h-4" />
-                            {downloading === q.id ? 'Téléchargement...' : 'Télécharger'}
-                          </button>
-                        </td>
+    <main className="flex-1 px-4 sm:px-6 py-4 overflow-auto flex flex-col min-h-0">
+          <div className="max-w-6xl mx-auto w-full flex flex-col gap-3 min-h-0">
+            {quittances.length === 0 ? (
+              <div className="bg-white rounded-xl border border-[#e8e7ef] p-6 text-center shrink-0">
+                <FileText className="w-12 h-12 text-[#e8e7ef] mx-auto mb-3" />
+                <p className="text-[14px] font-semibold text-[#151b2c] mb-1">Aucune quittance générée</p>
+                <p className="text-[12px] text-[#5e6478]">Les quittances que vous générerez apparaîtront ici.</p>
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl border border-[#e8e7ef] overflow-hidden shrink-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-[12px] sm:text-[13px]">
+                    <thead>
+                      <tr className="border-b border-[#e8e7ef] bg-[#f5f5f7]/50">
+                        <th className="text-left py-2 px-3 font-semibold text-[#151b2c] text-[11px] sm:text-[12px]">Locataire</th>
+                        <th className="text-left py-2 px-3 font-semibold text-[#151b2c] text-[11px] sm:text-[12px]">Période</th>
+                        <th className="text-left py-2 px-3 font-semibold text-[#151b2c] text-[11px] sm:text-[12px]">Date génération</th>
+                        <th className="text-center py-2 px-3 font-semibold text-[#151b2c] text-[11px] sm:text-[12px]">Envoi</th>
+                        <th className="text-center py-2 px-3 font-semibold text-[#151b2c] text-[11px] sm:text-[12px]">Paiement</th>
+                        <th className="text-right py-2 px-3 font-semibold text-[#151b2c] text-[11px] sm:text-[12px]">Montant</th>
+                        <th className="text-center py-2 px-3 font-semibold text-[#151b2c] text-[11px] sm:text-[12px]">Action</th>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+                    </thead>
+                    <tbody>
+                      {quittances.map((q) => {
+                        const locataire = locataires.find(l => l.id === q.locataire_id);
+                        const periode = formatPeriode(q.periode_debut, q.periode_fin);
+                        const isSent = q.statut === 'envoyee' || !!q.date_envoi;
+                        const isPaid = locataire?.statut === 'paye';
+                        return (
+                          <tr key={q.id} className="border-b border-[#e8e7ef]/80 hover:bg-[#f5f5f7] transition-colors">
+                            <td className="py-2 px-3">
+                              <p className="font-medium text-[#151b2c]">
+                                {locataire?.prenom} {locataire?.nom}
+                              </p>
+                            </td>
+                            <td className="py-2 px-3 text-[#5e6478]">{periode}</td>
+                            <td className="py-2 px-3 text-[#5e6478]">
+                              {new Date(q.date_generation).toLocaleDateString('fr-FR')}
+                            </td>
+                            <td className="py-2 px-3 text-center">
+                              {isSent ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium text-[#1e3a5f] bg-[#1e3a5f]/10">
+                                  <Mail className="w-3 h-3" />
+                                  Envoyée
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium text-[#5e6478] bg-[#e8e7ef]">
+                                  <Clock className="w-3 h-3" />
+                                  Non envoyée
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-2 px-3 text-center">
+                              {isPaid ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium text-[#1e3a5f] bg-[#1e3a5f]/10">
+                                  <CheckCircle className="w-3 h-3" />
+                                  Payé
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium text-[#5e6478] bg-[#e8e7ef]">
+                                  <Clock className="w-3 h-3" />
+                                  En attente
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-2 px-3 text-right">
+                              <p className="font-semibold text-[#1e3a5f]">{q.total.toFixed(2)} €</p>
+                            </td>
+                            <td className="py-2 px-3 text-center">
+                              <button
+                                onClick={() => downloadQuittance(q)}
+                                disabled={downloading === q.id}
+                                className="inline-flex items-center gap-1.5 bg-[#1e3a5f] hover:bg-[#1a2f4d] text-white px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                                {downloading === q.id ? '...' : 'Télécharger'}
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+    </main>
   );
 }

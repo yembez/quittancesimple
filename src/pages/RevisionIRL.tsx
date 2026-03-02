@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { TrendingUp, Calculator, AlertCircle, Euro, Calendar, Bell, X, Check, Download } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import RevisionLetterModal from '../components/RevisionLetterModal';
+import { useEspaceBailleur } from '../contexts/EspaceBailleurContext';
 
 interface IRLIndex {
   annee: number;
@@ -31,8 +32,9 @@ interface CalculResult {
 
 export default function RevisionIRL() {
   const navigate = useNavigate();
-  const [proprietaireId, setProprietaireId] = useState<string>('');
-  const [proprietaireEmail, setProprietaireEmail] = useState<string>('');
+  const { proprietaire } = useEspaceBailleur();
+  const proprietaireId = proprietaire?.id ?? '';
+  const proprietaireEmail = proprietaire?.email ?? '';
   const [planType, setPlanType] = useState<string>('');
   const [loyerActuel, setLoyerActuel] = useState('');
   const [trimestreSelectionne, setTrimestreSelectionne] = useState('');
@@ -50,71 +52,24 @@ export default function RevisionIRL() {
   const [showRevisionLetterModal, setShowRevisionLetterModal] = useState(false);
 
   useEffect(() => {
-    checkSubscription();
     loadIRLIndices();
   }, []);
+
+  useEffect(() => {
+    if (proprietaire?.plan_type === 'free') {
+      navigate(`/free-dashboard?email=${encodeURIComponent(proprietaire.email || '')}`);
+      return;
+    }
+    if (proprietaire?.plan_type) {
+      setPlanType(proprietaire.plan_type);
+    }
+  }, [proprietaire?.plan_type, proprietaire?.email, navigate]);
 
   useEffect(() => {
     if (proprietaireId) {
       loadExistingReminder();
     }
   }, [proprietaireId]);
-
-  const checkSubscription = async () => {
-    const storedEmail = localStorage.getItem('proprietaireEmail');
-
-    if (!storedEmail) {
-      console.log('No email in localStorage, redirecting to home');
-      setLoading(false);
-      navigate('/');
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      const { data, error } = await supabase
-        .from('proprietaires')
-        .select('id, email, plan_type, plan_actuel, abonnement_actif')
-        .eq('email', storedEmail)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error fetching proprietaire:', error);
-        alert('Erreur lors du chargement de vos informations. Veuillez vous reconnecter.');
-        setLoading(false);
-        navigate('/');
-        return;
-      }
-
-      if (!data) {
-        console.log('No proprietaire found for email:', storedEmail);
-        alert('Compte introuvable. Veuillez vous reconnecter.');
-        setLoading(false);
-        navigate('/');
-        return;
-      }
-
-      console.log('Proprietaire data:', data);
-
-      if (data.plan_type === 'free') {
-        alert('Cette fonctionnalité est réservée aux abonnés. Passez à un plan payant pour y accéder.');
-        setLoading(false);
-        navigate(`/free-dashboard?email=${storedEmail}`);
-        return;
-      }
-
-      setProprietaireId(data.id);
-      setProprietaireEmail(data.email);
-      setPlanType(data.plan_type || 'auto');
-      setLoading(false);
-    } catch (err) {
-      console.error('Exception in checkSubscription:', err);
-      alert('Une erreur est survenue. Veuillez réessayer.');
-      setLoading(false);
-      navigate('/');
-    }
-  };
 
   const loadIRLIndices = async () => {
     const { data, error } = await supabase
@@ -362,43 +317,12 @@ export default function RevisionIRL() {
     return today.toISOString().split('T')[0];
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 py-16 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#7CAA89]"></div>
-          <p className="mt-4 text-gray-600">Chargement...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!proprietaireId) {
-    return null;
-  }
+  if (!proprietaire || !proprietaireId) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 py-8">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="text-gray-600 hover:text-gray-900 mb-4 inline-flex items-center"
-          >
-            ← Retour au dashboard
-          </button>
-
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-[#7CAA89]/10 rounded-2xl mb-4">
-            <TrendingUp className="w-6 h-6 text-[#7CAA89]" />
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
-            Révision de loyer (IRL)
-          </h1>
-          <p className="text-lg text-gray-600">
-            Calculez votre révision IRL et programmez un rappel automatique
-          </p>
-        </div>
-
+    <>
+    <main className="flex-1 bg-gray-50 px-4 sm:px-6 py-4 sm:py-6 overflow-y-auto">
+          <div className="max-w-5xl mx-auto">
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 md:p-8 mb-6">
@@ -418,14 +342,14 @@ export default function RevisionIRL() {
                       type="number"
                       value={loyerActuel}
                       onChange={(e) => setLoyerActuel(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-[#7CAA89] focus:ring-0 transition-colors"
+                      className="w-full pl-10 pr-4 py-2.5 border-2 border-gray-200 rounded-md focus:border-[#1e3a5f] focus:ring-0 transition-colors"
                       placeholder="800"
                       step="0.01"
                     />
                   </div>
                 </div>
 
-                <div className="bg-gray-50 rounded-xl p-5 border-2 border-gray-200">
+                <div className="bg-gray-50 rounded-lg p-5 border-2 border-gray-200">
                   <div className="mb-4">
                     <h3 className="text-base font-bold text-gray-900">
                       Période de référence du loyer *
@@ -443,7 +367,7 @@ export default function RevisionIRL() {
                       <select
                         value={trimestreSelectionne}
                         onChange={(e) => setTrimestreSelectionne(e.target.value)}
-                        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-[#7CAA89] focus:ring-0 transition-colors bg-white"
+                        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-md focus:border-[#1e3a5f] focus:ring-0 transition-colors bg-white"
                       >
                         <option value="">Ex : T3 2024</option>
                         {generateTrimestreOptions().map((option) => (
@@ -466,7 +390,7 @@ export default function RevisionIRL() {
                         <select
                           value={moisSelectionne}
                           onChange={(e) => setMoisSelectionne(e.target.value)}
-                          className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:border-[#7CAA89] focus:ring-0 transition-colors bg-white text-sm"
+                          className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-md focus:border-[#1e3a5f] focus:ring-0 transition-colors bg-white text-sm"
                         >
                           <option value="">Mois</option>
                           {moisOptions.map((option) => (
@@ -478,7 +402,7 @@ export default function RevisionIRL() {
                         <select
                           value={anneeSelectionnee}
                           onChange={(e) => setAnneeSelectionnee(e.target.value)}
-                          className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl focus:border-[#7CAA89] focus:ring-0 transition-colors bg-white text-sm"
+                          className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-md focus:border-[#1e3a5f] focus:ring-0 transition-colors bg-white text-sm"
                         >
                           <option value="">Année</option>
                           {generateAnneeOptions().map((option) => (
@@ -492,7 +416,7 @@ export default function RevisionIRL() {
                   </div>
                 </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-3.5">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3.5">
                   <p className="text-sm text-blue-900">
                     <AlertCircle className="w-4 h-4 inline mr-2" />
                     La révision du loyer est possible uniquement si une clause de révision est prévue dans le bail.
@@ -502,7 +426,7 @@ export default function RevisionIRL() {
                 <button
                   onClick={calculateRevision}
                   disabled={loading}
-                  className="w-full bg-[#7CAA89] hover:bg-[#6a9479] text-white font-bold py-3 px-5 rounded-xl transition-colors flex items-center justify-center space-x-2"
+                  className="w-full bg-[#1e3a5f] hover:bg-[#1a2f4d] text-white font-bold py-3 px-5 rounded-md transition-colors flex items-center justify-center space-x-2"
                 >
                   {loading ? (
                     <span>Calcul en cours...</span>
@@ -589,7 +513,7 @@ export default function RevisionIRL() {
                   <span>Télécharger la lettre en PDF</span>
                 </button>
 
-                <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-3">
+                <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <p className="text-xs text-blue-900">
                     La lettre sera générée avec vos informations et sera conforme aux exigences légales.
                   </p>
@@ -608,7 +532,7 @@ export default function RevisionIRL() {
               </div>
 
               {existingReminder && (
-                <div className="bg-white/60 rounded-xl p-3 mb-4 border border-blue-200">
+                <div className="bg-white/60 rounded-lg p-3 mb-4 border border-blue-200">
                   <p className="text-sm text-gray-700 mb-1 font-semibold">Prochain rappel</p>
                   <p className="text-gray-900 font-bold">
                     {new Date(existingReminder.reminder_date).toLocaleDateString('fr-FR', {
@@ -641,7 +565,7 @@ export default function RevisionIRL() {
               </div>
 
               {reminderSuccess && (
-                <div className="bg-green-50 border border-green-200 rounded-xl p-3 mb-4 flex items-center">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4 flex items-center">
                   <Check className="w-5 h-5 text-green-600 mr-2" />
                   <p className="text-sm text-green-800 font-medium">Rappel enregistré avec succès</p>
                 </div>
@@ -666,7 +590,7 @@ export default function RevisionIRL() {
                   <button
                     onClick={deleteReminder}
                     disabled={reminderLoading}
-                    className="w-full bg-red-50 hover:bg-red-100 text-red-700 font-semibold py-2.5 px-4 rounded-xl transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-red-50 hover:bg-red-100 text-red-700 font-semibold py-2.5 px-4 rounded-md transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <X className="w-4 h-4 mr-2" />
                     Supprimer le rappel
@@ -682,7 +606,8 @@ export default function RevisionIRL() {
             </div>
           </div>
         </div>
-      </div>
+          </div>
+        </main>
 
       {calculResult && (
         <RevisionLetterModal
@@ -701,6 +626,6 @@ export default function RevisionIRL() {
           }}
         />
       )}
-    </div>
+    </>
   );
 }

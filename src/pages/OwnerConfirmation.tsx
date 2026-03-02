@@ -119,7 +119,7 @@ const OwnerConfirmation = () => {
           prenomProprietaire: proprietaire?.prenom,
           baillorAddress: proprietaire?.adresse,
           baillorEmail: proprietaire?.email,
-          locataireName: `${locataire?.nom} ${locataire?.prenom || ''}`.trim(),
+          locataireName: [locataire?.prenom, locataire?.nom].filter(Boolean).join(' ') || locataire?.nom || '',
           locataireEmail: locataire?.email,
           locataireDomicileAddress: locataire?.detail_adresse || '',
           logementAddress: locataire?.adresse_logement,

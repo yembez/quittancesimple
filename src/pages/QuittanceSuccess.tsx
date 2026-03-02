@@ -1,17 +1,42 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { CheckCircle } from 'lucide-react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { Check, CheckCircle, ArrowRight, ArrowLeft, Send } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { trackGA4Event, trackCtaClick } from '../utils/analytics';
-import QuickPaymentModal from '../components/QuickPaymentModal';
+import PackActivationFlow from '../components/PackActivationFlow';
+
+// Motion: premium easing, reduced-motion support
+const EASE_PREMIUM = [0.22, 1, 0.36, 1] as const;
+const STAGGER_MS = 90;
+const OVERSHOOT_DURATION_MS = 280;
+const BUBBLE_APPEAR_MS = 680; // apparition progressive depuis le téléphone
 
 const QuittanceSuccess = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email || '';
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isPackActivationFlowOpen, setIsPackActivationFlowOpen] = useState(false);
   const [satisfactionStep, setSatisfactionStep] = useState<'question' | 'positive' | 'negative' | 'sent'>('question');
   const [feedback, setFeedback] = useState('');
+  const [photoAnimStep, setPhotoAnimStep] = useState(0); // 0: rien, 1: phrase1, 2: phrase1+2, 3: hold, 4: disparition
+  const [bubbleStep, setBubbleStep] = useState<'idle' | 'appear' | 'visible' | 'tap' | 'release' | 'fly'>('idle'); // bulle : apparition → clic (tap) → relâche (release) → envol
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const fn = () => setIsMobile(mq.matches);
+    mq.addEventListener('change', fn);
+    return () => mq.removeEventListener('change', fn);
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReducedMotion(mq.matches);
+    const fn = () => setReducedMotion(mq.matches);
+    mq.addEventListener('change', fn);
+    return () => mq.removeEventListener('change', fn);
+  }, []);
 
   // Track page view + store email
   useEffect(() => {
@@ -24,6 +49,32 @@ const QuittanceSuccess = () => {
       localStorage.setItem('captured_email', email);
     }
   }, [email]);
+
+  // Boucle : texte apparaît → reste affiché → bulle joue (texte toujours visible) → texte disparaît → recommence (~5–5.5s)
+  useEffect(() => {
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
+
+    const runFullCycle = () => {
+      setBubbleStep('idle');
+      timeouts.push(setTimeout(() => setPhotoAnimStep(1), 0));        // 1ère phrase
+      timeouts.push(setTimeout(() => setPhotoAnimStep(2), 480));      // 2e phrase (stagger)
+      timeouts.push(setTimeout(() => setPhotoAnimStep(3), 1000));     // hold
+      timeouts.push(setTimeout(() => setBubbleStep('appear'), 1100)); // bulle sort progressivement du téléphone
+      timeouts.push(setTimeout(() => setBubbleStep('visible'), 1100 + BUBBLE_APPEAR_MS)); // arrivée
+      timeouts.push(setTimeout(() => setBubbleStep('tap'), 1100 + BUBBLE_APPEAR_MS + 1320));   // tap Envoyer
+      timeouts.push(setTimeout(() => setBubbleStep('release'), 1100 + BUBBLE_APPEAR_MS + 1520)); // relâche (bulle revient à la normale)
+      timeouts.push(setTimeout(() => setBubbleStep('fly'), 1100 + BUBBLE_APPEAR_MS + 1640));   // envol
+      timeouts.push(setTimeout(() => setBubbleStep('idle'), 1100 + BUBBLE_APPEAR_MS + 2140));   // fin bulle
+      timeouts.push(setTimeout(() => setPhotoAnimStep(4), 1100 + BUBBLE_APPEAR_MS + 2300));     // texte disparaît
+      timeouts.push(setTimeout(() => {
+        setPhotoAnimStep(0);
+        timeouts.push(setTimeout(runFullCycle, reducedMotion ? 600 : 420));
+      }, 1100 + BUBBLE_APPEAR_MS + 2720));
+    };
+
+    timeouts.push(setTimeout(runFullCycle, 320));
+    return () => timeouts.forEach((t) => clearTimeout(t));
+  }, [reducedMotion]);
 
   const handleSatisfactionResponse = (response: 'yes' | 'no') => {
     if (response === 'yes') {
@@ -66,257 +117,355 @@ const QuittanceSuccess = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      {/* Header - Mobile optimized */}
-      <header className="bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-50">
+    <div className="quittance-success-page min-h-screen bg-white flex flex-col overflow-hidden md:overflow-auto">
+      {/* Header - Quittance Simple, lien logo, flèche back, burger mobile */}
+      <header className="bg-white border-b border-[#e8e7ef] px-3 py-2 md:px-4 md:py-3 sticky top-0 z-50">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 bg-[#7CAA89] rounded-full flex items-center justify-center">
-              <CheckCircle className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-base font-bold text-[#1a1f20]">Quittance Simple</span>
+          <div className="flex items-center gap-2 md:gap-3">
+            <Link to="/" className="flex items-center gap-1.5 md:gap-2">
+              <div className="w-7 h-7 md:w-9 md:h-9 bg-[#E65F3F] rounded-lg md:rounded-xl flex items-center justify-center shadow-sm">
+                <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-white" />
+              </div>
+              <span className="text-sm md:text-base font-bold text-[#212a3e]">Quittance Simple</span>
+            </Link>
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="p-1.5 text-[#212a3e] hover:bg-[#f7f5fa] rounded-lg transition-colors"
+              aria-label="Retour"
+            >
+              <ArrowLeft className="w-5 h-5 md:w-5 md:h-5" />
+            </button>
           </div>
-          <button
-            className="md:hidden p-2"
-            onClick={() => navigate('/')}
-          >
-            <div className="w-6 h-0.5 bg-[#1a1f20] mb-1.5"></div>
-            <div className="w-6 h-0.5 bg-[#1a1f20] mb-1.5"></div>
-            <div className="w-6 h-0.5 bg-[#1a1f20]"></div>
-          </button>
+          {/* Desktop : rien ou lien ; Mobile : menu burger */}
+          <div className="md:hidden">
+            <Link to="/" className="p-2 flex items-center justify-center text-[#212a3e] hover:bg-[#f7f5fa] rounded-lg transition-colors" aria-label="Menu">
+              <span className="sr-only">Menu</span>
+              <div className="w-5 h-4 flex flex-col justify-between">
+                <span className="block w-5 h-0.5 bg-[#212a3e] rounded" />
+                <span className="block w-5 h-0.5 bg-[#212a3e] rounded" />
+                <span className="block w-5 h-0.5 bg-[#212a3e] rounded" />
+              </div>
+            </Link>
+          </div>
         </div>
       </header>
 
-      {/* Content - DESKTOP 40% SMALLER */}
-      <main className="flex-1 px-4 py-3 md:py-8 max-w-3xl md:max-w-2xl mx-auto w-full pb-24 md:pb-6">
-        {/* Success message */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="text-center mb-3 md:mb-6"
-        >
-          <div className="flex items-center justify-center gap-2 mb-3 md:mb-4">
-            <h1 className="text-lg md:text-2xl font-bold text-[#1a1f20]">
-              Quittance envoyée
-            </h1>
-            <CheckCircle className="w-7 h-7 md:w-8 md:h-8 text-[#7CAA89]" />
+      {/* Content — sobriété, hiérarchie claire */}
+      <main className="flex-1 px-4 py-6 md:px-6 md:py-8 max-w-2xl mx-auto w-full md:pb-6 overflow-y-auto">
+        <div className="mb-2 md:mb-3">
+          {/* Desktop : "Quittance envoyée" et entonnoir sur la même ligne */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-3">
+            <motion.div
+              initial={{ opacity: 0, ...(reducedMotion ? {} : { y: 6, scale: 0.96 }) }}
+              animate={{ opacity: 1, ...(reducedMotion ? {} : { y: 0, scale: reducedMotion ? 1 : [0.96, 1.02, 1] }) }}
+              transition={{
+                duration: reducedMotion ? 0.25 : OVERSHOOT_DURATION_MS / 1000,
+                ease: EASE_PREMIUM,
+                ...(reducedMotion ? {} : { scale: { duration: OVERSHOOT_DURATION_MS / 1000, times: [0, 0.55, 1], ease: EASE_PREMIUM } }),
+              }}
+              className="flex items-center gap-2"
+            >
+              <h1 className="text-xl md:text-2xl font-normal text-[#111827] tracking-tight">
+                Quittance envoyée
+              </h1>
+              <Check className="w-6 h-6 md:w-7 md:h-7 text-[#111827] flex-shrink-0" strokeWidth={2.5} />
+            </motion.div>
+
+            {/* Entonnoir de satisfaction — même ligne que "Quittance envoyée" sur desktop, masqué sur mobile */}
+            <motion.div
+              initial={{ opacity: 0, ...(reducedMotion ? {} : { y: 8 }) }}
+              animate={{ opacity: 1, ...(reducedMotion ? {} : { y: 0 }) }}
+              transition={{ duration: reducedMotion ? 0.25 : 0.3, delay: reducedMotion ? 0 : STAGGER_MS / 1000, ease: EASE_PREMIUM }}
+              className="hidden md:flex flex-shrink-0"
+            >
+            <div className="flex items-center gap-2 md:gap-3 flex-wrap justify-end">
+            {satisfactionStep === 'question' && (
+              <>
+                <span className="text-[10px] md:text-xs text-[#5e6478] whitespace-nowrap">Notre outil vous a plu&nbsp;?</span>
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => handleSatisfactionResponse('yes')}
+                    className="px-2 py-0 md:px-2.5 md:py-0.5 bg-[#f7f5fa] hover:bg-[#e8e7ef] text-[#212a3e] text-[10px] md:text-xs font-medium rounded leading-none min-h-0 shadow-[0_2px_4px_rgba(0,0,0,0.12)]"
+                  >
+                    Oui
+                  </button>
+                  <button
+                    onClick={() => handleSatisfactionResponse('no')}
+                    className="px-2 py-0 md:px-2.5 md:py-0.5 bg-[#f7f5fa] hover:bg-[#e8e7ef] text-[#212a3e] text-[10px] md:text-xs font-medium rounded leading-none min-h-0 shadow-[0_2px_4px_rgba(0,0,0,0.12)]"
+                  >
+                    Bof
+                  </button>
+                </div>
+              </>
+            )}
+            {satisfactionStep === 'positive' && (
+              <div className="flex items-center gap-2 flex-wrap justify-center">
+                <span className="text-[10px] md:text-xs text-[#5e6478] whitespace-nowrap">Merci ! Un avis Google nous aiderait 🙏</span>
+                <a
+                  href="https://g.page/r/CXTzg3vBtXQcEBM/review"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => trackGA4Event('google_review_clicked', { page_source: 'quittance_success' })}
+                  className="px-2.5 py-1 bg-[#E65F3F] hover:bg-[#d95530] text-white text-[10px] md:text-xs font-medium rounded-lg transition-colors whitespace-nowrap"
+                >
+                  Laisser un avis
+                </a>
+              </div>
+            )}
+            {satisfactionStep === 'negative' && (
+              <div className="flex items-center gap-2 flex-wrap justify-center">
+                <span className="text-[10px] md:text-xs text-[#5e6478] whitespace-nowrap">Dites-nous ce qui n'a pas marché :</span>
+                <textarea
+                  value={feedback}
+                  onChange={(e) => setFeedback(e.target.value)}
+                  placeholder="Votre retour..."
+                  className="w-24 md:w-32 border border-[#e8e7ef] rounded-lg p-1.5 text-[10px] md:text-xs resize-none focus:outline-none focus:ring-1 focus:ring-[#E65F3F]/20 focus:border-[#E65F3F]"
+                  rows={1}
+                />
+                <div className="flex gap-1">
+                  <button
+                    onClick={handleFeedbackSubmit}
+                    disabled={!feedback.trim()}
+                    className="px-2 py-1 bg-[#E65F3F] hover:bg-[#d95530] disabled:bg-[#e8e7ef] disabled:text-[#5e6478] text-white text-[10px] md:text-xs font-medium rounded-lg transition-colors whitespace-nowrap"
+                  >
+                    Envoyer
+                  </button>
+                  <button
+                    onClick={() => setSatisfactionStep('question')}
+                    className="px-2 py-1 bg-[#f7f5fa] hover:bg-[#e8e7ef] text-[#212a3e] text-[10px] md:text-xs font-medium rounded-lg transition-colors whitespace-nowrap"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            )}
+            {satisfactionStep === 'sent' && (
+              <span className="text-[10px] md:text-xs text-[#5e6478] whitespace-nowrap">
+                Merci pour votre retour ! 🙏
+              </span>
+            )}
+            </div>
+          </motion.div>
           </div>
 
-          {/* Ultra discreet satisfaction - replaces subtitle */}
-          {satisfactionStep === 'question' && (
-            <div className="max-w-xs mx-auto text-center">
-              <p className="text-[10px] md:text-xs text-gray-500 mb-1.5">Notre outil vous a plu&nbsp;?</p>
-              <div className="inline-flex gap-1.5">
-                <button
-                  onClick={() => handleSatisfactionResponse('yes')}
-                  className="px-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors"
-                  style={{ 
-                    padding: '2px 10px',
-                    lineHeight: '1',
-                    minHeight: 'auto',
-                    height: 'auto',
-                    WebkitAppearance: 'none'
-                  }}
-                >
-                  Oui
-                </button>
-                <button
-                  onClick={() => handleSatisfactionResponse('no')}
-                  className="px-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors"
-                  style={{ 
-                    padding: '2px 10px',
-                    lineHeight: '1',
-                    minHeight: 'auto',
-                    height: 'auto',
-                    WebkitAppearance: 'none'
-                  }}
-                >
-                  Bof
-                </button>
-              </div>
-            </div>
-          )}
+          <motion.p
+            initial={{ opacity: 0, ...(reducedMotion ? {} : { y: 6 }) }}
+            animate={{ opacity: 1, ...(reducedMotion ? {} : { y: 0 }) }}
+            transition={{ duration: reducedMotion ? 0.25 : 0.3, delay: reducedMotion ? 0 : (STAGGER_MS * 2) / 1000, ease: EASE_PREMIUM }}
+            className="text-base md:text-lg text-[#111827] font-normal leading-relaxed mt-2"
+          >
+            C'est fait... mais pourquoi le faire encore à la main ?
+          </motion.p>
+        </div>
 
-          {satisfactionStep === 'positive' && (
-            <div className="max-w-xs mx-auto text-center">
-              <p className="text-[10px] text-gray-600 mb-1.5">Merci ! Un avis Google nous aiderait énormément 🙏</p>
-              <a
-                href="https://g.page/r/CXTzg3vBtXQcEBM/review"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => trackGA4Event('google_review_clicked', { page_source: 'quittance_success' })}
-                className="inline-block px-2.5 bg-5[#7caa89] hover:bg-[#70997b] text-gray-700 text-[10px] font-medium rounded-full transition-colors"
-                style={{ 
-                  padding: '2px 10px',
-                  lineHeight: '1',
-                  minHeight: 'auto',
-                  height: 'auto',
-                  WebkitAppearance: 'none'
-                }}
-              >
-                Laisser un avis
-              </a>
+        {/* Photo + bandeau — on garde la photo, texte sobre */}
+        <motion.div
+          initial={{ opacity: 0, ...(reducedMotion ? {} : { y: 10 }) }}
+          animate={{ opacity: 1, ...(reducedMotion ? {} : { y: 0 }) }}
+          transition={{ duration: reducedMotion ? 0.25 : 0.32, delay: reducedMotion ? 0 : (STAGGER_MS * 3) / 1000, ease: EASE_PREMIUM }}
+          className="mb-4 md:mb-5"
+        >
+          <div className="w-screen relative left-1/2 -translate-x-1/2 md:w-full md:left-0 md:translate-x-0 md:max-w-2xl md:mx-auto md:rounded-xl overflow-hidden">
+            <div className="bg-[#374151] py-3 md:py-4 px-4 flex items-center justify-center">
+              <p className="text-lg md:text-2xl font-normal text-white text-center leading-snug">
+                Et si ça se faisait tout seul ?
+              </p>
             </div>
-          )}
-
-          {satisfactionStep === 'negative' && (
-            <div className="max-w-xs mx-auto text-center">
-              <p className="text-[10px] text-gray-600 mb-1.5">Désolé ! Dites-nous ce qui n'a pas marché :</p>
-              <textarea
-                value={feedback}
-                onChange={(e) => setFeedback(e.target.value)}
-                placeholder="Votre retour..."
-                className="w-full border border-gray-300 rounded-lg p-2 text-[10px] resize-none focus:outline-none focus:ring-1 focus:ring-gray-400 mb-1.5"
-                rows={2}
+            <div className="relative w-full aspect-[3/1.5] md:aspect-[4/2] overflow-hidden">
+              <img
+                src="https://jfpbddtdblqakabyjxkq.supabase.co/storage/v1/object/public/website-images/femme_rue_mobile_2.png"
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover object-top"
               />
-              <div className="inline-flex gap-1.5">
-                <button
-                  onClick={handleFeedbackSubmit}
-                  disabled={!feedback.trim()}
-                  className="px-2.5 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-200 disabled:text-gray-400 text-gray-700 text-[10px] font-medium rounded-full transition-colors"
-                  style={{ 
-                    padding: '2px 10px',
-                    lineHeight: '1',
-                    minHeight: 'auto',
-                    height: 'auto',
-                    WebkitAppearance: 'none'
-                  }}
-                >
-                  Envoyer
-                </button>
-                <button
-                  onClick={() => setSatisfactionStep('question')}
-                  className="px-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-medium rounded-full transition-colors"
-                  style={{ 
-                    padding: '2px 10px',
-                    lineHeight: '1',
-                    minHeight: 'auto',
-                    height: 'auto',
-                    WebkitAppearance: 'none'
-                  }}
-                >
-                  Annuler
-                </button>
-              </div>
-            </div>
-          )}
 
-          {satisfactionStep === 'sent' && (
-            <p className="text-[10px] text-gray-600">
-              Merci pour votre retour ! 🙏
-            </p>
-          )}
+              {/* Bulle de message animée : sort du téléphone → tap Envoyer → s'envole */}
+              {bubbleStep !== 'idle' && (
+                <>
+                  <motion.div
+                    className="absolute z-10 pointer-events-none"
+                    initial={{
+                      left: reducedMotion ? '52%' : '50%',
+                      bottom: reducedMotion ? '47%' : isMobile ? '32%' : '32%',
+                      scale: reducedMotion ? (isMobile ? 1.8 : 2.16) : 0.35,
+                      opacity: 0,
+                      ...(reducedMotion ? {} : { filter: 'blur(0px)' }),
+                    }}
+                    animate={{
+                      left: reducedMotion ? '52%' : (bubbleStep === 'fly' ? '92%' : '52%'),
+                      bottom: reducedMotion
+                        ? '47%'
+                        : isMobile
+                          ? (bubbleStep === 'fly' ? '96%' : '47%')
+                          : (bubbleStep === 'fly' ? '96%' : '47%'),
+                      scale:
+                        reducedMotion
+                          ? (isMobile ? 1.8 : 2.16)
+                          : bubbleStep === 'fly'
+                            ? 0.18
+                            : bubbleStep === 'appear'
+                              ? (isMobile ? 1.8 : 2.16)
+                              : bubbleStep === 'tap'
+                                ? (isMobile ? 1.73 : 2.08)
+                                : bubbleStep === 'release'
+                                  ? (isMobile ? 1.8 : 2.16)
+                                  : (isMobile ? 1.8 : 2.16),
+                      opacity: bubbleStep === 'fly' ? 0 : 1,
+                      rotate: bubbleStep === 'fly' && !reducedMotion ? -20 : 0,
+                      ...(reducedMotion ? {} : { filter: bubbleStep === 'fly' ? ['blur(0px)', 'blur(2px)', 'blur(0px)'] : 'blur(0px)' }),
+                    }}
+                    transition={
+                      (reducedMotion
+                        ? { duration: 0.3, ease: EASE_PREMIUM }
+                        : bubbleStep === 'fly'
+                          ? {
+                              duration: 0.5,
+                              ease: [0.4, 0, 0.6, 1],
+                              filter: { duration: 0.5, times: [0, 0.4, 1], ease: [0.4, 0, 0.6, 1] },
+                            }
+                          : {
+                              duration:
+                                bubbleStep === 'appear'
+                                  ? BUBBLE_APPEAR_MS / 1000
+                                  : bubbleStep === 'tap'
+                                    ? 0.12
+                                    : bubbleStep === 'release'
+                                      ? 0.18
+                                      : 0.5,
+                              ease: EASE_PREMIUM,
+                            })
+                    }
+                    style={{ transformOrigin: '0% 100%' }}
+                  >
+                    <div className="relative inline-block scale-[1.2] md:scale-100 origin-[0%_100%]">
+                      <img
+                        src="https://jfpbddtdblqakabyjxkq.supabase.co/storage/v1/object/public/website-images/bulle_message_envoi_auto_transp2.png"
+                        alt="Quittance envoyée !"
+                        className="w-[min(42%,140px)] h-auto object-contain drop-shadow-md block"
+                      />
+                      {/* Bouton Envoyer ancré dans la bulle, juste au-dessus de la zone bouton dans l'image */}
+                      <motion.div
+                        className="absolute left-[0%] md:left-[1%] top-[40%] md:top-[53%] -translate-y-1/2 pointer-events-none"
+                        initial={false}
+                        animate={{
+                          scale: bubbleStep === 'tap' ? 0.74 : 0.81,
+                          opacity: (bubbleStep === 'appear' || bubbleStep === 'visible' || bubbleStep === 'tap' || bubbleStep === 'release') ? 1 : 0,
+                          filter: bubbleStep === 'tap' ? 'brightness(0.92)' : 'brightness(1)',
+                        }}
+                        transition={{
+                          duration: bubbleStep === 'tap' ? 0.1 : bubbleStep === 'release' ? 0.18 : 0.18,
+                          ease: bubbleStep === 'tap' ? [0.25, 0.1, 0.25, 1] : EASE_PREMIUM,
+                        }}
+                      >
+                        <span className="inline-flex items-center gap-0.5 md:gap-1 bg-[#22c55e] text-white text-[8px] md:text-xs font-semibold px-1.5 py-0.5 md:px-[0.605rem] md:py-[0.152rem] rounded-md shadow-md whitespace-nowrap scale-[0.64] md:scale-[0.81] origin-left">
+                          <Send className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 flex-shrink-0" strokeWidth={2.5} />
+                          Envoyer
+                        </span>
+                      </motion.div>
+                    </div>
+                  </motion.div>
+                </>
+              )}
+
+              <motion.div
+                className="absolute inset-x-0 bottom-0 pt-6 pb-3 px-4 bg-gradient-to-t from-black/75 to-transparent flex flex-col items-center justify-center gap-1"
+              >
+                <motion.p
+                  animate={{
+                    opacity: photoAnimStep >= 1 && photoAnimStep <= 3 ? 1 : 0,
+                    ...(reducedMotion ? {} : { y: photoAnimStep >= 1 && photoAnimStep <= 3 ? 0 : 6 }),
+                  }}
+                  transition={{ duration: reducedMotion ? 0.25 : 0.28, ease: EASE_PREMIUM }}
+                  className="text-sm md:text-base font-medium text-white text-center"
+                >
+                  Génération et envoi
+                </motion.p>
+                <motion.p
+                  animate={{
+                    opacity: photoAnimStep >= 2 && photoAnimStep <= 3 ? 1 : 0,
+                    ...(reducedMotion ? {} : { y: photoAnimStep >= 2 && photoAnimStep <= 3 ? 0 : 5 }),
+                  }}
+                  transition={{ duration: reducedMotion ? 0.25 : 0.28, delay: reducedMotion ? 0 : STAGGER_MS / 1000, ease: EASE_PREMIUM }}
+                  className="text-sm md:text-base font-medium text-white text-center"
+                >
+                  en 5 secondes
+                </motion.p>
+              </motion.div>
+            </div>
+          </div>
         </motion.div>
 
-        {/* CTA Card - Pack Automatique */}
+        {/* Bloc offre — accroche + boîte à outils */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-3 md:p-8 border border-gray-200 shadow-lg"
+          initial={{ opacity: 0, ...(reducedMotion ? {} : { y: 10 }) }}
+          animate={{ opacity: 1, ...(reducedMotion ? {} : { y: 0 }) }}
+          transition={{ duration: reducedMotion ? 0.25 : 0.32, delay: reducedMotion ? 0 : (STAGGER_MS * 4) / 1000, ease: EASE_PREMIUM }}
+          className="mb-20 md:mb-6 px-1"
         >
-          <div className="mb-3 md:mb-6">
-            <p className="text-xs md:text-sm text-[#545454] leading-relaxed max-w-2xl mx-auto">
-             Vous devrez recommencer les mois prochains&nbsp;: chercher e-mail et loyer, transférer le PDF, rédiger l'email, archiver…😕
-            </p>
-            <p className="text-sm md:text-base text-[#1a1f20] font-semibold mt-2 md:mt-4 max-w-2xl mx-auto">
-              Et si vous stoppiez enfin ces corvées&nbsp;?
-            </p>
-          </div>
+          <p className="text-base md:text-lg text-[#111827]  leading-loose tracking-normal mb-3">
+            Compris dans l'essai gratuit :
+          </p>
+          <p className="text-[15px] text-[#4b5563] leading-relaxed my-4 mx-0">
+            Les Quittances Automatiques, <span className="font-semibold text-[#1e3a5f]">plus la boîte à outils intelligents :</span>
+          </p>
+          <ul className="space-y-1.5 mb-5 pl-0">
+            <li className="flex items-start gap-2 text-[15px] text-[#4b5563]">
+             
+              <span>Annonces assistée par IA - Baux et états des lieux intelligents - Signature électronique simplifiée - Bilan annuel prêt - Alerte révision loyers etc.</span>
+            </li>
+            
+          </ul>
 
-          <div className="text-xs md:text-base text-[#545454] mb-3 md:mb-6 space-y-1.5 md:space-y-3 max-w-2xl mx-auto">
-            <div className="flex items-start gap-2 md:gap-3">
-              <span className="text-[#7CAA89] font-bold text-base md:text-lg flex-shrink-0">✓</span>
-              <span><strong>Zéro oubli :</strong> Quittance et relance auto chaque mois, sous votre contrôle</span>
-            </div>
-            <div className="flex items-start gap-2 md:gap-3">
-              <span className="text-[#7CAA89] font-bold text-base md:text-lg flex-shrink-0">✓</span>
-              <span><strong>Saisie minimale :</strong> Pas de formulaires sans fin, on a fait vraiment simple</span>
-            </div>
-            <div className="flex items-start gap-2 md:gap-3">
-              <span className="text-[#7CAA89] font-bold text-base md:text-lg flex-shrink-0">✓</span>
-              <span><strong>Zéro perte :</strong> Révision IRL automatique pour ne plus oublier d'augmenter votre loyer</span>
-            </div>
-            <div className="flex items-start gap-2 md:gap-3">
-              <span className="text-[#7CAA89] font-bold text-base md:text-lg flex-shrink-0">✓</span>
-              <span><strong>Zéro calcul :</strong> Bilan annuel prêt pour votre déclaration d'impôts</span>
-            </div>
-            <div className="flex items-start gap-2 md:gap-3">
-              <span className="text-[#7CAA89] font-bold text-base md:text-lg flex-shrink-0">✓</span>
-              <span><strong>Zéro stress :</strong> Tout est archivé accessible 24h/24</span>
-            </div>
-            <div className="flex items-start gap-2 md:gap-3">
-              <span className="text-[#7CAA89] font-bold text-base md:text-lg flex-shrink-0">✓</span>
-              <span><strong>Prix de lancement :</strong> Dès 0,82€/mois</span>
-            </div>
-          </div>
+          <button
+            onClick={() => {
+              trackCtaClick('mode_tranquillite_success_page', 'quittance_success', 'pack_activation_flow');
+              trackGA4Event('conversion_cta_clicked', {
+                cta_name: 'passer_mode_tranquillite',
+                page_source: 'quittance_success',
+                destination: 'pack_activation_flow',
+              });
+              setIsPackActivationFlowOpen(true);
+            }}
+            className="hidden md:flex w-full bg-[#E65F3F] hover:bg-[#d95530] text-white font-medium text-[15px] py-3.5 rounded-xl flex-col items-center justify-center gap-0.5 transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              Activer l'automate gratuitement
+              <ArrowRight className="w-5 h-5" />
+            </span>
+            <span className="text-[12px] font-normal text-white/90">Sans carte bancaire - sans engagement</span>
+          </button>
 
-          {/* Desktop CTA (hidden on mobile) */}
-          <div className="hidden md:block max-w-md mx-auto">
-            <button
-              onClick={() => {
-                trackCtaClick('mode_tranquillite_success_page', 'quittance_success', 'payment_modal');
-                trackGA4Event('conversion_cta_clicked', {
-                  cta_name: 'passer_mode_tranquillite',
-                  page_source: 'quittance_success',
-                  destination: 'payment_modal',
-                });
-                setIsPaymentModalOpen(true);
-              }}
-              className="w-full bg-[#545454] hover:bg-[#1a1f20] text-white font-bold text-base md:text-lg py-4 md:py-4 rounded-full transition-all transform hover:scale-[1.02] shadow-lg mb-4">
-              Tester Pack Automatique
-            </button>
+          </motion.div>
 
-            <p className="text-center text-sm md:text-base text-[#545454] mb-4">
-              <strong>et ne plus m'en occuper</strong> dès <span className="font-bold text-[#1a1f20]">0,82 € / mois</span>
-            </p>
-            <p className="text-center text-sm md:text-base text-[#545454] mb-4">
-              Sans engagement
-            </p>
-
-            <button
-              onClick={() => {
-                trackGA4Event('skip_automation_clicked', {
-                  page_source: 'quittance_success',
-                  action: 'continue_without_automation',
-                });
-                navigate('/');
-              }}
-              className="w-full text-center text-sm md:text-sm text-[#545454] hover:text-[#1a1f20] transition-colors underline">
-              Retour
-            </button>
-          </div>
-        </motion.div>
       </main>
 
-      {/* Fixed Mobile CTA - Only on mobile - COMPACT VERSION */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-3 py-2 shadow-lg z-50">
+      {/* CTA mobile fixe — sobre */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-[#e5e7eb] px-4 py-3 z-50">
         <button
           onClick={() => {
-            trackCtaClick('mode_tranquillite_success_page', 'quittance_success', 'payment_modal');
+            trackCtaClick('mode_tranquillite_success_page', 'quittance_success', 'pack_activation_flow');
             trackGA4Event('conversion_cta_clicked', {
               cta_name: 'passer_mode_tranquillite',
               page_source: 'quittance_success',
-              destination: 'payment_modal',
+              destination: 'pack_activation_flow',
             });
-            setIsPaymentModalOpen(true);
+            setIsPackActivationFlowOpen(true);
           }}
-          className="w-full bg-[#545454] hover:bg-[#1a1f20] text-white font-bold text-sm py-3 rounded-full transition-all shadow-lg flex items-center justify-center gap-2">
-          <span>Tester Pack Automatique</span>
+          className="w-full bg-[#E65F3F] hover:bg-[#d95530] text-white font-medium text-[15px] py-3 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-colors"
+        >
+          <span className="flex items-center gap-2">
+            Essayer gratuitement
+            <ArrowRight className="w-5 h-5" />
+          </span>
+          <span className="text-[12px] font-normal text-white/90">Sans CB - sans engagement</span>
         </button>
       </div>
 
-      {/* Simple footer - Mobile optimized */}
-      <footer className="py-6 text-center hidden md:block">
-      </footer>
-
-      {/* Payment Modal */}
-      <QuickPaymentModal
-        isOpen={isPaymentModalOpen}
-        onClose={() => setIsPaymentModalOpen(false)}
-        selectedPlan="auto"
-        prefilledEmail={email}
+      {/* Pack Activation Flow Modal */}
+      <PackActivationFlow
+        isOpen={isPackActivationFlowOpen}
+        onClose={() => setIsPackActivationFlowOpen(false)}
+        prefillEmail={email}
       />
     </div>
   );

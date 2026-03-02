@@ -62,32 +62,32 @@ const Header = () => {
   const isDashboard = location.pathname === '/dashboard' || location.pathname === '/free-dashboard' || location.pathname === '/manage-subscription';
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white backdrop-blur-lg border-b border-gray-200">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-[#f6f5f9] backdrop-blur-lg border-b border-[#e8e7ef]">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-5 lg:px-10 xl:px-10">
         <div className="flex items-center h-14 max-[480px]:h-[56px]">
           {isDashboard ? (
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => navigate('/')}
-                className="flex items-center space-x-1.5 text-gray-600 hover:text-[#7CAA89] transition-colors"
+                className="flex items-center space-x-1.5 text-[#5e6478] hover:text-[#f4663b] transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
               <Link to="/" className="flex items-center space-x-2 group">
-                <div className="w-7 h-7 bg-[#7CAA89] rounded-xl flex items-center justify-center shadow-sm">
+                <div className="w-7 h-7 bg-[#f4663b] rounded-xl flex items-center justify-center shadow-sm">
                   <Check className="w-4 h-4 text-white stroke-[3]" />
                 </div>
-                <span className="text-base font-bold text-[#2b2b2b]">
+                <span className="text-base font-bold text-[#151b2c]">
                   Quittance Simple
                 </span>
               </Link>
             </div>
           ) : (
             <Link to="/" className="flex items-center space-x-2 group">
-              <div className="w-7 h-7 bg-[#7CAA89] rounded-xl flex items-center justify-center shadow-sm">
+              <div className="w-7 h-7 bg-[#f4663b] rounded-xl flex items-center justify-center shadow-sm">
                 <Check className="w-4 h-4 text-white stroke-[3]" />
               </div>
-              <span className="text-base font-bold text-[#2b2b2b]">
+              <span className="text-base font-bold text-[#151b2c]">
                 Quittance Simple
               </span>
             </Link>
@@ -100,8 +100,8 @@ const Header = () => {
                   onClick={() => setIsToolsMenuOpen(!isToolsMenuOpen)}
                   className={`flex items-center space-x-1 text-[14px] font-semibold transition-colors ${
                     isToolsActive()
-                      ? 'text-[#7CAA89]'
-                      : 'text-gray-700 hover:text-[#7CAA89]'
+                      ? 'text-[#f4663b]'
+                      : 'text-[#151b2c] hover:text-[#f4663b]'
                   }`}
                 >
                   <span>Outils gratuits</span>
@@ -114,7 +114,7 @@ const Header = () => {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 10 }}
-                      className="absolute left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50"
+                      className="absolute left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-[#e8e7ef] py-1 z-50"
                     >
                       {toolsMenuItems.map((item) => (
                         <Link
@@ -123,8 +123,8 @@ const Header = () => {
                           onClick={() => setIsToolsMenuOpen(false)}
                           className={`block px-4 py-2.5 text-sm font-medium transition-colors ${
                             isActive(item.path)
-                              ? 'bg-[#7CAA89]/10 text-[#7CAA89]'
-                              : 'text-gray-700 hover:bg-gray-50'
+                              ? 'bg-[#f4663b]/10 text-[#f4663b]'
+                              : 'text-[#151b2c] hover:bg-[#f6f5f9]'
                           }`}
                         >
                           {item.label}
@@ -141,8 +141,8 @@ const Header = () => {
                   to={item.path}
                   className={`text-[14px] font-semibold transition-colors ${
                     isActive(item.path)
-                      ? 'text-[#7CAA89]'
-                      : 'text-gray-700 hover:text-[#7CAA89]'
+                      ? 'text-[#f4663b]'
+                      : 'text-[#151b2c] hover:text-[#f4663b]'
                   }`}
                 >
                   {item.label}
@@ -156,12 +156,12 @@ const Header = () => {
               <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center space-x-1.5 px-2 py-1 hover:bg-gray-50 rounded-full transition-all"
+                  className="flex items-center space-x-2 px-3 py-1.5 hover:bg-[#f7f5fa] rounded-xl transition-all border border-transparent hover:border-[#e8e7ef]"
                 >
-                  <div className="w-7 h-7 bg-[#ed7862] rounded-full flex items-center justify-center">
+                  <div className="w-7 h-7 bg-[#E65F3F] rounded-lg flex items-center justify-center shadow-sm">
                     <User className="w-3.5 h-3.5 text-white" />
                   </div>
-                  <span className="text-xs font-medium text-[#2b2b2b] max-w-[120px] truncate">
+                  <span className="text-xs font-semibold text-[#212a3e] max-w-[120px] truncate">
                     {userEmail?.split('@')[0]}
                   </span>
                 </button>
@@ -172,27 +172,28 @@ const Header = () => {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 10 }}
-                      className="absolute right-0 mt-1.5 w-52 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50"
+                      transition={{ duration: 0.2 }}
+                      className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-[0_8px_24px_rgba(15,23,42,0.12)] border border-[#e8e7ef] py-2 z-50 overflow-hidden"
                     >
-                      <div className="px-2.5 py-1.5 border-b border-gray-100">
-                        <p className="text-[9px] text-gray-500">Connecté en tant que</p>
-                        <p className="text-xs font-semibold text-[#2b2b2b] truncate">{userEmail}</p>
+                      <div className="px-3 py-2.5 border-b border-[#e8e7ef] bg-[#f7f5fa]">
+                        <p className="text-[10px] text-[#5e6478] uppercase tracking-wide font-semibold">Connecté en tant que</p>
+                        <p className="text-xs font-semibold text-[#212a3e] truncate mt-0.5">{userEmail}</p>
                       </div>
 
-                      <div className="py-1">
+                      <div className="py-1.5">
                         <button
                           onClick={() => {
                             navigate(`/dashboard?email=${encodeURIComponent(userEmail)}`);
                             setIsUserMenuOpen(false);
                           }}
-                          className="w-full flex items-center space-x-2 px-2.5 py-1.5 hover:bg-gray-50 transition-colors text-left"
+                          className="w-full flex items-center space-x-3 px-3 py-2 hover:bg-[#f7f5fa] transition-colors text-left group"
                         >
-                          <div className="w-6 h-6 bg-[#ed7862]/10 rounded-lg flex items-center justify-center">
-                            <FileCheck className="w-3.5 h-3.5 text-[#ed7862]" />
+                          <div className="w-7 h-7 bg-[#E65F3F]/10 rounded-lg flex items-center justify-center group-hover:bg-[#E65F3F]/20 transition-colors">
+                            <FileCheck className="w-4 h-4 text-[#E65F3F]" />
                           </div>
-                          <div>
-                            <p className="text-xs font-medium text-[#2b2b2b]">Tableau de bord</p>
-                            <p className="text-[10px] text-gray-500">Mes locataires</p>
+                          <div className="flex-1">
+                            <p className="text-xs font-semibold text-[#212a3e]">Tableau de bord</p>
+                            <p className="text-[10px] text-[#5e6478] mt-0.5">Mes locataires</p>
                           </div>
                         </button>
 
@@ -201,14 +202,14 @@ const Header = () => {
                             navigate(`/billing?email=${encodeURIComponent(userEmail)}`);
                             setIsUserMenuOpen(false);
                           }}
-                          className="w-full flex items-center space-x-2 px-2.5 py-1.5 hover:bg-gray-50 transition-colors text-left"
+                          className="w-full flex items-center space-x-3 px-3 py-2 hover:bg-[#f7f5fa] transition-colors text-left group"
                         >
-                          <div className="w-6 h-6 bg-[#7CAA89]/10 rounded-lg flex items-center justify-center">
-                            <FileText className="w-3.5 h-3.5 text-[#7CAA89]" />
+                          <div className="w-7 h-7 bg-[#212a3e]/10 rounded-lg flex items-center justify-center group-hover:bg-[#212a3e]/20 transition-colors">
+                            <FileText className="w-4 h-4 text-[#212a3e]" />
                           </div>
-                          <div>
-                            <p className="text-xs font-medium text-[#2b2b2b]">Facturation</p>
-                            <p className="text-[10px] text-gray-500">Mes factures</p>
+                          <div className="flex-1">
+                            <p className="text-xs font-semibold text-[#212a3e]">Facturation</p>
+                            <p className="text-[10px] text-[#5e6478] mt-0.5">Mes factures</p>
                           </div>
                         </button>
 
@@ -217,27 +218,27 @@ const Header = () => {
                             navigate(`/manage-subscription?email=${encodeURIComponent(userEmail)}`);
                             setIsUserMenuOpen(false);
                           }}
-                          className="w-full flex items-center space-x-2 px-2.5 py-1.5 hover:bg-gray-50 transition-colors text-left"
+                          className="w-full flex items-center space-x-3 px-3 py-2 hover:bg-[#f7f5fa] transition-colors text-left group"
                         >
-                          <div className="w-6 h-6 bg-[#FFD76F]/10 rounded-lg flex items-center justify-center">
-                            <Settings className="w-3.5 h-3.5 text-[#FFD76F]" />
+                          <div className="w-7 h-7 bg-[#212a3e]/10 rounded-lg flex items-center justify-center group-hover:bg-[#212a3e]/20 transition-colors">
+                            <Settings className="w-4 h-4 text-[#212a3e]" />
                           </div>
-                          <div>
-                            <p className="text-xs font-medium text-[#2b2b2b]">Abonnement</p>
-                            <p className="text-[10px] text-gray-500">Gérer mon plan</p>
+                          <div className="flex-1">
+                            <p className="text-xs font-semibold text-[#212a3e]">Abonnement</p>
+                            <p className="text-[10px] text-[#5e6478] mt-0.5">Gérer mon plan</p>
                           </div>
                         </button>
                       </div>
 
-                      <div className="border-t border-gray-100 pt-1">
+                      <div className="border-t border-[#e8e7ef] pt-1.5">
                         <button
                           onClick={handleLogout}
-                          className="w-full flex items-center space-x-2 px-2.5 py-1.5 hover:bg-red-50 transition-colors text-left group"
+                          className="w-full flex items-center space-x-3 px-3 py-2 hover:bg-red-50 transition-colors text-left group"
                         >
-                          <div className="w-6 h-6 bg-red-50 rounded-lg flex items-center justify-center group-hover:bg-red-100 transition-colors">
-                            <LogOut className="w-3.5 h-3.5 text-red-600" />
+                          <div className="w-7 h-7 bg-red-50 rounded-lg flex items-center justify-center group-hover:bg-red-100 transition-colors">
+                            <LogOut className="w-4 h-4 text-red-600" />
                           </div>
-                          <p className="text-xs font-medium text-red-600">Se déconnecter</p>
+                          <p className="text-xs font-semibold text-red-600">Se déconnecter</p>
                         </button>
                       </div>
                     </motion.div>
@@ -247,7 +248,7 @@ const Header = () => {
             ) : (
               <button
                 onClick={() => setIsLoginModalOpen(true)}
-                className="text-sm font-bold text-white bg-[#ed7862] hover:bg-[#e56651] transition-all px-5 py-1.5 rounded-full shadow-sm"
+                className="text-sm font-bold text-white bg-[#45556e] hover:bg-[#3a4a5f] transition-all px-5 py-2 rounded-xl shadow-sm"
               >
                 Connexion
               </button>
@@ -256,12 +257,12 @@ const Header = () => {
 
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="lg:hidden p-1 rounded-lg hover:bg-orange-50 transition-colors ml-auto"
+            className="lg:hidden p-1 rounded-lg hover:bg-white/60 transition-colors ml-auto"
           >
             {isMenuOpen ? (
-              <X className="w-4 h-4 text-gray-600" />
+              <X className="w-4 h-4 text-[#151b2c]" />
             ) : (
-              <Menu className="w-4 h-4 text-gray-600" />
+              <Menu className="w-4 h-4 text-[#151b2c]" />
             )}
           </button>
         </div>
@@ -273,7 +274,7 @@ const Header = () => {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="lg:hidden bg-white/95 backdrop-blur-lg border-t border-gray-100"
+            className="lg:hidden bg-[#faf9fc] backdrop-blur-lg border-t border-[#e8e7ef]"
           >
             <div className="px-4 py-3 space-y-2">
               <Link
@@ -281,8 +282,8 @@ const Header = () => {
                 onClick={() => setIsMenuOpen(false)}
                 className={`block text-sm font-semibold transition-colors py-2 ${
                   isActive('/')
-                    ? 'text-[#7CAA89]'
-                    : 'text-gray-700 hover:text-[#7CAA89]'
+                    ? 'text-[#f4663b]'
+                    : 'text-[#151b2c] hover:text-[#f4663b]'
                 }`}
               >
                 Accueil
@@ -293,8 +294,8 @@ const Header = () => {
                 onClick={() => setIsMenuOpen(false)}
                 className={`block text-sm font-semibold transition-colors py-2 ${
                   isActive('/automation')
-                    ? 'text-[#7CAA89]'
-                    : 'text-gray-700 hover:text-[#7CAA89]'
+                    ? 'text-[#f4663b]'
+                    : 'text-[#151b2c] hover:text-[#f4663b]'
                 }`}
               >
                 Pack Automatique
@@ -305,8 +306,8 @@ const Header = () => {
                   onClick={() => setIsMobileToolsOpen(!isMobileToolsOpen)}
                   className={`flex items-center justify-between w-full text-sm font-semibold transition-colors py-2 ${
                     isToolsActive()
-                      ? 'text-[#7CAA89]'
-                      : 'text-gray-700 hover:text-[#7CAA89]'
+                      ? 'text-[#f4663b]'
+                      : 'text-[#151b2c] hover:text-[#f4663b]'
                   }`}
                 >
                   <span>Outils gratuits</span>
@@ -331,8 +332,8 @@ const Header = () => {
                           }}
                           className={`block text-sm font-medium transition-colors py-2 ${
                             isActive(item.path)
-                              ? 'text-[#7CAA89]'
-                              : 'text-gray-600 hover:text-[#7CAA89]'
+                              ? 'text-[#f4663b]'
+                              : 'text-[#5e6478] hover:text-[#f4663b]'
                           }`}
                         >
                           {item.label}
@@ -348,8 +349,8 @@ const Header = () => {
                 onClick={() => setIsMenuOpen(false)}
                 className={`block text-sm font-medium transition-colors py-2 ${
                   isActive('/pricing')
-                    ? 'text-[#7CAA89]'
-                    : 'text-gray-600 hover:text-[#7CAA89]'
+                    ? 'text-[#f4663b]'
+                    : 'text-[#5e6478] hover:text-[#f4663b]'
                 }`}
               >
                 Tarifs
@@ -360,20 +361,20 @@ const Header = () => {
                 onClick={() => setIsMenuOpen(false)}
                 className={`block text-sm font-medium transition-colors py-2 ${
                   isActive('/about')
-                    ? 'text-[#7CAA89]'
-                    : 'text-gray-600 hover:text-[#7CAA89]'
+                    ? 'text-[#f4663b]'
+                    : 'text-[#5e6478] hover:text-[#f4663b]'
                 }`}
               >
                 À propos
               </Link>
 
-              <div className="pt-3 border-t border-gray-200 mt-3">
+              <div className="pt-3 border-t border-[#e8e7ef] mt-3">
                 {userEmail ? (
                   <>
                     <Link
                       to={`/dashboard?email=${encodeURIComponent(userEmail)}`}
                       onClick={() => setIsMenuOpen(false)}
-                      className="block bg-[#ed7862] hover:bg-[#e56651] text-white px-4 py-2.5 rounded-xl text-sm font-semibold text-center shadow-sm"
+                      className="block bg-[#f4663b] hover:bg-[#e25830] text-white px-4 py-2.5 rounded-xl text-sm font-semibold text-center shadow-sm"
                     >
                       Mon tableau de bord
                     </Link>
@@ -382,7 +383,7 @@ const Header = () => {
                         handleLogout();
                         setIsMenuOpen(false);
                       }}
-                      className="block w-full text-gray-600 hover:text-red-600 px-4 py-2 text-sm font-medium text-center mt-2"
+                      className="block w-full text-[#5e6478] hover:text-red-600 px-4 py-2 text-sm font-medium text-center mt-2"
                     >
                       Se déconnecter
                     </button>
@@ -393,7 +394,7 @@ const Header = () => {
                       setIsMenuOpen(false);
                       setIsLoginModalOpen(true);
                     }}
-                    className="block w-full bg-[#ed7862] hover:bg-[#e56651] text-white px-4 py-2.5 rounded-xl text-sm font-semibold text-center shadow-sm"
+                    className="block w-full bg-[#45556e] hover:bg-[#3a4a5f] text-white px-4 py-2.5 rounded-xl text-sm font-semibold text-center shadow-sm"
                   >
                     Connexion
                   </button>

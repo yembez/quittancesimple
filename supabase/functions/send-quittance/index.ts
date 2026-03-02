@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { encodeBase64 } from 'https://deno.land/std@0.208.0/encoding/base64.ts';
 import { jsPDF } from 'npm:jspdf@2.5.1';
+import { buildEmailHtml } from '../_shared/email-template.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -449,13 +450,22 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Construire le nom complet du propriétaire avec prénom + nom
     if (!data.baillorName || data.baillorName.trim() === '') {
       if (data.proprietaireName && data.proprietaireName.trim() !== '') {
         data.baillorName = data.proprietaireName;
       } else {
         const nom = data.nomProprietaire || '';
         const prenom = data.prenomProprietaire || '';
-        data.baillorName = `${prenom} ${nom}`.trim();
+        data.baillorName = [prenom, nom].filter(Boolean).join(' ').trim();
+      }
+    } else if (data.nomProprietaire || data.prenomProprietaire) {
+      // Si baillorName existe mais qu'on a nom/prenomProprietaire, reconstruire le nom complet
+      const nom = data.nomProprietaire || '';
+      const prenom = data.prenomProprietaire || '';
+      const nomComplet = [prenom, nom].filter(Boolean).join(' ').trim();
+      if (nomComplet) {
+        data.baillorName = nomComplet;
       }
     }
 
@@ -498,6 +508,26 @@ Deno.serve(async (req) => {
 
     await supabase.from('proprietaires').upsert(proprietaireData, { onConflict: 'email' });
 
+    // Récupérer le nom complet du locataire depuis la DB si locataireId est présent
+    let locataireEmailFromPayload = (data.locataireEmail ?? data.locataire_email ?? '').toString().trim();
+    let locataireNameFromDb = '';
+    if (data.locataireId || data.locataire_id) {
+      const lid = data.locataireId ?? data.locataire_id;
+      const { data: locataireRow } = await supabase
+        .from('locataires')
+        .select('email, nom, prenom')
+        .eq('id', lid)
+        .maybeSingle();
+      if (locataireRow) {
+        // Toujours récupérer le nom complet depuis la DB
+        locataireNameFromDb = [locataireRow.prenom, locataireRow.nom].filter(Boolean).join(' ');
+        // Récupérer l'email si absent du payload
+        if (!locataireEmailFromPayload && locataireRow.email) {
+          locataireEmailFromPayload = String(locataireRow.email).trim();
+        }
+      }
+    }
+
     const resendKey = Deno.env.get('RESEND_API_KEY');
     if (!resendKey) {
       return new Response(JSON.stringify({
@@ -509,229 +539,77 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Utiliser le nom complet du locataire depuis la DB si disponible, sinon depuis le payload
+    const locataireNameFinal = locataireNameFromDb || (data.locataireName ?? data.locataire_name) || '';
+    if (locataireNameFinal) {
+      data.locataireName = locataireNameFinal;
+    }
+    
     const pdfBuffer = generateProfessionalPDF(data);
     const total = (parseFloat(data.loyer) || 0) + (parseFloat(data.charges) || 0);
-    const recipientEmail = data.locataireEmail || data.baillorEmail;
+    // Accepter camelCase et snake_case (au cas où le corps serait transformé)
+    const locataireEmailRaw = locataireEmailFromPayload;
+    const recipientEmail = locataireEmailRaw || data.baillorEmail;
+    // Template locataire : destinataire = locataire OU flow "clic rappel" (action auto_send)
+    const isToTenant = !!locataireEmailRaw || data.action === 'auto_send';
+    console.log('📧 [send-quittance] action=', data.action, 'recipient=', recipientEmail?.slice(0, 8) + '…', 'isToTenant=', isToTenant, 'template=', isToTenant ? 'LOCATAIRE' : 'PROPRIETAIRE');
 
+    // Extraire le prénom du propriétaire pour l'email (premier mot du nom complet)
     const fullName = data.baillorName || data.proprietaireName || '';
     const prenom = fullName.split(' ')[0].trim() || 'Propriétaire';
+    // Utiliser le nom complet du locataire pour l'email
+    const locataireName = data.locataireName || 'Locataire';
+    const loyer = parseFloat(data.loyer) || 0;
+    const charges = parseFloat(data.charges) || 0;
 
-    const htmlEmail = `
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      line-height: 1.6;
-      color: #1a1a1a;
-      margin: 0;
-      padding: 0;
-      background-color: #f5f5f5;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      background-color: #ffffff;
-      overflow: hidden;
-    }
-    .header {
-      background: linear-gradient(135deg, #7ba893 0%, #8fb89f 100%);
-      color: white;
-      padding: 40px 30px;
-      text-align: center;
-      border-radius: 12px 12px 0 0;
-    }
-    .header h1 {
-      margin: 0 0 10px 0;
-      font-size: 32px;
-      font-weight: 600;
-      line-height: 1.3;
-    }
-    .header-subtitle {
-      font-size: 16px;
-      opacity: 0.95;
-      margin: 0;
-      font-weight: 400;
-    }
-    .content {
-      padding: 40px 30px;
-    }
-    .greeting {
-      font-size: 28px;
-      font-weight: 700;
-      color: #1a1a1a;
-      margin-bottom: 25px;
-    }
-    .intro {
-      font-size: 16px;
-      color: #333;
-      margin-bottom: 40px;
-      line-height: 1.6;
-    }
-    .main-question {
-      font-size: 28px;
-      font-weight: 700;
-      color: #d77a61;
-      margin: 40px 0 15px 0;
-      line-height: 1.3;
-    }
-    .sub-question {
-      font-size: 18px;
-      font-weight: 700;
-      color: #1a1a1a;
-      margin-bottom: 30px;
-    }
-    .illustration {
-      text-align: center;
-      margin: 30px 0;
-    }
-    .illustration img {
-      max-width: 100%;
-      height: auto;
-    }
-    .features-intro {
-      font-size: 16px;
-      color: #333;
-      margin: 30px 0 20px 0;
-    }
-    .feature-list {
-      list-style: none;
-      padding: 0;
-      margin: 20px 0;
-    }
-    .feature-item {
-      display: flex;
-      align-items: start;
-      margin-bottom: 15px;
-      font-size: 16px;
-      line-height: 1.5;
-    }
-    .check-icon {
-      color: #d77a61;
-      margin-right: 12px;
-      font-size: 20px;
-      font-weight: bold;
-      flex-shrink: 0;
-      margin-top: 2px;
-    }
-    .cta-section {
-      text-align: center;
-      margin: 40px 0;
-    }
-    .cta-button {
-      display: inline-block;
-      background: #d77a61;
-      color: white !important;
-      text-decoration: none !important;
-      padding: 18px 40px;
-      border-radius: 12px;
-      font-weight: 700;
-      font-size: 18px;
-      box-shadow: 0 4px 15px rgba(215, 122, 97, 0.3);
-      transition: all 0.3s ease;
-    }
-    .cta-button:hover {
-      background: #c56b52;
-      box-shadow: 0 6px 20px rgba(215, 122, 97, 0.4);
-    }
-    .cta-note {
-      font-size: 14px;
-      color: #666;
-      margin-top: 20px;
-    }
-    .footer {
-      background-color: #fafafa;
-      padding: 30px;
-      text-align: center;
-      border-top: 1px solid #e5e5e5;
-    }
-    .footer-brand {
-      font-size: 18px;
-      font-weight: 700;
-      color: #d77a61;
-      margin-bottom: 10px;
-    }
-    .footer-copyright {
-      font-size: 13px;
-      color: #999;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>Votre quittance est prête</h1>
-      <p class="header-subtitle">(et les prochaines pourraient l'être aussi sans rien faire...)</p>
-    </div>
+    // Template email destiné au LOCATAIRE (modèle design unifié — QS Espace Bailleur)
+    const dashboardUrl = 'https://quittancesimple.fr/dashboard';
+    const htmlEmailTenant = buildEmailHtml({
+      title: 'QS- Espace Bailleur',
+      bodyHtml: `
+        <p>Bonjour ${locataireName},</p>
+        <p>Veuillez trouver ci-joint votre quittance de loyer pour la période : <strong>${data.periode}</strong>.</p>
+        <ul style="padding-left: 20px;">
+          <li>Loyer mensuel : ${loyer.toFixed(2)} €</li>
+          <li>Charges mensuelles : ${charges.toFixed(2)} €</li>
+          <li>Total réglé : ${total.toFixed(2)} €</li>
+        </ul>
+        <p>Conservez ce document pendant au moins trois ans (obligation légale).</p>
+      `,
+      ctaText: 'Accéder à l\'espace bailleur',
+      ctaUrl: dashboardUrl,
+      closingHtml: `Cordialement,<br><strong>${fullName || 'Votre bailleur'}</strong>`,
+      footerReason: 'Vous recevez cet e-mail car votre bailleur vous a envoyé une quittance via Quittance Simple.',
+    });
 
-    <div class="content">
-      <div class="greeting">Bonjour ${prenom},</div>
-
-      <div class="intro">
-        Votre quittance PDF <strong>${data.periode}</strong> est jointe à cet e-mail.
-      </div>
-
-      <div class="main-question">Ça vous dirait de ne plus jamais y penser ?</div>
-      <div class="sub-question">Et si on s'en occupait pour vous ?</div>
-
-      <div class="illustration">
-        <img src="https://jfpbddtdblqakabyjxkq.supabase.co/storage/v1/object/public/website-images/homme_transat_mug-removebg-preview.png" alt="Détendez-vous" style="max-width: 500px; width: 100%;" />
-      </div>
-
-      <div class="features-intro">
-        Avec le <strong>Pack Automatique</strong> :
-      </div>
-
-      <ul class="feature-list">
-        <li class="feature-item">
-          <span class="check-icon">✓</span>
-          <span>Quittance <strong>envoyée automatiquement + archivage</strong></span>
-        </li>
-        <li class="feature-item">
-          <span class="check-icon">✓</span>
-          <span>Relance envoyée en cas de <strong>retard de loyer</strong></span>
-        </li>
-        <li class="feature-item">
-          <span class="check-icon">✓</span>
-          <span><strong>Calcul IRL</strong> et génération du courrier automatique</span>
-        </li>
-        <li class="feature-item">
-          <span class="check-icon">✓</span>
-          <span><strong>Bilan annuel automatique</strong> pour déclaration</span>
-        </li>
-        <li class="feature-item">
-          <span class="check-icon">✓</span>
-          <span>Offre de lancement <strong>0,82€/mois</strong> (9,90€/an) 1 - 2 locataires</span>
-        </li>
-      </ul>
-
-      <div class="cta-section">
-        <a href="https://quittancesimple.fr/automation" class="cta-button">
-          Ne plus jamais y penser →
-        </a>
-        <p class="cta-note">
-          Bien sûr, le générateur gratuit reste accessible à tout moment.
-        </p>
-      </div>
-    </div>
-
-    <div class="footer">
-      <div class="footer-brand">Quittance Simple</div>
-      <div class="footer-copyright">© 2026 Quittance Simple — Tous droits réservés</div>
-    </div>
-  </div>
-</body>
-</html>
-    `;
+    // Template email destiné au PROPRIÉTAIRE (quittance gratuite) — contenu adapté au contexte
+    const htmlEmail = buildEmailHtml({
+      title: 'Quittance Simple',
+      bodyHtml: `
+        <p>Bonjour ${prenom},</p>
+        <p>Votre quittance de loyer pour la période <strong>${data.periode}</strong> est en pièce jointe.</p>
+        <p>Vous venez de générer votre quittance, mais le mois prochain il faudra recommencer… :(</p>
+        <p>Ou vous pouvez tester gratuitement l'envoi automatique, sans carte bancaire.</p>
+        <p>30 jours pour profiter sereinement du <strong>Pack Automatique</strong>. C'est l'occasion idéale pour tester sans stress :</p>
+        <ul style="padding-left: 20px;">
+          <li>L'envoi automatisé de vos quittances chaque mois.</li>
+          <li>La génération d'annonces assistée par IA.</li>
+          <li>Le calcul et les rappels de révisions de loyer et charges.</li>
+          <li>Et plein d'autres choses…</li>
+        </ul>
+        <p><strong>Une question ? Un doute ?</strong> Écrivez-nous à <a href="mailto:contact@quittancesimple.fr">contact@quittancesimple.fr</a>, nous sommes là pour vous aider personnellement.</p>
+      `,
+      ctaText: 'Tester gratuitement le Pack Automatique',
+      ctaUrl: 'https://quittancesimple.fr/automation',
+      closingHtml: "À très vite,<br><strong>Guilhem de Quittance Simple</strong>",
+      footerReason: "Vous recevez cet e-mail car vous avez créé un compte ou généré une quittance sur Quittance Simple.",
+    });
 
     const emailData = {
       from: 'Quittance Simple <noreply@quittancesimple.fr>',
       to: [recipientEmail],
-      subject: `Votre quittance de loyer - ${data.periode}`,
-      html: htmlEmail,
+      subject: isToTenant ? `Quittance de loyer – ${data.periode}` : `Votre quittance de loyer - ${data.periode}`,
+      html: isToTenant ? htmlEmailTenant : htmlEmail,
       attachments: [{
         filename: `quittance-${data.periode.replace(/\s+/g, '-')}.pdf`,
         content: encodeBase64(pdfBuffer),
@@ -794,19 +672,39 @@ Deno.serve(async (req) => {
           const periodeDebut = new Date(year, month, 1).toISOString().split('T')[0];
           const periodeFin = new Date(year, month + 1, 0).toISOString().split('T')[0];
 
+          // Vérifier si la quittance existe déjà
+          const { data: existingQuittance } = await supabase
+            .from('quittances')
+            .select('date_generation')
+            .eq('proprietaire_id', locataireData.proprietaire_id)
+            .eq('locataire_id', data.locataireId)
+            .eq('periode_debut', periodeDebut)
+            .eq('periode_fin', periodeFin)
+            .maybeSingle();
+
+          const now = new Date().toISOString();
+          const updateData: any = {
+            proprietaire_id: locataireData.proprietaire_id,
+            locataire_id: data.locataireId,
+            periode_debut: periodeDebut,
+            periode_fin: periodeFin,
+            loyer: parseFloat(data.loyer) || 0,
+            charges: parseFloat(data.charges) || 0,
+            date_envoi: now,
+            statut: 'envoyee',
+            source: 'website'
+          };
+
+          // Préserver date_generation si la quittance existe déjà
+          if (existingQuittance?.date_generation) {
+            updateData.date_generation = existingQuittance.date_generation;
+          } else {
+            updateData.date_generation = now;
+          }
+
           const { error: quittanceError } = await supabase
             .from('quittances')
-            .upsert({
-              proprietaire_id: locataireData.proprietaire_id,
-              locataire_id: data.locataireId,
-              periode_debut: periodeDebut,
-              periode_fin: periodeFin,
-              loyer: parseFloat(data.loyer) || 0,
-              charges: parseFloat(data.charges) || 0,
-              date_generation: new Date().toISOString(),
-              statut: 'envoye',
-              source: 'website'
-            }, {
+            .upsert(updateData, {
               onConflict: 'proprietaire_id,locataire_id,periode_debut,periode_fin',
               ignoreDuplicates: false
             });

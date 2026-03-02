@@ -483,7 +483,7 @@ async function activateProprietaireSubscription(email: string, planName: string)
 
     const { data: proprietaire, error: findError } = await supabase
       .from('proprietaires')
-      .select('id, email')
+      .select('id, email, date_fin_essai')
       .eq('email', email)
       .maybeSingle();
 
@@ -492,13 +492,23 @@ async function activateProprietaireSubscription(email: string, planName: string)
       return;
     }
 
+    // Préparer les données de mise à jour
+    const updateData: any = {
+      abonnement_actif: true,
+      plan_actuel: planName,
+      lead_statut: 'QA_paid_subscriber',
+    };
+
+    // Si l'utilisateur était en période d'essai, mettre date_fin_essai à null
+    // pour indiquer que l'essai a été converti en abonnement payant
+    if (proprietaire.date_fin_essai) {
+      updateData.date_fin_essai = null;
+      console.info(`Converting trial to paid subscription for ${email}`);
+    }
+
     const { error: updateError } = await supabase
       .from('proprietaires')
-      .update({
-        abonnement_actif: true,
-        plan_actuel: planName,
-        lead_statut: 'QA_paid_subscriber',
-      })
+      .update(updateData)
       .eq('id', proprietaire.id);
 
     if (updateError) {

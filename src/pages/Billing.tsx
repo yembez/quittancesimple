@@ -2,8 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Download, Mail, CheckCircle, CreditCard, Calendar, FileText, RefreshCw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+import { useEspaceBailleur } from '../contexts/EspaceBailleurContext';
 
 interface Proprietaire {
   id: string;
@@ -36,7 +35,8 @@ interface Facture {
 const Billing = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [proprietaire, setProprietaire] = useState<Proprietaire | null>(null);
+  const { proprietaire: contextProprietaire } = useEspaceBailleur();
+  const proprietaire = contextProprietaire as Proprietaire | null;
   const [factures, setFactures] = useState<Facture[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedFactures, setSelectedFactures] = useState<Set<string>>(new Set());
@@ -49,36 +49,19 @@ const Billing = () => {
   const pollingStarted = useRef(false);
 
   useEffect(() => {
-    const email = searchParams.get('email');
     const success = searchParams.get('success');
     const sessionId = searchParams.get('session_id');
 
-    if (!email) {
-      navigate('/');
-      return;
-    }
+    if (!proprietaire?.id) return;
 
-    const loadData = async (emailParam: string) => {
+    const loadData = async (proprietaireId: string) => {
       try {
         setLoading(true);
-
-        const { data: propData, error: propError } = await supabase
-          .from('proprietaires')
-          .select('*')
-          .eq('email', emailParam)
-          .single();
-
-        if (propError) {
-          console.error('Erreur récupération propriétaire:', propError);
-          return;
-        }
-
-        setProprietaire(propData);
 
         const { data: facturesData, error: facturesError } = await supabase
           .from('factures')
           .select('*')
-          .eq('proprietaire_id', propData.id)
+          .eq('proprietaire_id', proprietaireId)
           .order('date_emission', { ascending: false });
 
         if (!facturesError && facturesData) {
@@ -96,7 +79,7 @@ const Billing = () => {
       setShowSuccessMessage(true);
       setIsRefreshing(true);
 
-      loadData(email);
+      loadData(proprietaire.id);
 
       let attempts = 0;
       const maxAttempts = 15;
@@ -104,7 +87,7 @@ const Billing = () => {
       const pollForUpdates = setInterval(async () => {
         attempts++;
         console.log(`Polling for updates, attempt ${attempts}/${maxAttempts}`);
-        await loadData(email);
+        await loadData(proprietaire.id);
 
         if (attempts >= maxAttempts) {
           clearInterval(pollForUpdates);
@@ -121,9 +104,9 @@ const Billing = () => {
 
       return () => clearInterval(pollForUpdates);
     } else {
-      loadData(email);
+      loadData(proprietaire.id);
     }
-  }, [searchParams, navigate]);
+  }, [searchParams, proprietaire?.id]);
 
   const toggleFactureSelection = (factureId: string) => {
     const newSelection = new Set(selectedFactures);
@@ -323,42 +306,14 @@ const Billing = () => {
     );
   }
 
-  if (!proprietaire) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600">Propriétaire non trouvé</p>
-          <button
-            onClick={() => navigate('/')}
-            className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
-          >
-            Retour à l'accueil
-          </button>
-        </div>
-      </div>
-    );
-  }
+  if (!proprietaire) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
-        <div className="mb-6">
-          <button
-            onClick={() => navigate(`/dashboard?email=${proprietaire.email}`)}
-            className="text-gray-600 hover:text-gray-900 text-sm font-medium mb-4 flex items-center space-x-1"
-          >
-            <span>←</span>
-            <span>Retour au dashboard</span>
-          </button>
-          <h1 className="text-2xl font-semibold text-gray-900 mb-1">Facturation et abonnement</h1>
-          <p className="text-sm text-gray-500">Gérez votre abonnement et téléchargez vos factures</p>
-        </div>
-
+    <main className="flex-1 bg-gray-50 px-4 sm:px-6 py-4 sm:px-6 overflow-y-auto">
+          <div className="max-w-7xl mx-auto">
         {/* Success Message */}
         {showSuccessMessage && (
-          <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 flex items-start space-x-3">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 flex items-start space-x-3">
             <div className="flex-shrink-0">
               <CheckCircle className="w-6 h-6 text-green-600" />
             </div>
@@ -422,7 +377,7 @@ const Billing = () => {
               </div>
               <button
                 onClick={() => navigate('/manage-subscription')}
-                className="bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                className="bg-[#1e3a5f] hover:bg-[#1a2f4d] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
               >
                 Gérer mon abonnement
               </button>
@@ -471,7 +426,7 @@ const Billing = () => {
                     disabled={selectedFactures.size === 0}
                     className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center space-x-1.5 ${
                       selectedFactures.size > 0
-                        ? 'bg-gray-900 hover:bg-gray-800 text-white cursor-pointer'
+                        ? 'bg-[#1e3a5f] hover:bg-[#1a2f4d] text-white cursor-pointer'
                         : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                     }`}
                   >
@@ -491,7 +446,7 @@ const Billing = () => {
                     disabled={selectedFactures.size === 0}
                     className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center space-x-1.5 ${
                       selectedFactures.size > 0
-                        ? 'bg-gray-900 hover:bg-gray-800 text-white cursor-pointer'
+                        ? 'bg-[#1e3a5f] hover:bg-[#1a2f4d] text-white cursor-pointer'
                         : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                     }`}
                   >
@@ -566,7 +521,7 @@ const Billing = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        <span className={`px-2 py-1 rounded-md text-xs font-medium ${
                           facture.statut === 'payee'
                             ? 'bg-gray-100 text-gray-700'
                             : facture.statut === 'en_attente'
@@ -630,7 +585,7 @@ const Billing = () => {
                 value={emailComptable}
                 onChange={(e) => setEmailComptable(e.target.value)}
                 placeholder="comptable@exemple.fr"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1e3a5f] focus:border-[#1e3a5f]"
               />
             </div>
             <div className="flex justify-end space-x-3">
@@ -640,14 +595,14 @@ const Billing = () => {
                   setEmailComptable('');
                 }}
                 disabled={isSendingEmail}
-                className="px-4 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                className="px-4 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
               >
                 Annuler
               </button>
               <button
                 onClick={handleConfirmSendEmail}
                 disabled={isSendingEmail}
-                className="px-4 py-2 bg-[#2D3436] hover:bg-[#1a1f20] disabled:bg-gray-400 text-white rounded-lg text-sm font-semibold transition-colors flex items-center space-x-2 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-[#1e3a5f] hover:bg-[#1a2f4d] disabled:bg-gray-400 text-white rounded-md text-sm font-semibold transition-colors flex items-center space-x-2 disabled:cursor-not-allowed"
               >
                 {isSendingEmail ? (
                   <>
@@ -784,7 +739,7 @@ const Billing = () => {
 
               {/* Statut */}
               <div className="mt-6 text-center">
-                <span className={`inline-block px-4 py-2 rounded-lg text-sm font-semibold ${
+                <span className={`inline-block px-4 py-2 rounded-md text-sm font-semibold ${
                   previewFacture.statut === 'payee'
                     ? 'bg-gray-100 text-gray-700'
                     : previewFacture.statut === 'en_attente'
@@ -817,9 +772,7 @@ const Billing = () => {
           </div>
         </div>
       )}
-
-      <Footer />
-    </div>
+    </main>
   );
 };
 

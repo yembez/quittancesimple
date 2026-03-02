@@ -35,17 +35,18 @@ function corsResponse(body: any, status = 200) {
   });
 }
 
-// Mapping price_id vers plan config
+// Mapping price_id vers plan config (Pack Automatique - IDs Stripe actuels)
 const PRICE_TO_PLAN: Record<string, { max_locataires: number; plan_actuel: string }> = {
   // Pack Automatique - Mensuels
-  'price_1SpTqEB1aSt8zL1num8XjK2d': { max_locataires: 2, plan_actuel: 'Pack Automatique (1-2 locataires)' },
-  'price_1SqivyB1aSt8zL1nIQcsn7bU': { max_locataires: 5, plan_actuel: 'Pack Automatique (3-5 locataires)' },
-  'price_1SpTu8B1aSt8zL1nZ7Xx0oZE': { max_locataires: 999, plan_actuel: 'Pack Automatique (5+ locataires)' },
+  'price_1T2a6NB1aSt8zL1nyNy1v2gT': { max_locataires: 2, plan_actuel: 'Pack Automatique (1-2 locataires)' },
+  'price_1T2a8DB1aSt8zL1n1T0H7NPy': { max_locataires: 5, plan_actuel: 'Pack Automatique (3-5 locataires)' },
+  'price_1T2a8sB1aSt8zL1nbkpWQdp6': { max_locataires: 999, plan_actuel: 'Pack Automatique (6+ locataires)' },
 
   // Pack Automatique - Annuels
-  'price_1SqizVB1aSt8zL1nwJdEIzkl': { max_locataires: 2, plan_actuel: 'Pack Automatique (1-2 locataires)' },
-  'price_1Sqj1nB1aSt8zL1neyt7IuZp': { max_locataires: 5, plan_actuel: 'Pack Automatique (3-5 locataires)' },
-  'price_1Sqj3DB1aSt8zL1nyy6Hf5N7': { max_locataires: 999, plan_actuel: 'Pack Automatique (5+ locataires)' },
+  'price_1T0sYUB1aSt8zL1nm3DDI9F3': { max_locataires: 2, plan_actuel: 'Pack Automatique (1-2 locataires)' },
+  'price_1Sqj1nB1aSt8zL1neyt7IuZp': { max_locataires: 5, plan_actuel: 'Pack Automatique (3-5 locataires)' }, // ancien ID, rétrocompat
+  'price_1T2e1uB1aSt8zL1nlIrT3UdR': { max_locataires: 5, plan_actuel: 'Pack Automatique (3-5 locataires)' },
+  'price_1Sqj3DB1aSt8zL1nyy6Hf5N7': { max_locataires: 999, plan_actuel: 'Pack Automatique (6+ locataires)' },
 
   // Connectée+ (pour futur)
   'price_1SNhrwB1aSt8zL1nCiVq1dUs': { max_locataires: 1, plan_actuel: 'Quittance Connectée+' },

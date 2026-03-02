@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowLeft, Calendar, User, Clock, Tag, Zap, Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { trackCtaClick } from '../utils/analytics';
 
 const Blog = () => {
   const navigate = useNavigate();
@@ -216,7 +217,10 @@ const Blog = () => {
                   Rappels SMS, envoi automatique et relances en 1 clic pour seulement 0,82€/mois.
                 </p>
                 <button
-                  onClick={() => navigate('/pricing')}
+                  onClick={() => {
+                    trackCtaClick('activer_pack_automatique_blog', 'blog', '/pricing');
+                    navigate('/pricing');
+                  }}
                   className="bg-white text-[#ed7862] px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-50 transition-all duration-200 transform hover:scale-105 shadow-lg inline-flex items-center space-x-2"
                 >
                   <Send className="w-5 h-5" />

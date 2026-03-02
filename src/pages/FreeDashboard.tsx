@@ -52,6 +52,7 @@ const FreeDashboard = () => {
   const [proprietaire, setProprietaire] = useState<Proprietaire | null>(null);
   const [locataires, setLocataires] = useState<Locataire[]>([]);
   const [quittances, setQuittances] = useState<Quittance[]>([]);
+  const [relances, setRelances] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [previewQuittance, setPreviewQuittance] = useState<any>(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -115,6 +116,25 @@ const FreeDashboard = () => {
       if (quittancesData) {
         setQuittances(quittancesData);
       }
+
+      // Charger les relances récentes (dernière par locataire)
+      const { data: relancesData } = await supabase
+        .from('relances')
+        .select('*')
+        .eq('proprietaire_id', propData.id)
+        .order('date_envoi', { ascending: false });
+
+      if (relancesData) {
+        // Grouper par locataire et prendre la dernière relance
+        const latestByLocataire = new Map<string, any>();
+        relancesData.forEach(r => {
+          const existing = latestByLocataire.get(r.locataire_id);
+          if (!existing || new Date(r.date_envoi) > new Date(existing.date_envoi)) {
+            latestByLocataire.set(r.locataire_id, r);
+          }
+        });
+        setRelances(Array.from(latestByLocataire.values()));
+      }
     } catch (error) {
       console.error('Erreur chargement:', error);
     } finally {
@@ -136,15 +156,24 @@ const FreeDashboard = () => {
     const year = currentDate.getFullYear();
     console.log('📅 Période générée pour la preview:', `${month} ${year}`);
 
+    // Calculer les dates de début et fin de période
+    const periodeDebut = new Date(year, currentDate.getMonth(), 1).toISOString().split('T')[0];
+    const periodeFin = new Date(year, currentDate.getMonth() + 1, 0).toISOString().split('T')[0];
+
     const quittanceData = {
-      baillorName: `${proprietaire.nom} ${proprietaire.prenom || ''}`.trim(),
+      baillorName: `${proprietaire.prenom || ''} ${proprietaire.nom}`.trim() || proprietaire.nom,
       baillorAddress: proprietaire.adresse || '',
       baillorEmail: proprietaire.email,
-      locataireName: `${locataire.nom} ${locataire.prenom || ''}`.trim(),
-      logementAddress: locataire.adresse_logement,
+      locataireName: `${locataire.prenom || ''} ${locataire.nom}`.trim() || locataire.nom,
+      logementAddress: locataire.adresse_logement || '',
+      locataireDomicileAddress: locataire.detail_adresse || '', // Adresse de domicile si différente
       loyer: (locataire.loyer_mensuel || 0).toFixed(2),
       charges: (locataire.charges_mensuelles || 0).toFixed(2),
       periode: `${month} ${year}`,
+      dateDebut: periodeDebut,
+      dateFin: periodeFin,
+      isProrata: false,
+      typeCalcul: '',
       isElectronicSignature: true,
       locataireId: locataire.id,
     };
@@ -354,13 +383,13 @@ const FreeDashboard = () => {
   const getPlanPrice = () => {
     const count = locataires.length;
     if (billingCycle === 'yearly') {
-      if (count <= 2) return '9,90 €';
-      if (count <= 5) return '14,90 €';
-      return '24,90 €';
+      if (count <= 2) return '39 €';
+      if (count <= 5) return '59 €';
+      return '89 €';
     } else {
-      if (count <= 2) return '0,99 €';
-      if (count <= 5) return '1,49 €';
-      return '2,49 €';
+      if (count <= 2) return '3,90 €';
+      if (count <= 5) return '5,90 €';
+      return '8,90 €';
     }
   };
 
@@ -518,6 +547,8 @@ const FreeDashboard = () => {
                       onProceedToPayment={handleProceedToPayment}
                       billingCycle={billingCycle}
                       onBillingCycleChange={(cycle) => setBillingCycle(cycle)}
+                      quittances={quittances}
+                      relances={relances}
                     />
                   ) : (
                     <div className="p-12 text-center">

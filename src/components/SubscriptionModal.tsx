@@ -51,13 +51,11 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, 
 
   const calculatePrice = (tenants: number) => {
     if (tenants >= 1 && tenants <= 2) {
-      return 0.99;
-    } else if (tenants >= 3 && tenants <= 4) {
-      return 1.49;
-    } else if (tenants >= 5 && tenants <= 8) {
-      return 2.49;
+      return 3.90;
+    } else if (tenants >= 3 && tenants <= 5) {
+      return 5.90;
     } else {
-      return 2.49;
+      return 8.90;
     }
   };
 

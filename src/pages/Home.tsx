@@ -1,8 +1,8 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ArrowDown, Download, Heart, Star, ThumbsUp, Coffee, Users, Calendar, Eye, Home as HomeIcon, Mail, Lock, Clock, User, Euro, Shield, FileText, Zap, CheckCircle } from 'lucide-react';
+import { ArrowRight, ArrowDown, Download, Heart, Star, ThumbsUp, Coffee, Users, Calendar, Eye, Home as HomeIcon, Mail, Lock, Clock, User, Euro, Shield, FileText, Zap, Check } from 'lucide-react';
 import QuittancePreview from '../components/QuittancePreview';
 import { sendQuittanceByEmail } from '../utils/emailService';
 import SEOHead from '../components/SEOHead';
@@ -11,6 +11,12 @@ import { useEmailCapture } from '../hooks/useEmailCapture';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { supabase } from '../lib/supabase';
 import { trackQuittanceGenerated, trackPdfDownload, trackCtaClick } from '../utils/analytics';
+
+const AVIS_MOBILE = [
+  { text: "J'ai automatisé mes quittances, je ne m'en occupe plus ! C'est trop bien :)", author: 'Julie, propriétaire coloc 5 chambres' },
+  { text: "Yes, Enfin un outil simple ! On automatise hyper facilement", author: 'Thomas, bailleur' },
+  { text: "L'idée est super, c'est automatisé mais j'ai le contrôle ", author: 'Marie, propriétaire' },
+];
 
 const Home = () => {
   const [searchParams] = useSearchParams();
@@ -74,6 +80,16 @@ const Home = () => {
 
   // Device detection hook
   const isMobile = useIsMobile();
+
+  // Carrousel d'avis mobile
+  const [avisIndex, setAvisIndex] = React.useState(0);
+  React.useEffect(() => {
+    if (!isMobile) return;
+    const t = setInterval(() => {
+      setAvisIndex((i) => (i + 1) % AVIS_MOBILE.length);
+    }, 4500);
+    return () => clearInterval(t);
+  }, [isMobile]);
 
   // Cleanup debounce timer on unmount
   React.useEffect(() => {
@@ -422,7 +438,7 @@ const Home = () => {
   }, [calculateProrata]);
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans text-[#2b2b2b] pt-14 max-[480px]:pt-[56px]">
+    <div className="min-h-screen bg-[#fefefe] sm:bg-white font-sans text-[#212a3e]">
       <SEOHead
         title="Quittance Simple – Quittance de loyer gratuite ou automatique"
         description="Générez une quittance de loyer PDF gratuite en qques secondes ou automatisez vos envois mensuels. Ultra simple, conforme et sans engagement."
@@ -432,55 +448,57 @@ const Home = () => {
         schema={schema}
       />
 
-      <header className="py-3 sm:py-8 lg:py-10 bg-[#fefdf9] max-[480px]:h-[100dvh] max-[480px]:py-0 max-[480px]:flex max-[480px]:items-start max-[480px]:overflow-hidden">
+      <header className="min-h-[100vh] pt-20 sm:pt-28 lg:pt-32 pb-0 bg-[#fefefe] sm:bg-[#efeef3] border-b border-[#e5e7f3] max-[480px]:min-h-[100dvh] max-[480px]:py-0 max-[480px]:flex max-[480px]:items-start max-[480px]:pb-6 flex flex-col">
         <div
-          className="max-w-[1250px] mx-auto px-4 sm:px-5 lg:px-7 xl:px-10 max-[480px]:w-full"
+          className="max-w-[1250px] mx-auto px-4 sm:px-5 lg:px-7 xl:px-10 max-[480px]:w-full flex flex-col"
           style={{
             paddingTop: window.innerWidth <= 480 ? 'var(--mobile-header-spacing)' : undefined,
             paddingBottom: window.innerWidth <= 480 ? '0' : undefined
           }}
         >
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-5 lg:gap-10 items-center">
-            {/* VERSION MOBILE UNIQUEMENT - Ultra-compact sans scroll - MAQUETTE EXACTE */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_1.05fr] gap-8 lg:gap-10 items-center">
+            {/* Colonne texte */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="order-2 lg:order-1 sm:space-y-3 max-[480px]:flex max-[480px]:flex-col max-[480px]:justify-start"
+              className="order-2 lg:order-1 sm:space-y-5 max-[480px]:flex max-[480px]:flex-col max-[480px]:justify-start"
               style={{
                 gap: window.innerWidth <= 480 ? 'var(--mobile-section-spacing)' : undefined
               }}
             >
-              {/* Titre mobile ultra-court */}
               <div
                 className="text-center sm:text-left"
                 style={{
                   marginBottom: window.innerWidth <= 480 ? 'var(--mobile-title-bottom-spacing)' : undefined
                 }}
               >
-                <h1 className="text-xl font-bold text-[#2b2b2b] leading-tight hidden sm:block sm:text-4xl lg:text-5xl">
-                 La quittance de loyer,<br />enfin simple.
+                <h1 className="font-semibold sm:font-bold text-[#212a3e] leading-[1.12] hidden sm:block">
+                  <span className="!text-[32px] sm:!text-[40px] lg:!text-[46px] block">
+                    Votre quittance de loyer<br />
+                    tout de suite.
+                  </span>
+                  <span className="!text-[26px] sm:!text-[30px] lg:!text-[34px] block mt-0.5">Enfin simple et fiable.</span>
                 </h1>
-                <h1 className="text-[25px] font-bold text-[#2b2b2b] leading-[1.08] block sm:hidden px-2">
-                 Votre quittance de <br />loyer, tout de suite.
+                <h1 className="font-semibold text-[#212a3e] leading-[1.16] block sm:hidden px-2">
+                  <span className="!text-[22px] block">
+                    Votre quittance de loyer<br />
+                    tout de suite
+                  </span>
                 </h1>
-                <h2 className="text-[20px] lg:text-0xl text-[#545454] font-medium leading-snug mt-2 hidden sm:block lg:block">
-                 Générez votre PDF gratuit conforme en quelques secondes <span className="text-base sm:text-xl lg:text-2xl text-[#ed7862] font-medium leading-snug">ou </span> passez au Pack Automatique et automatisez votre gestion locative ( dont l'envoi de quittances ) pour <span className="text-base sm:text-xl lg:text-2xl text-[#ed7862] font-medium leading-snug">0,82€/mois</span><span className="text-[20px] lg:text-0xl text-[#545454] font-medium leading-snug"></span>.
+                {/* Illustration mobile sous le titre */}
+                <div className="block sm:hidden mt-8 px-6">
+                  <div className="w-full max-w-[340px] h-[200px] mx-auto flex items-center justify-center rounded-2xl bg-[#fefefe]">
+                    <img
+                      src="https://jfpbddtdblqakabyjxkq.supabase.co/storage/v1/object/public/website-images/quittance_stamp_mobile_4_resized.png"
+                      alt="Illustration de quittances tamponnées"
+                      className="max-h-[240px] w-auto max-w-full object-contain"
+                    />
+                  </div>
+                </div>
+                <h2 className="text-[15px] lg:text-[17px] text-[#5e6478] font-normal leading-snug mt-3 hidden sm:block lg:block max-w-xl">
+                 Générez vos quittances PDF conformes à la loi ALUR, ou automatisez l’envoi et l’archivage, les calculs IRL, le reporting fiscal, sans y penser.
                 </h2>
-              </div>
-
-              {/* Visuel femme - mobile uniquement - comme maquette */}
-              <div
-                className="block sm:hidden"
-                style={{
-                  marginBottom: window.innerWidth <= 480 ? 'var(--mobile-visual-bottom-spacing)' : undefined
-                }}
-              >
-                <img
-                  src="https://jfpbddtdblqakabyjxkq.supabase.co/storage/v1/object/public/website-images/femme_orange_resized.png"
-                  alt="Quittance de loyer simple"
-                  className="w-[225px] h-[140px] object-contain mx-auto"
-                />
               </div>
 
               {/* CTA - Version mobile UNIQUEMENT */}
@@ -490,286 +508,316 @@ const Home = () => {
                   gap: window.innerWidth <= 480 ? 'var(--mobile-cta-spacing)' : undefined
                 }}
               >
-                {/* CTA principal - Vert massif arrondi */}
               <Link
   to="/generator"
   className="
     block w-full
-    rounded-[15px]
-    px-3.5 py-1.5
-    bg-[#7CAA89] hover:bg-[#6b9378]
+    rounded-[14px]
+    px-3.5 min-h-[52px] flex items-center justify-center
+    bg-[#f4663b] hover:bg-[#e25830]
     text-white text-center
     transition-all duration-150 ease-out
-
-    /* Ombre par défaut (flottant) */
-    shadow-[0_6px_18px_rgba(0,0,0,0.18),0_2px_6px_rgba(0,0,0,0.12)]
-
-    /* Hover (desktop & mobile hover simulé) */
-    hover:shadow-[0_10px_28px_rgba(0,0,0,0.22),0_4px_10px_rgba(0,0,0,0.14)]
-
-    /* Feedback tactile mobile */
+    shadow-[0_2px_8px_rgba(15,23,42,0.12)]
     active:translate-y-[1px]
     active:scale-[0.985]
-    active:shadow-[0_4px_12px_rgba(0,0,0,0.18)]
   "
 >
-  <div className="text-[15px] font-bold leading-tight">
-    Créer quittance gratuite
-  </div>
-
-  <div className="text-[11px] font-normal opacity-90 mt-0.5">
-    En moins de 2 minutes · PDF conforme
+  <div className="text-[15px] font-semibold leading-tight">
+    Créer une quittance gratuite
   </div>
 </Link>
 
 
                 {/* Séparateur "ou" avec lignes */}
                 <div className="flex items-center gap-2 py-0">
-                  <div className="flex-1 h-[1px] bg-gray-300"></div>
-                  <span className="text-[11px] text-[#545454] font-medium">ou</span>
-                  <div className="flex-1 h-[1px] bg-gray-300"></div>
+                  <div className="flex-1 h-[1px] bg-slate-200"></div>
+                  <span className="text-[11px] text-slate-500 font-medium">ou</span>
+                  <div className="flex-1 h-[1px] bg-slate-200"></div>
                 </div>
 
-                {/* CTA secondaire - Outline vert avec border */}
+                {/* CTA secondaire - Outline comme maquette */}
                 <Link
                   to="/automation"
                   onClick={() => trackCtaClick('decouvrir_automatisation_mobile', 'home', '/automation')}
-                  className="block w-full rounded-[15px] px-3.5 py-1.5 border-[2px] border-[#5a8167] bg-white hover:bg-gray-50 text-[#2b2b2b] text-center transition-all shadow-[0_6px_18px_rgba(0,0,0,0.08)] hover:shadow-[0_10px_28px_rgba(0,0,0,0.30)]"
+                  className="block w-full rounded-[14px] px-3.5 min-h-[52px] flex flex-col items-center justify-center border-2 border-[#212a3e] bg-white hover:bg-[#212a3e] hover:text-white text-[#212a3e] text-center transition-all shadow-[0_2px_8px_rgba(15,23,42,0.08)] hover:shadow-[0_4px_12px_rgba(15,23,42,0.1)]"
                 >
-                  <div className="text-[15px] font-bold leading-tight">Découvrir le Pack Automatique</div>
-                  <div className="text-[11px] font-normal opacity-75 mt-0.5">Et ne pensez plus à l'administratif locatif</div>
-                </Link>
-              </div>
-
-              {/* CTA - Version DESKTOP/TABLET comme screenshot */}
-              <div className="hidden sm:block space-y-6">
-                {/* Texte explicatif */}
-                <div className="space-y-4">
-                  <p className="text-base text-[#545454] leading-relaxed">
-                    Avec nos outils ultra simples du Pack Automatique, on envoie vos quittances (ou vos rappel de loyer), on calcule vos bilans annuels, vos IRL pour vous, et vous n'y pensez plus !<br />
-                    Nous sommes aussi des "petits" bailleurs, notre priorité : nous (vous) simplifier vraiment la vie !
-                  </p>
-                </div>
-
-                {/* Les 2 CTA empilés comme screenshot */}
-               <div className="flex flex-col items-end gap-3">
-                <Link
-                  to="/automation"
-                  onClick={() => trackCtaClick('automatiser_envoi_desktop', 'home', '/automation')}
-                  className="rounded-full px-5 py-2 bg-[#ed7862] hover:bg-[#e56651] text-white text-xs sm:text-sm font-semibold transition-colors shadow-sm flex items-center gap-1.5"
-                >
-                  Automatiser l'envoi de quittances
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <div className="text-[15px] font-semibold leading-tight">Découvrir le Pack Automatique</div>
+                  <div className="text-[11px] font-normal text-slate-500 mt-0.5">Automatisation : quittances, rappels, calcul IRL, rapport fiscal, courriers, archivage. </div>
                 </Link>
 
-                <div className="flex flex-col items-center gap-3">
-                  <span className="text-xs text-[#545454] font-medium whitespace-nowrap">ou</span>
-
-                  <div className="flex flex-col items-center gap-1">
-                    <button
-                      onClick={() => document.getElementById('generator')?.scrollIntoView({ behavior: 'smooth' })}
-                      className="rounded-full px-5 py-2 bg-gray-700 hover:bg-gray-800 text-white text-xs sm:text-sm font-semibold transition-colors shadow-sm flex items-center gap-1.5"
-                    >
-                      Créer une quittance gratuite
-                      <ArrowDown className="w-3.5 h-3.5" />
-                    </button>
-                    <span className="text-[12px] text-[#545454] font-medium whitespace-nowrap">En moins de 2 mn !</span>
+                {/* Bloc avis mobile - carrousel, même taille fixe */}
+                <div className="block sm:hidden mt-3 w-full">
+                  <div className="w-full h-[68px] bg-white/90 backdrop-blur-sm border border-[#e8e7ef] rounded-2xl px-3 py-2.5 shadow-[0_2px_8px_rgba(15,23,42,0.08)] overflow-hidden relative flex items-center">
+                    <AnimatePresence mode="wait" initial={false}>
+                      <motion.div
+                        key={avisIndex}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.3 }}
+                        className="absolute inset-0 px-3 py-2.5 flex flex-col justify-center"
+                      >
+                        <p className="text-[11px] leading-snug text-[#212a3e] italic line-clamp-2">
+                          « {AVIS_MOBILE[avisIndex].text} »
+                        </p>
+                        <span className="text-[9px] text-[#8b90a3] mt-1 shrink-0">{AVIS_MOBILE[avisIndex].author}</span>
+                      </motion.div>
+                    </AnimatePresence>
                   </div>
                 </div>
               </div>
-              </div>
 
-              {/* Visuel femme orange mobile - desktop */}
-              <div className="mt-0 px-20 lg:mt-0 flex justify-start hidden sm:flex">
-                <img
-                  src="https://jfpbddtdblqakabyjxkq.supabase.co/storage/v1/object/public/website-images/femme_orange_resized.png"
-                  alt="Quittance de loyer simple - Propriétaire satisfait"
-                  className="w-[120px] sm:w-[160px] lg:w-[150px] h-auto object-contain"
-                />
+              {/* CTA - Version DESKTOP/TABLET */}
+              <div className="hidden sm:block space-y-10">
+                {/* Texte explicatif */}
+                <div className="space-y-3 max-w-xl">
+                  <p className="text-[14px] sm:text-base text-[#5e6478] leading-relaxed">
+                    Nous avons voulu un outil pour nous, bailleurs, vraiment simple à utiliser et ultra conforme.
+                  </p>
+                  
+                </div>
+
+                {/* CTA comme maquette : l'un au-dessus de l'autre, secondaire fond blanc + outline */}
+                <div className="flex flex-col items-start gap-3 mt-2">
+                  <Link
+                    to="/generator"
+                    className="inline-flex items-center justify-center rounded-xl px-6 py-3 bg-[#E65F3F] hover:bg-[#d95530] text-white text-sm font-semibold transition-colors shadow-[0_2px_6px_rgba(15,23,42,0.1)]"
+                    onClick={() => document.getElementById('generator')?.scrollIntoView({ behavior: 'smooth' })}
+                  >
+                    Créer une quittance gratuite
+                    <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                  </Link>
+                  <Link
+                    to="/automation"
+                    onClick={() => trackCtaClick('decouvrir_pack_automatique_desktop', 'home', '/automation')}
+                    className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-[#212a3e] text-xs sm:text-sm font-semibold transition-colors bg-white border-2 border-[#212a3e] hover:bg-[#212a3e] hover:text-white"
+                  >
+                    Découvrir le Pack Automatique
+                  </Link>
+                </div>
               </div>
 
             </motion.div>
 
-            {/* Bloc "Pack Automatique" - MASQUÉ sur mobile */}
+            {/* Hero : bloc image avec angles arrondis, ombre légère ; PDF en superposition qui sort du cadre, penché à droite, ombre marquée */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="order-1 lg:order-2 hidden sm:block"
+              className="order-1 lg:order-2 hidden sm:block relative overflow-visible"
             >
-              <div className="bg-white rounded-2xl shadow-lg p-5 sm:p-6 lg:p-8 space-y-5">
-                <div className="text-center">
-                  <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-[#2b2b2b] leading-tight mb-1.5">
-                    Outils automatisés pour bailleurs <br />zéro usine à gaz
-                  </h3>
-                  <div className="space-y-0.5">
-                    <p className="text-lg sm:text-xl lg:text-xl text-[#2b2b2b] font-semibold">
-                      À partir de 0,82€/mois  <span className="text-[25px] sm:text-sm text-[#545454]">
-                
-                    soit 9,90€/an (offre de lancement)</span>  <p className="text-lg sm:text-xl lg:text-xl text-[#2b2b2b]">
-                      
-                  Votre gestion locative en pilote automatique. </p>
-                    </p>
-                    <p className="text-[10px] sm:text-xs text-[#545454]">
-                      
-                    </p>
-                    <p className="text-[10px] sm:text-xs text-[#545454]">
-                      2 mois offerts par rapport au mensuel
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <Link
-                    to="/automation"
-                    onClick={() => trackCtaClick('quittance_automatique_banner', 'home', '/automation')}
-                    className="flex gap-2 sm:gap-3 items-center hover:opacity-80 transition-opacity"
-                  >
-                    <div className="flex-shrink-0">
-                      <img
-                        src="https://jfpbddtdblqakabyjxkq.supabase.co/storage/v1/object/public/website-images/homme_bras_back_final.png"
-                        alt="Quittance de loyer simple - Notification loyer reçu automatique"
-                        className="w-[120px] sm:w-[150px] lg:w-[240px] h-auto object-contain"
-                      />
-                    </div>
-                    <div className="space-y-1 flex-1 min-w-0 text-xs sm:text-sm lg:text-base text-[#2b2b2b] font-medium"> Avec
-                      <h4 className="text-sm sm:text-base lg:text-xl font-bold text-[#ed7862] leading-tight">
-                       Le Pack Automatique
-                      </h4>
-                      <p className="text-xs sm:text-sm lg:text-sm text-[#2b2b2b] font-medium leading-snug">
-                        Rien de plus simple, <strong>on s'occupe de tout. </strong>Vos quittances, vos calculs de bilans annuels, votre calcul IRL etc. On s'en charge, avec nos outils c'est automatique, ultra simple mais surtout vous gardez le contrôle.
-                      </p>
-                    </div>
-                  </Link>
-  {/* Card Locataire <br />
-             <br />       
-     
-                  <div className="flex gap-4 sm:gap-6 items-center relative bg-gray-100 rounded-xl px-3 py-5">
-                    <div className="absolute top-0 right-0 bg-[#545454] text-white px-3 py-1 text-xs rounded-xl font-bold shadow-md z-10">
-                      Bientôt disponible
-                    </div>
-                    <div className="flex-shrink-0 ml-3 sm:ml-5 lg:ml-6 opacity-60">
-                      <img
-                        src="https://jfpbddtdblqakabyjxkq.supabase.co/storage/v1/object/public/website-images/homme_bras_back_final.png"
-                        alt="Quittance de loyer simple - Automatisation complète"
-                        className="w-[150px] sm:w-[180px] lg:w-[260px] h-auto object-contain"
-                      />
-                    </div>
-                    <div className="space-y-2 flex-1 min-w-0 opacity-80">
-                      <h4 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-500 leading-tight">
-                        Et bientôt : <br />Quittance Connectée<span className="text-[#2b2b2b] text-xl sm:text-2xl lg:text-3xl">+</span>
-                      </h4>
-                      <p className="text-base sm:text-base lg:text-base text-[#545454] font-medium leading-snug">
-                        <span className="font-bold text-[#545454]">Synchronisation de votre compte bancaire</span> - Vous n'aurez plus rien à faire, tout partira automatiquement !
-                      </p>
-                    </div>
-                  </div> */}
-                </div>
-
-                <div className="flex items-center justify-center gap-1.5 text-[10px] sm:text-xs text-[#545454] pt-3 border-t border-gray-200 mt-3">
-                  <span className="whitespace-nowrap">Créé par des propriétaires, pour des propriétaires</span>
-                  <Heart className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" style={{
-                    background: 'linear-gradient(135deg, #FFD76F 0%, #FF7A7F 50%, #A46BFF 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text'
-                  }} />
-                </div>
-              </div><br /><br />
+              <div className="relative rounded-xl sm:rounded-2xl overflow-hidden shadow-[0_8px_24px_rgba(15,23,42,0.12)]">
+                <img
+                  src="https://jfpbddtdblqakabyjxkq.supabase.co/storage/v1/object/public/website-images/generator_screen_2.png"
+                  alt="Aperçu quittance générée"
+                  className="w-full h-auto object-contain object-center"
+                />
+              </div>
+              {/* Quittance PDF : sort du cadre en bas à droite, penchée vers la droite, ombre portée marquée */}
+              <img
+                src="https://jfpbddtdblqakabyjxkq.supabase.co/storage/v1/object/public/website-images/pdf_quittance.png"
+                alt="Quittance PDF finale"
+                className="absolute right-0 bottom-0 w-[30%] max-w-[200px] h-auto object-contain origin-bottom-right translate-x-[15%] translate-y-[12%] rotate-[8deg] rounded-md shadow-[0_12px_32px_rgba(15,23,42,0.35),0_4px_12px_rgba(15,23,42,0.2)]"
+              />
             </motion.div>
           </div>
         </div>
-      </header>
-      {/* Section supprimée sur mobile car CTA redirige vers /generator */}
-      <div className="bg-[#fefdf9] border-t border-gray-200 hidden sm:block">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-5 lg:px-7 xl:px-10 py-5">
-          <div className="space-y-2 flex flex-col items-center text-center">
-            <p className="text-xs sm:text-sm text-[#2b2b2b]"><br /><br />
-              <span className="font-semibold">Besoin d'une quittance ?</span>
-              <br />
-              <span className="font-normal">Recevez votre quittance gratuite remplie en moins de 2mn, avec le générateur le plus rapide du marché, <br />avec calculateur de prorata inclus et entièrement gratuit !</span>
-            </p>
-            <button
-              onClick={() => document.getElementById('generator')?.scrollIntoView({ behavior: 'smooth' })}
-              className="rounded-full px-4 py-1.5 bg-gray-700 hover:bg-gray-800 text-white text-[10px] sm:text-xs font-medium transition-colors shadow-sm flex items-center gap-1.5"
-            >
-              Quittance gratuite
-              <ArrowDown className="w-3 h-3" />
-            </button><br /><br />
+        {/* Bandeau pleine largeur, même bg que bloc Pack Automatique en dessous */}
+        <div className="w-full mt-20 sm:mt-24 pt-12 pb-12 sm:pt-14 sm:pb-10 bg-[#f6f5f9] border-t border-[#e8e7ef] hidden sm:block">
+          <div className="max-w-[1250px] mx-auto px-8 sm:px-5 lg:px-7 xl:px-10">
+            <div className="grid grid-cols-2 gap-8">
+              <div className="flex items-start gap-3">
+                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#0f9f6e] shrink-0 mt-0.5">
+                  <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                </span>
+                <div>
+                  <p className="font-semibold text-[#212a3e] text-base">Conforme loi ALUR (2026)</p>
+                  <p className="text-[#5e6478] text-sm">Montants en lettres et chiffres.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#0f9f6e] shrink-0 mt-0.5">
+                  <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                </span>
+                <div>
+                  <p className="font-semibold text-[#212a3e] text-base">Calcul prorata inclus</p>
+                  <p className="text-[#5e6478] text-sm">Module inclus.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#0f9f6e] shrink-0 mt-0.5">
+                  <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                </span>
+                <div>
+                  <p className="font-semibold text-[#212a3e] text-base">Signature électronique conforme</p>
+                  <p className="text-[#5e6478] text-sm">Avec mentions légales.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#0f9f6e] shrink-0 mt-0.5">
+                  <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                </span>
+                <div>
+                  <p className="font-semibold text-[#212a3e] text-base">Déjà utilisé par plus de 1300 bailleurs</p>
+                  <p className="text-[#5e6478] text-sm">En quelques semaines.</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+        {/* Zone sous le bandeau : même bg que le bloc Pack Automatique (évite le retour au bg hero) */}
+        <div className="flex-1 min-h-[1px] w-full bg-[#f7f5fa] hidden sm:block" aria-hidden="true" />
+      </header>
+      {/* Section Pack Automatique */}
+      <section className="mt-10 sm:mt-0 bg-[#f7f5fa] pt-10 sm:pt-12 pb-16 sm:pb-20 border-t border-b border-[#e8e7ef]">
+        <div className="max-w-[1250px] mx-auto px-4 sm:px-5 lg:px-7 xl:px-10">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-8 items-center">
+            <div className="space-y-5">
+              <h2 className="section-pack-title font-bold text-[#212a3e] leading-tight">
+                Simplifiez votre gestion locative<br className="hidden sm:block" /> avec le Pack Automatique
+              </h2>
+              <p className="text-sm sm:text-base text-[#212a3e]">
+                À partir de <span className="font-bold text-[20px] sm:text-[22px]">0,82&nbsp;€/mois</span>
+              </p>
+              <p className="text-sm sm:text-base text-[#5e6478] max-w-xl">
+                Le Pack Automatique automatise l’envoi de vos quittances, calcule vos IRL au bon moment, crée le courrier pour vos locataires, calcule votre reporting fiscal. Fini l’administratif locatif oublié ou en retard.
+              </p>
+              <div className="flex flex-wrap items-center gap-3">
+                <Link
+                  to="/automation"
+                  onClick={() => trackCtaClick('tester_pack_automatique_section', 'home', '/automation')}
+                  className="inline-flex items-center justify-center rounded-xl px-6 py-3 bg-[#E65F3F] hover:bg-[#d95530] text-white text-sm font-semibold transition-colors shadow-[0_2px_6px_rgba(15,23,42,0.1)]"
+                >
+                  Tester le Pack Automatique
+                  <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                </Link>
+                <span className="text-[11px] sm:text-xs text-[#8b90a3]">
+                  Sans engagement, annulation possible à tout moment
+                </span>
+              </div>
+            </div>
+
+            <div className="relative">
+              <img
+                src="https://jfpbddtdblqakabyjxkq.supabase.co/storage/v1/object/public/website-images/Ordinateur_Fleur_HD_3.jpg"
+                alt="Pack Automatique sur ordinateur"
+                className="w-full h-auto object-contain"
+              />
+            </div>
+          </div>
+
+          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+              <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center mb-3">
+                <Clock className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-semibold text-[#212a3e] mb-1">Quittances automatiques</h3>
+              <p className="text-[11px] sm:text-xs text-slate-600">
+                Envoi programmé chaque mois à vos locataires, ou rappel si loyer impayé.
+              </p>
+            </div>
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+              <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center mb-3">
+                <Calendar className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-semibold text-[#212a3e] mb-1">Calcul du loyer IRL</h3>
+              <p className="text-[11px] sm:text-xs text-slate-600">
+                Indices à jour et calculs prêts pour vos révisions de loyers au bon moment. Courrier remplis prêt à envoyer.
+              </p>
+            </div>
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+              <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center mb-3">
+                <FileText className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-semibold text-[#212a3e] mb-1">Reporting fiscal avancé</h3>
+              <p className="text-[11px] sm:text-xs text-slate-600">
+                Bilan annuel synthétique pour préparer plus sereinement votre déclaration.
+              </p>
+            </div>
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+              <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center mb-3">
+                <Shield className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-semibold text-[#212a3e] mb-1">Archivage sécurisé</h3>
+              <p className="text-[11px] sm:text-xs text-slate-600">
+                Historique centralisé de vos loyers et quittances, accessible en cas de contrôle ou de litige.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Générateur masqué sur mobile car CTA redirige vers /generator */}
-      <section id="generator" className="py-8 sm:py-12 bg-gray-50 hidden sm:block">
+      <section id="generator" className="pt-28 sm:pt-36 pb-8 sm:pb-14 bg-slate-50 hidden sm:block">
         <div className="max-w-[1300px] mx-auto px-4 sm:px-5 lg:px-7 xl:px-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
-            className="text-center mb-5"
+            className="text-center mb-6"
           >
-            <h2 className="text-base lg:text-xl font-bold text-[#2b2b2b] mb-2">
-              Générateur gratuit de quittances
+            <h2 className="text-base lg:text-xl font-semibold text-[#212a3e] mb-2">
+              Générateur gratuit de quittances de loyer
             </h2>
-            <p className="text-xs lg:text-sm text-[#545454] max-w-2xl mx-auto">
-              Remplissez le formulaire ci-dessous et recevez votre quittance PDF conforme.
+            <p className="text-xs lg:text-sm text-slate-600 max-w-2xl mx-auto">
+              Remplissez les informations de votre bail et recevez votre quittance PDF conforme à la loi ALUR, prête à être envoyée à votre locataire.
             </p>
 
-            <div className="mt-4 mx-auto max-w-3xl bg-gradient-to-r from-[#7CAA89]/5 to-[#ed7862]/5 border border-[#7CAA89]/20 rounded-2xl px-4 py-3">
-              <p className="text-[11px] sm:text-xs text-[#545454] leading-relaxed">
-                <span className="font-semibold text-[#2b2b2b]">L'alternative moderne aux modèles Word et Excel</span> : plus rapide, calculs automatiques et envoi par email inclus. Fini les formules Excel qui cassent, les mises en page Word qui sautent !
+            <div className="mt-4 mx-auto max-w-3xl bg-white border border-slate-200 rounded-2xl px-4 py-3 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+              <p className="text-[11px] sm:text-xs text-slate-600 leading-relaxed">
+                <span className="font-semibold text-[#212a3e]">Plus fiable qu’un modèle Word ou Excel</span> : calculs automatisés, mises en page stables, envoi par email intégré. Vous gagnez du temps tout en restant parfaitement conforme.
               </p>
             </div>
           </motion.div>
 
           <div className="grid lg:grid-cols-2 gap-6 items-start">
-            <div className="bg-white rounded-3xl border border-gray-200 p-5 shadow-xl">
+            <div className="bg-white rounded-3xl border border-slate-200 p-5 shadow-[0_18px_45px_rgba(15,23,42,0.12)]">
               <form className="space-y-5">
-                <div className="space-y-3 bg-[#7CAA89]/10 rounded-2xl p-4 border border-[#7CAA89]/20">
-                  <div className="flex items-center space-x-2 pb-2 border-b border-[#7CAA89]/20">
-                    <div className="w-8 h-8 bg-[#7CAA89] rounded-xl flex items-center justify-center">
-                      <User className="w-4 h-4 text-white" />
+                <div className="space-y-3 bg-slate-50 rounded-2xl p-4 border border-slate-200">
+                  <div className="flex items-center space-x-2 pb-2 border-b border-slate-200">
+                    <div className="w-8 h-8 bg-[#1e3a5f] rounded-xl flex items-center justify-center">
+                      <User className="w-4 h-4 text-white" strokeWidth={2} />
                     </div>
-                    <h3 className="text-base font-bold text-[#2b2b2b]">Informations Bailleur</h3>
+                    <h3 className="text-base font-semibold text-[#212a3e]">Informations bailleur</h3>
                   </div>
 
                   <div className="space-y-2">
                     <div>
-                      <label className="block text-[10px] font-semibold text-[#545454] mb-1">Nom complet</label>
+                      <label className="block text-[10px] font-semibold text-slate-600 mb-1">Nom complet</label>
                       <input
                         type="text"
                         name="baillorName"
                         value={formData.baillorName}
                         onChange={handleInputChange}
                         onBlur={handleBlur}
-                        className="w-full px-2.5 py-1.5 rounded-xl border border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20 transition-all duration-200 text-xs"
+                        className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all duration-200 text-xs"
                         placeholder="Ex: Jean Dupont"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-semibold text-[#545454] mb-1">Adresse complète</label>
+                      <label className="block text-[10px] font-semibold text-slate-600 mb-1">Adresse complète</label>
                       <input
                         type="text"
                         name="baillorAddress"
                         value={formData.baillorAddress}
                         onChange={handleInputChange}
                         onBlur={handleBlur}
-                        className="w-full px-2.5 py-1.5 rounded-xl border border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20 transition-all duration-200 text-xs"
+                        className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all duration-200 text-xs"
                         placeholder="Ex: 123 rue de la République, 75001 Paris"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-semibold text-[#545454] mb-1">Email</label>
+                      <label className="block text-[10px] font-semibold text-slate-600 mb-1">Email</label>
                       <input
                         type="email"
                         name="baillorEmail"
                         value={formData.baillorEmail}
                         onChange={handleInputChange}
                         onBlur={handleBlur}
-                        className="w-full px-2.5 py-1.5 rounded-xl border border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20 transition-all duration-200 text-xs"
+                        className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all duration-200 text-xs"
                         placeholder="Ex: jean.dupont@email.com"
                         required
                       />
@@ -777,53 +825,53 @@ const Home = () => {
                   </div>
                 </div>
 
-                <div className="space-y-3 bg-[#7CAA89]/10 rounded-2xl p-4 border border-[#7CAA89]/20">
-                  <div className="flex items-center space-x-2 pb-2 border-b border-[#7CAA89]/20">
-                    <div className="w-8 h-8 bg-[#7CAA89] rounded-xl flex items-center justify-center">
-                      <HomeIcon className="w-4 h-4 text-white" />
+                <div className="space-y-3 bg-slate-50 rounded-2xl p-4 border border-slate-200">
+                  <div className="flex items-center space-x-2 pb-2 border-b border-slate-200">
+                    <div className="w-8 h-8 bg-[#1e3a5f] rounded-xl flex items-center justify-center">
+                      <HomeIcon className="w-4 h-4 text-white" strokeWidth={2} />
                     </div>
-                    <h3 className="text-base font-bold text-[#2b2b2b]">Informations Locataire</h3>
+                    <h3 className="text-base font-semibold text-[#212a3e]">Informations locataire</h3>
                   </div>
 
                   <div className="space-y-2">
                     <div>
-                      <label className="block text-[10px] font-semibold text-[#545454] mb-1">Nom du locataire</label>
+                      <label className="block text-[10px] font-semibold text-slate-600 mb-1">Nom du locataire</label>
                       <input
                         type="text"
                         name="locataireName"
                         value={formData.locataireName}
                         onChange={handleInputChange}
-                        className="w-full px-2.5 py-1.5 rounded-xl border border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20 transition-all duration-200 text-xs"
+                        className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all duration-200 text-xs"
                         placeholder="Ex: Marie Martin"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-semibold text-[#545454] mb-1">Adresse du logement</label>
+                      <label className="block text-[10px] font-semibold text-slate-600 mb-1">Adresse du logement</label>
                       <input
                         type="text"
                         name="logementAddress"
                         value={formData.logementAddress}
                         onChange={handleInputChange}
-                        className="w-full px-2.5 py-1.5 rounded-xl border border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20 transition-all duration-200 text-xs"
+                        className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all duration-200 text-xs"
                         placeholder="Ex: 45 avenue des Champs, 75008 Paris"
                         required
                       />
                     </div>
 
-                    <div className="bg-[#7CAA89]/10 border border-[#7CAA89]/20 rounded-xl p-2">
+                    <div className="bg-slate-100 border border-slate-200 rounded-xl p-2">
                       <label className="flex items-start space-x-1.5 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={formData.hasDifferentDomicile}
                           onChange={(e) => setFormData(prev => ({ ...prev, hasDifferentDomicile: e.target.checked, locataireDomicileAddress: e.target.checked ? prev.locataireDomicileAddress : '' }))}
-                          className="w-3.5 h-3.5 text-[#7CAA89] border-2 border-gray-300 rounded focus:ring-2 focus:ring-[#7CAA89]/20 mt-0.5"
+                          className="w-3.5 h-3.5 text-[#2563eb] border-2 border-slate-300 rounded focus:ring-2 focus:ring-[#2563eb]/20 mt-0.5"
                         />
                         <div>
-                          <div className="font-semibold text-[#415052] mb-0.5 text-[10px]">
+                          <div className="font-semibold text-slate-700 mb-0.5 text-[10px]">
                             Adresse de domicile du locataire différente du bien loué
                           </div>
-                          <div className="text-[10px] text-[#545454]">
+                          <div className="text-[10px] text-slate-500">
                             Cochez si le locataire habite à une autre adresse
                           </div>
                         </div>
@@ -832,13 +880,13 @@ const Home = () => {
 
                     {formData.hasDifferentDomicile && (
                       <div>
-                        <label className="block text-[10px] font-semibold text-[#545454] mb-1">Adresse du domicile du locataire</label>
+                      <label className="block text-[10px] font-semibold text-slate-600 mb-1">Adresse du domicile du locataire</label>
                         <input
                           type="text"
                           name="locataireDomicileAddress"
                           value={formData.locataireDomicileAddress}
                           onChange={handleInputChange}
-                          className="w-full px-2.5 py-1.5 rounded-xl border border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20 transition-all duration-200 text-xs"
+                          className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all duration-200 text-xs"
                           placeholder="Ex: 12 rue Victor Hugo, 75016 Paris"
                         />
                       </div>
@@ -846,23 +894,23 @@ const Home = () => {
                   </div>
                 </div>
 
-                <div className="space-y-3 bg-[#7CAA89]/10 rounded-2xl p-4 border border-[#7CAA89]/20">
-                  <div className="flex items-center space-x-2 pb-2 border-b border-[#7CAA89]/20">
-                    <div className="w-8 h-8 bg-[#7CAA89] rounded-xl flex items-center justify-center">
-                      <Euro className="w-4 h-4 text-white" />
+                <div className="space-y-3 bg-slate-50 rounded-2xl p-4 border border-slate-200">
+                  <div className="flex items-center space-x-2 pb-2 border-b border-slate-200">
+                    <div className="w-8 h-8 bg-[#1e3a5f] rounded-xl flex items-center justify-center">
+                      <Euro className="w-4 h-4 text-white" strokeWidth={2} />
                     </div>
-                    <h3 className="text-base font-bold text-[#2b2b2b]">Montants</h3>
+                    <h3 className="text-base font-semibold text-[#212a3e]">Montants</h3>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[10px] font-semibold text-[#545454] mb-1">Loyer mensuel (€)</label>
+                      <label className="block text-[10px] font-semibold text-slate-600 mb-1">Loyer mensuel (€)</label>
                       <input
                         type="number"
                         name="loyer"
                         value={formData.loyer}
                         onChange={handleInputChange}
-                        className="w-full px-2.5 py-1.5 rounded-xl border border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20 transition-all duration-200 text-xs"
+                        className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all duration-200 text-xs"
                         placeholder="800"
                         min="0"
                         step="0.01"
@@ -870,13 +918,13 @@ const Home = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-semibold text-[#545454] mb-1">Charges mensuelles (€)</label>
+                      <label className="block text-[10px] font-semibold text-slate-600 mb-1">Charges mensuelles (€)</label>
                       <input
                         type="number"
                         name="charges"
                         value={formData.charges}
                         onChange={handleInputChange}
-                        className="w-full px-2.5 py-1.5 rounded-xl border border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20 transition-all duration-200 text-xs"
+                        className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all duration-200 text-xs"
                         placeholder="100"
                         min="0"
                         step="0.01"
@@ -887,14 +935,14 @@ const Home = () => {
 
                   {!formData.isProrata && (
                     <div>
-                      <label className="block text-[10px] font-semibold text-[#545454] mb-1">Période</label>
+                      <label className="block text-[10px] font-semibold text-slate-600 mb-1">Période</label>
                       <div className="relative">
-                        <Calendar className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                        <Calendar className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                         <select
                           name="periode"
                           value={formData.periode}
                           onChange={handleInputChange}
-                          className="w-full pl-9 pr-2.5 py-1.5 rounded-xl border border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20 transition-all duration-200 appearance-none bg-white text-xs"
+                          className="w-full pl-9 pr-2.5 py-1.5 rounded-xl border border-slate-300 focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all duration-200 appearance-none bg-white text-xs"
                         >
                           {(() => {
                             const now = new Date();
@@ -913,19 +961,19 @@ const Home = () => {
                     </div>
                   )}
 
-                  <div className="bg-[#7CAA89]/10 border border-[#7CAA89]/20 rounded-xl p-2">
+                  <div className="bg-slate-100 border border-slate-200 rounded-xl p-2">
                     <label className="flex items-start space-x-1.5 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={formData.isProrata}
                         onChange={(e) => setFormData(prev => ({ ...prev, isProrata: e.target.checked }))}
-                        className="w-3.5 h-3.5 text-[#7CAA89] border-2 border-gray-300 rounded focus:ring-2 focus:ring-[#7CAA89]/20 mt-0.5"
+                        className="w-3.5 h-3.5 text-[#2563eb] border-2 border-slate-300 rounded focus:ring-2 focus:ring-[#2563eb]/20 mt-0.5"
                       />
                       <div>
-                        <div className="font-semibold text-[#415052] mb-0.5 text-[10px]">
+                        <div className="font-semibold text-slate-700 mb-0.5 text-[10px]">
                           Calculer le prorata pour une période spécifique
                         </div>
-                        <div className="text-[10px] text-[#545454]">
+                        <div className="text-[10px] text-slate-500">
                           Le montant sera ajusté selon la période exacte du séjour
                         </div>
                       </div>
@@ -936,62 +984,62 @@ const Home = () => {
                 {formData.isProrata && (
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[10px] font-semibold text-[#545454] mb-1">Date d'entrée</label>
+                      <label className="block text-[10px] font-semibold text-slate-600 mb-1">Date d'entrée</label>
                       <input
                         type="date"
                         name="dateDebut"
                         value={formData.dateDebut}
                         onChange={handleInputChange}
-                        className="w-full px-2.5 py-1.5 rounded-xl border border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20 transition-all duration-200 text-xs"
+                        className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all duration-200 text-xs"
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-semibold text-[#545454] mb-1">Date de sortie</label>
+                      <label className="block text-[10px] font-semibold text-slate-600 mb-1">Date de sortie</label>
                       <input
                         type="date"
                         name="dateFin"
                         value={formData.dateFin}
                         onChange={handleInputChange}
                         min={formData.dateDebut || undefined}
-                        className="w-full px-2.5 py-1.5 rounded-xl border border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20 transition-all duration-200 text-xs"
+                        className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all duration-200 text-xs"
                       />
                     </div>
                   </div>
                 )}
 
                 {formData.isProrata && prorataAmounts.total > 0 && (
-                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-2">
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-2">
                     <div className="flex items-center justify-between text-[10px]">
-                      <span className="font-semibold text-[#2b2b2b]">Total prorata calculé:</span>
-                      <span className="text-xs font-bold text-gray-600">
+                      <span className="font-semibold text-[#212a3e]">Total prorata calculé&nbsp;:</span>
+                      <span className="text-xs font-bold text-slate-700">
                         {prorataAmounts.loyer.toFixed(2)}€ + {prorataAmounts.charges.toFixed(2)}€ = {prorataAmounts.total.toFixed(2)}€
                       </span>
                     </div>
                   </div>
                 )}
 
-                <div className="space-y-3 bg-[#7CAA89]/10 rounded-2xl p-4 border border-[#7CAA89]/20">
-                  <div className="flex items-center space-x-2 pb-2 border-b border-[#7CAA89]/20">
-                    <div className="w-8 h-8 bg-[#7CAA89] rounded-xl flex items-center justify-center">
-                      <Shield className="w-4 h-4 text-white" />
+                <div className="space-y-3 bg-slate-50 rounded-2xl p-4 border border-slate-200">
+                  <div className="flex items-center space-x-2 pb-2 border-b border-slate-200">
+                    <div className="w-8 h-8 bg-[#1e3a5f] rounded-xl flex items-center justify-center">
+                      <Shield className="w-4 h-4 text-white" strokeWidth={2} />
                     </div>
-                    <h3 className="text-base font-bold text-[#2b2b2b]">Validation</h3>
+                    <h3 className="text-base font-semibold text-[#212a3e]">Validation</h3>
                   </div>
 
-                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
                     <label className="flex items-start space-x-2 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={isElectronicSignatureChecked}
                         onChange={(e) => setIsElectronicSignatureChecked(e.target.checked)}
-                        className="w-3.5 h-3.5 text-[#7CAA89] border-2 border-gray-300 rounded focus:ring-2 focus:ring-[#7CAA89]/20 mt-0.5"
+                        className="w-3.5 h-3.5 text-[#2563eb] border-2 border-slate-300 rounded focus:ring-2 focus:ring-[#2563eb]/20 mt-0.5"
                         required
                       />
                       <div>
-                        <div className="text-sm font-bold text-[#2b2b2b] mb-0.5">
+                        <div className="text-sm font-semibold text-[#212a3e] mb-0.5">
                           Signature électronique *
                         </div>
-                        <div className="text-[10px] text-[#415052] leading-relaxed">
+                        <div className="text-[10px] text-slate-600 leading-relaxed">
                           Je certifie que le paiement a été encaissé et j'approuve l'émission de la quittance.
                         </div>
                       </div>
@@ -1004,7 +1052,7 @@ const Home = () => {
                 <button
                   onClick={handleDownload}
                   disabled={isLoading}
-                  className="w-full px-4 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 transform shadow-lg flex items-center justify-center space-x-1.5 bg-[#ed7862] hover:bg-[#e56651] text-white hover:-translate-y-1 hover:shadow-xl"
+                  className="w-full px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 transform shadow-lg flex items-center justify-center space-x-1.5 bg-[#1e3a5f] hover:bg-[#16304a] text-white hover:-translate-y-1 hover:shadow-xl disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {isLoading ? (
                     <>
@@ -1022,7 +1070,7 @@ const Home = () => {
                 {hasContent() && (
                   <button
                     onClick={() => setShowPreview(!showPreview)}
-                    className="w-full border-2 border-gray-300 hover:border-[#ed7862] text-[#545454] hover:text-[#ed7862] px-4 py-2 rounded-xl font-semibold text-xs transition-all duration-200 transform hover:-translate-y-1 bg-white/80 backdrop-blur-sm flex items-center justify-center space-x-1.5"
+                    className="w-full border border-slate-300 hover:border-[#618e82] text-slate-600 hover:text-[#618e82] px-4 py-2 rounded-xl font-semibold text-xs transition-all duration-200 transform hover:-translate-y-1 bg-white/80 backdrop-blur-sm flex items-center justify-center space-x-1.5"
                   >
                     <Eye className="w-3.5 h-3.5" />
                     <span>{showPreview ? 'Masquer l\'aperçu' : 'Aperçu de la quittance'}</span>
@@ -1043,26 +1091,26 @@ const Home = () => {
                   onClose={() => setShowPreview(false)}
                 />
               ) : (
-                <div className="bg-gradient-to-br bg-[#fefdf9] rounded-3xl p-5 border border-gray-200 shadow-xl">
+                <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-[0_18px_45px_rgba(15,23,42,0.12)]">
                   <div className="text-center">
                     <button
                       onClick={() => {
                         setShowPreview(true);
                       }}
-                      className="w-14 h-14 bg-[#ed7862] rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg hover:scale-110 transition-transform cursor-pointer"
+                      className="w-14 h-14 bg-[#618e82] rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg hover:scale-110 transition-transform cursor-pointer"
                     >
                       <FileText className="w-7 h-7 text-white" />
                     </button>
-                    <h3 className="text-lg font-bold text-[#2b2b2b] mb-2">Quittance conforme</h3>
-                    <p className="text-xs text-[#545454] mb-5 leading-relaxed">
-                      Votre quittance sera générée selon les normes légales françaises avec toutes les mentions obligatoires.
+                    <h3 className="text-lg font-semibold text-[#212a3e] mb-2">Quittance conforme</h3>
+                    <p className="text-xs text-slate-600 mb-5 leading-relaxed">
+                      La quittance est générée selon les normes légales françaises, avec toutes les mentions obligatoires et une présentation claire pour votre locataire.
                     </p>
 
                     <button
                       onClick={() => {
                         setShowPreview(true);
                       }}
-                      className="mb-3 inline-flex items-center justify-center bg-[#ed7862] hover:bg-[#e56651] text-white px-3 py-1.5 rounded-lg font-medium text-xs transition-all duration-200 transform hover:-translate-y-1 shadow-lg"
+                      className="mb-3 inline-flex items-center justify-center bg-[#618e82] hover:bg-[#527a70] text-white px-3 py-1.5 rounded-lg font-medium text-xs transition-all duration-200 transform hover:-translate-y-1 shadow-lg"
                     >
                       <Eye className="w-3.5 h-3.5 mr-1.5" />
                       <span>Voir l'aperçu</span>
@@ -1077,21 +1125,21 @@ const Home = () => {
           <div className="mt-8 max-w-4xl mx-auto hidden sm:block">
             <Link
               to="/pricing"
-              className="block bg-gradient-to-r from-[#ed7862]/10 to-[#e56651]/10 border border-[#ed7862]/20 rounded-xl p-4 hover:shadow-md transition-all duration-200 cursor-pointer group"
+              className="block bg-white border border-slate-200 rounded-xl p-4 hover:shadow-[0_18px_45px_rgba(15,23,42,0.12)] transition-all duration-200 cursor-pointer group"
             >
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="flex items-center gap-3 flex-1">
-                  <div className="bg-[#ed7862]/20 rounded-lg p-1.5 group-hover:scale-105 transition-transform flex-shrink-0">
-                    <Zap className="w-4 h-4 text-[#ed7862]" />
+                  <div className="bg-[#2563eb]/10 rounded-lg p-1.5 group-hover:scale-105 transition-transform flex-shrink-0">
+                    <Zap className="w-4 h-4 text-[#E65F3F]" />
                   </div>
-                  <div className="text-sm text-[#2b2b2b]">
-                    
-                    <span className="hidden sm:inline"> — </span>
-                    <span className="block sm:inline text-[#545454] font-semibold">Vous pouvez aussi tout automatiser pour <strong className="text-[#ed7862]">0,82€/mois</strong></span><span className="font-semibold"> et vous n'aurez même plus à remplir ce formulaire.</span>
+                  <div className="text-sm text-slate-700">
+                    <span className="block sm:inline text-[#212a3e] font-semibold">Fatigué de perdre du temps ? Essayez le pack automatique.</span>
+                    <span className="hidden sm:inline"> </span>
+                    <span className="block sm:inline text-slate-600">À partir de <strong className="text-[#E65F3F]">0,82&nbsp;€/mois</strong>, les quittances sont automatiques.</span>
                   </div>
                 </div>
                 <div className="flex-shrink-0">
-                  <div className="bg-[#ed7862] text-white px-4 py-2 rounded-lg font-medium text-sm group-hover:bg-[#e56651] transition-colors flex items-center space-x-1.5">
+                  <div className="bg-[#E65F3F] text-white px-4 py-2 rounded-lg font-medium text-sm group-hover:bg-[#d95530] transition-colors flex items-center space-x-1.5">
                     <span>Découvrir</span>
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                   </div>
@@ -1106,7 +1154,7 @@ const Home = () => {
       <footer className="bg-subtle-light border-t border-subtle-light hidden sm:block">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-5 lg:px-7 xl:px-10 py-5">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-[10px] text-muted-light">© 2024 Quittance Simple. Tous droits réservés.</p>
+            <p className="text-[10px] text-muted-light">© 2026 Quittance Simple. Tous droits réservés.</p>
             <div className="flex gap-2 mt-2 md:mt-0">
               <Link to="/legal" className="text-[10px] text-muted-light hover:text-[#ed7862] transition-colors">Mentions légales</Link>
               <Link to="/legal" className="text-[10px] text-muted-light hover:text-[#ed7862] transition-colors">Confidentialité</Link>

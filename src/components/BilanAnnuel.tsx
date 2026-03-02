@@ -257,17 +257,17 @@ const BilanAnnuel: React.FC<BilanAnnuelProps> = ({ proprietaireId, locataires })
         </div>
       )}
 
-      {/* Onglets par locataire */}
+      {/* Onglets par locataire (style Mes documents) */}
       {quittances.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="border-b border-gray-200 px-4 pt-3">
-            <div className="flex space-x-1 overflow-x-auto">
+        <div className="bg-[#f7f5fa] rounded-lg shadow-sm border border-[#e8e7ef] overflow-hidden">
+          <div className="border-b border-[#e8e7ef]">
+            <nav className="flex space-x-1 px-4 overflow-x-auto" aria-label="Onglets locataires">
               <button
                 onClick={() => setSelectedLocataireId('tous')}
-                className={`px-3 py-2 text-xs font-medium rounded-t-lg whitespace-nowrap transition-colors ${
+                className={`px-3 py-2 text-sm font-medium rounded-t-md whitespace-nowrap transition-colors flex-shrink-0 ${
                   selectedLocataireId === 'tous'
-                    ? 'bg-[#7CAA89] text-white'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    ? 'bg-charte-bleu text-white border-b-2 border-charte-bleu'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
                 Tous les locataires
@@ -276,16 +276,16 @@ const BilanAnnuel: React.FC<BilanAnnuelProps> = ({ proprietaireId, locataires })
                 <button
                   key={locataire.id}
                   onClick={() => setSelectedLocataireId(locataire.id)}
-                  className={`px-3 py-2 text-xs font-medium rounded-t-lg whitespace-nowrap transition-colors ${
+                  className={`px-3 py-2 text-sm font-medium rounded-t-md whitespace-nowrap transition-colors flex-shrink-0 ${
                     selectedLocataireId === locataire.id
-                      ? 'bg-[#7CAA89] text-white'
-                      : 'text-gray-600 hover:bg-gray-100'
+                      ? 'bg-charte-bleu text-white border-b-2 border-charte-bleu'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                   }`}
                 >
                   {locataire.nom} {locataire.prenom}
                 </button>
               ))}
-            </div>
+            </nav>
           </div>
 
           {/* Tableau des quittances */}

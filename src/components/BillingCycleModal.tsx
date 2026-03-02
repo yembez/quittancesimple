@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Check, Calendar } from 'lucide-react';
+import { getPricing, formatPrice } from '../utils/pricing';
 
 interface BillingCycleModalProps {
   isOpen: boolean;
@@ -24,20 +25,14 @@ const BillingCycleModal = ({
 
   if (!isOpen) return null;
 
-  const getPriceByTenants = (cycle: 'monthly' | 'yearly') => {
-    if (cycle === 'monthly') {
-      if (numberOfTenants >= 1 && numberOfTenants <= 2) return { price: 0.99, savings: null };
-      if (numberOfTenants >= 3 && numberOfTenants <= 5) return { price: 1.49, savings: null };
-      return { price: 2.49, savings: null };
-    } else {
-      if (numberOfTenants >= 1 && numberOfTenants <= 2) return { price: 9.90, savings: 1.98 };
-      if (numberOfTenants >= 3 && numberOfTenants <= 5) return { price: 14.90, savings: 2.98 };
-      return { price: 24.90, savings: 4.98 };
-    }
+  const pricing = getPricing(numberOfTenants);
+  
+  const monthlyPrice = { price: pricing.monthlyPrice, savings: null };
+  const yearlyPrice = { 
+    price: pricing.yearlyPrice, 
+    savings: pricing.savings || undefined,
+    monthlyEquivalent: pricing.monthlyEquivalent
   };
-
-  const monthlyPrice = getPriceByTenants('monthly');
-  const yearlyPrice = getPriceByTenants('yearly');
 
   const handleConfirm = () => {
     if (!ownerInfoComplete) {
@@ -113,11 +108,11 @@ const BillingCycleModal = ({
 
               <div className="mb-4">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-bold text-gray-900">{monthlyPrice.price.toFixed(2)} €</span>
+                  <span className="text-3xl font-bold text-gray-900">{formatPrice(monthlyPrice.price)} €</span>
                   <span className="text-gray-600">/mois</span>
                 </div>
                 <p className="text-sm text-gray-500 mt-1">
-                  Soit {(monthlyPrice.price * 12).toFixed(2)} €/an
+                  Soit {formatPrice(monthlyPrice.price * 12)} €/an
                 </p>
               </div>
 
@@ -162,12 +157,17 @@ const BillingCycleModal = ({
 
               <div className="mb-4">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-bold text-gray-900">{yearlyPrice.price.toFixed(2)} €</span>
-                  <span className="text-gray-600">/an</span>
+                  <span className="text-3xl font-bold text-gray-900">{formatPrice(yearlyPrice.monthlyEquivalent)} €</span>
+                  <span className="text-gray-600">/mois</span>
                 </div>
-                <p className="text-sm text-[#7CAA89] font-semibold mt-1">
-                  Économisez {yearlyPrice.savings?.toFixed(2)} € par an
+                <p className="text-sm text-gray-500 mt-1">
+                  ({formatPrice(yearlyPrice.price)} €/an)
                 </p>
+                {yearlyPrice.savings && (
+                  <p className="text-sm text-[#7CAA89] font-semibold mt-1">
+                    Économisez {formatPrice(yearlyPrice.savings)} € par an
+                  </p>
+                )}
               </div>
 
               <ul className="space-y-2 text-sm text-gray-600">

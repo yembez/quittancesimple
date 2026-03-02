@@ -1,7 +1,8 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { Analytics } from '@vercel/analytics/react';
 import Header from './components/Header';
+import UserSpaceHeader from './components/UserSpaceHeader';
 import Footer from './components/Footer';
 import Home from './pages/Home';
 import HomeVersion1 from './pages/HomeVersion1';
@@ -25,6 +26,8 @@ import PaymentRules from './pages/PaymentRules';
 import TenantDetectionSetup from './pages/TenantDetectionSetup';
 import ManageSubscription from './pages/ManageSubscription';
 import Historique from './pages/Historique';
+import Documents from './pages/Documents';
+import EtatDesLieux from './pages/EtatDesLieux';
 import HowItWorks from './pages/HowItWorks';
 import Legal from './pages/Legal';
 import QuittancePDFGratuit from './pages/QuittancePDFGratuit';
@@ -49,6 +52,14 @@ import QuittanceSuccess from './pages/QuittanceSuccess';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentCancelled from './pages/PaymentCancelled';
 import SetPassword from './pages/SetPassword'; // ← NOUVELLE LIGNE
+import BailWeb from './pages/BailWeb';
+import BailMeubleWeb from './pages/BailMeubleWeb';
+import Overview from './pages/Overview';
+import AnnonceGenerator from './pages/AnnonceGenerator';
+import SignatureSignPage from './pages/SignatureSignPage';
+import BailSignatureValidationPage from './pages/BailSignatureValidationPage';
+import BailSignatureFlowPage from './pages/BailSignatureFlowPage';
+import EspaceBailleurLayout from './layouts/EspaceBailleurLayout';
 
 // Component to scroll to top on route change
 function ScrollToTop() {
@@ -60,6 +71,8 @@ function ScrollToTop() {
 
   return null;
 }
+
+const EspaceBailleurLayoutElement = <EspaceBailleurLayout />;
 
 function App() {
   const location = useLocation();
@@ -74,17 +87,42 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const noLayoutPages = ['/billing', '/owner-confirmation', '/quick-confirm', '/quick-payment-confirm', '/sms-confirm', '/confirmation', '/quittance-success', '/payment-success', '/payment-cancelled', '/set-password']; // ← AJOUT /set-password
-  const noFooterPages = ['/billing', '/owner-confirmation', '/quick-confirm', '/quick-payment-confirm', '/sms-confirm', '/confirmation', '/dashboard', '/free-dashboard', '/manage-subscription', '/historique', '/revision-irl', '/quittance-success', '/payment-success', '/payment-cancelled', '/set-password']; // ← AJOUT /set-password
+  const noLayoutPages = ['/billing', '/owner-confirmation', '/quick-confirm', '/quick-payment-confirm', '/sms-confirm', '/confirmation', '/quittance-success', '/payment-success', '/payment-cancelled', '/set-password', '/bail', '/bail-meuble', '/sign'];
+  const noFooterPages = ['/billing', '/owner-confirmation', '/quick-confirm', '/quick-payment-confirm', '/sms-confirm', '/confirmation', '/dashboard', '/overview', '/free-dashboard', '/manage-subscription', '/historique', '/revision-irl', '/quittance-success', '/payment-success', '/payment-cancelled', '/set-password', '/bail', '/bail-meuble', '/documents', '/annonce-generator', '/etat-des-lieux', '/sign', '/dashboard/baux'];
   const formPages = ['/generator', '/generateur-quittance-loyer'];
 
-  const shouldShowLayout = !noLayoutPages.includes(location.pathname) && !location.pathname.startsWith('/c/');
-  const shouldShowFooter = !noFooterPages.includes(location.pathname) && !location.pathname.startsWith('/c/') && !(isMobile && formPages.includes(location.pathname));
+  const userSpacePages = ['/dashboard', '/overview', '/free-dashboard', '/manage-subscription', '/historique', '/revision-irl', '/billing', '/documents', '/bail', '/bail-meuble', '/annonce-generator', '/etat-des-lieux', '/dashboard/baux'];
+  const isUserSpacePage = userSpacePages.some(
+    (p) =>
+      location.pathname === p ||
+      location.pathname.startsWith(`${p}/`) ||
+      location.pathname.startsWith(`${p}?`)
+  );
+
+  const isSignPage = location.pathname.startsWith('/sign/');
+  const shouldShowLayout = !noLayoutPages.includes(location.pathname) && !location.pathname.startsWith('/c/') && !isSignPage;
+  const isBailSignatureDashboardPage = location.pathname.startsWith('/dashboard/baux/');
+  const shouldShowFooter =
+    !noFooterPages.includes(location.pathname) &&
+    !isBailSignatureDashboardPage &&
+    !location.pathname.startsWith('/c/') &&
+    !isSignPage &&
+    !(isMobile && formPages.includes(location.pathname));
+
+  const showUserSpaceHeader = isUserSpacePage;
+  const showMainHeader = shouldShowLayout && !showUserSpaceHeader;
+
+  React.useEffect(() => {
+    if (isUserSpacePage) {
+      document.title = 'QS Espace bailleur';
+    }
+  }, [isUserSpacePage, location.pathname]);
 
   return (
     <div className="min-h-screen bg-white">
-      {shouldShowLayout && <Header />}
-      <main>
+      {showUserSpaceHeader && <UserSpaceHeader />}
+      {showMainHeader && <Header />}
+      <main className={showUserSpaceHeader || (showMainHeader && (location.pathname !== '/' || isMobile)) ? 'pt-14' : ''}>
         <Routes>
           <Route path="/powens/callback" element={<PowensCallback />} />
           <Route path="/" element={<Home />} />
@@ -125,13 +163,24 @@ function App() {
           <Route path="/prorata" element={<ProrataCalculator />} />
           <Route path="/calcul-revision-loyer" element={<CalculRevisionLoyer />} />
           <Route path="/irl/resultat" element={<IRLResultat />} />
-          <Route path="/revision-irl" element={<RevisionIRL />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/tableau-de-bord" element={<Navigate to="/overview" replace />} />
+          <Route element={EspaceBailleurLayoutElement}>
+            <Route path="/revision-irl" element={<RevisionIRL />} />
+            <Route path="/overview" element={<Overview />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/documents" element={<Documents />} />
+            <Route path="/historique" element={<Historique />} />
+            <Route path="/bail" element={<BailWeb />} />
+            <Route path="/bail-meuble" element={<BailMeubleWeb />} />
+            <Route path="/etat-des-lieux" element={<EtatDesLieux />} />
+            <Route path="/annonce-generator" element={<AnnonceGenerator />} />
+            <Route path="/dashboard/baux/:id/validation" element={<BailSignatureValidationPage />} />
+            <Route path="/dashboard/baux/:id/signature" element={<BailSignatureFlowPage />} />
+            <Route path="/billing" element={<Billing />} />
+            <Route path="/manage-subscription" element={<ManageSubscription />} />
+          </Route>
           <Route path="/free-dashboard" element={<FreeDashboard />} />
           <Route path="/payment-checkout" element={<PaymentCheckout />} />
-          <Route path="/billing" element={<Billing />} />
-          <Route path="/manage-subscription" element={<ManageSubscription />} />
-          <Route path="/historique" element={<Historique />} />
           <Route path="/bank-sync" element={<BankSync />} />
           <Route path="/payment-rules" element={<PaymentRules />} />
           <Route path="/tenant-detection-setup" element={<TenantDetectionSetup />} />
@@ -143,6 +192,7 @@ function App() {
           <Route path="/inscription" element={<FreeSignup />} />
           <Route path="/signup" element={<FreeSignup />} />
           <Route path="/set-password" element={<SetPassword />} /> {/* ← NOUVELLE ROUTE */}
+          <Route path="/sign/:token" element={<SignatureSignPage />} />
           <Route path="/quittance-success" element={<QuittanceSuccess />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/payment-cancelled" element={<PaymentCancelled />} />

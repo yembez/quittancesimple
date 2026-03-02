@@ -58,7 +58,7 @@ Deno.serve(async (req: Request) => {
 
           <tr>
             <td style="background: linear-gradient(135deg, #2D3436 0%, #1a1f20 100%); padding: 40px; text-align: center;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">Quittance Simple</h1>
+              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">QS - Espace Bailleur</h1>
               <p style="margin: 10px 0 0 0; color: rgba(255, 255, 255, 0.9); font-size: 16px;">Votre facture</p>
             </td>
           </tr>
@@ -151,9 +151,10 @@ Deno.serve(async (req: Request) => {
         <table width="600" cellpadding="0" cellspacing="0" style="margin-top: 20px;">
           <tr>
             <td style="text-align: center; padding: 20px;">
-              <p style="margin: 0; font-size: 12px; color: #999999; line-height: 1.5;">
-                Quittance Simple - Gestion locative simplifiée<br>
-                © ${new Date().getFullYear()} Tous droits réservés
+              <p style="margin: 0; font-size: 12px; color: #666; line-height: 1.5;">
+                <strong>QS – Espace Bailleur</strong><br/>
+                Un service édité par Quittance Simple<br/>
+                <a href="https://quittancesimple.fr">quittancesimple.fr</a>
               </p>
             </td>
           </tr>
@@ -166,7 +167,7 @@ Deno.serve(async (req: Request) => {
     `;
 
     const { data, error } = await resend.emails.send({
-      from: 'Quittance Simple <noreply@quittancesimple.fr>',
+      from: 'QS - Espace Bailleur <noreply@quittancesimple.fr>',
       to: [email],
       subject: `Facture ${numeroFacture} - ${montant.toFixed(2)}€`,
       html: emailHtml,

@@ -28,27 +28,204 @@ const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
   const [canMakePayment, setCanMakePayment] = useState(false);
   const [paymentRequestAvailable, setPaymentRequestAvailable] = useState(false);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>(initialBillingCycle);
+  const [activeTenantsCount, setActiveTenantsCount] = useState<number | null>(null);
+  const [isLoadingTenants, setIsLoadingTenants] = useState(false);
   const [tenantTier, setTenantTier] = useState<'1-2' | '3-5' | '5+'>(() => {
     const saved = localStorage.getItem('tenant_tier');
     const validTiers = ['1-2', '3-5', '5+'];
     return validTiers.includes(saved as string) ? (saved as '1-2' | '3-5' | '5+') : '1-2';
   });
 
+  // Fonction pour déterminer le tier selon le nombre de locataires
+  const getTierFromTenantCount = (count: number): '1-2' | '3-5' | '5+' => {
+    if (count >= 1 && count <= 2) return '1-2';
+    if (count >= 3 && count <= 5) return '3-5';
+    if (count >= 6) return '5+';
+    return '1-2'; // Par défaut
+  };
+
+  // Fonction pour obtenir les limites d'un tier
+  const getTierLimits = (tier: '1-2' | '3-5' | '5+'): { min: number; max: number } => {
+    switch (tier) {
+      case '1-2':
+        return { min: 1, max: 2 };
+      case '3-5':
+        return { min: 3, max: 5 };
+      case '5+':
+        return { min: 6, max: Infinity };
+      default:
+        return { min: 1, max: 2 };
+    }
+  };
+
+  // Fonction pour obtenir le label d'affichage d'un tier
+  const getTierDisplayLabel = (tier: '1-2' | '3-5' | '5+'): string => {
+    return tier === '5+' ? '6+' : tier;
+  };
+
+  // Vérifier la compatibilité entre le nombre de locataires et le tier sélectionné
+  const getTierValidation = () => {
+    if (activeTenantsCount === null) return null;
+
+    const tierLimits = getTierLimits(tenantTier);
+    const tierDisplayLabel = getTierDisplayLabel(tenantTier);
+    
+    // Cas 1 : Tier inférieur au nombre de locataires → ERREUR, bloquer
+    if (activeTenantsCount > tierLimits.max) {
+      return {
+        type: 'error' as const,
+        message: `Vous avez ${activeTenantsCount} locataire${activeTenantsCount > 1 ? 's' : ''} actif${activeTenantsCount > 1 ? 's' : ''}. Pour souscrire au plan "${tierDisplayLabel}", vous devez d'abord supprimer ${activeTenantsCount - tierLimits.max} locataire${activeTenantsCount - tierLimits.max > 1 ? 's' : ''} depuis votre espace bailleur.`,
+        canProceed: false
+      };
+    }
+    
+    // Cas 2 : Tier supérieur au nombre de locataires → AVERTISSEMENT, permettre
+    if (activeTenantsCount < tierLimits.min) {
+      return {
+        type: 'warning' as const,
+        message: `Vous avez ${activeTenantsCount} locataire${activeTenantsCount > 1 ? 's' : ''} actif${activeTenantsCount > 1 ? 's' : ''}. Le plan "${tierDisplayLabel}" vous permettra d'ajouter jusqu'à ${tierLimits.max === Infinity ? 'un nombre illimité de' : tierLimits.max} locataire${tierLimits.max > 1 ? 's' : ''} dans votre espace bailleur.`,
+        canProceed: true
+      };
+    }
+    
+    // Cas 3 : Compatible → OK
+    return null;
+  };
+
+  const tierValidation = React.useMemo(() => getTierValidation(), [activeTenantsCount, tenantTier]);
+
   const getTierPrice = (tier: string, cycle: 'monthly' | 'yearly') => {
-    const prices: Record<string, { monthly: number; yearly: number }> = {
-      '1-2': { monthly: 0.99, yearly: 9.90 },
-      '3-5': { monthly: 1.49, yearly: 14.90 },
-      '5+': { monthly: 2.49, yearly: 24.90 },
+    const prices: Record<string, { monthly: number; yearly: number; monthlyEquivalent: number }> = {
+      '1-2': { monthly: 3.90, yearly: 39.00, monthlyEquivalent: 3.25 },
+      '3-5': { monthly: 5.90, yearly: 59.00, monthlyEquivalent: 4.92 },
+      '5+': { monthly: 8.90, yearly: 89.00, monthlyEquivalent: 7.42 },
     };
     // Default to '1-2' if tier is invalid
     const validTier = prices[tier] ? tier : '1-2';
-    return prices[validTier][cycle];
+    return prices[validTier];
   };
 
-  const price = getTierPrice(tenantTier, billingCycle);
+  const tierPricing = getTierPrice(tenantTier, billingCycle);
+  const price = billingCycle === 'yearly' ? tierPricing.yearly : tierPricing.monthly;
   const planName = 'Pack Automatique';
   const cycleLabel = billingCycle === 'monthly' ? 'mois' : 'an';
-  const monthlyEquivalent = billingCycle === 'yearly' ? (Math.floor(price / 12 * 100) / 100).toFixed(2) : price.toFixed(2);
+  const monthlyEquivalent = billingCycle === 'yearly' 
+    ? tierPricing.monthlyEquivalent.toFixed(2) 
+    : tierPricing.monthly.toFixed(2);
+
+  // Price ID Stripe (même source que Dashboard : .env VITE_STRIPE_PRICE_*)
+  const getStripePriceIdForTier = (): string => {
+    if (billingCycle === 'yearly') {
+      if (tenantTier === '1-2') return import.meta.env.VITE_STRIPE_PRICE_AUTO_TIER1_YEARLY || '';
+      if (tenantTier === '3-5') return import.meta.env.VITE_STRIPE_PRICE_AUTO_TIER2_YEARLY || '';
+      return import.meta.env.VITE_STRIPE_PRICE_AUTO_TIER3_YEARLY || '';
+    }
+    if (tenantTier === '1-2') return import.meta.env.VITE_STRIPE_PRICE_AUTO_TIER1 || '';
+    if (tenantTier === '3-5') return import.meta.env.VITE_STRIPE_PRICE_AUTO_TIER2 || '';
+    return import.meta.env.VITE_STRIPE_PRICE_AUTO_TIER3 || '';
+  };
+
+  const stripePriceId = getStripePriceIdForTier();
+
+  // Au moment d'ouvrir le modal : afficher le dernier envoi (pour debug après retour Stripe)
+  useEffect(() => {
+    if (!isOpen) return;
+    try {
+      const raw = localStorage.getItem('lastQuickPaymentDebug');
+      if (raw) {
+        const last = JSON.parse(raw);
+        console.log('[QuickPayment] Dernier envoi (au retour de Stripe) :', last);
+      }
+    } catch (_) {}
+  }, [isOpen]);
+
+  // Charger le nombre de locataires actifs quand le modal s'ouvre
+  useEffect(() => {
+    const loadActiveTenants = async () => {
+      if (!isOpen) return;
+
+      setIsLoadingTenants(true);
+      try {
+        // Récupérer l'email
+        const emailToUse = prefilledEmail || 
+                          localStorage.getItem('proprietaireEmail') ||
+                          localStorage.getItem('captured_email') || '';
+
+        if (!emailToUse) {
+          setIsLoadingTenants(false);
+          return;
+        }
+
+        // Vérifier si l'utilisateur est connecté
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          // Récupérer le propriétaire par user_id
+          const { data: proprietaire, error: propError } = await supabase
+            .from('proprietaires')
+            .select('id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          if (propError || !proprietaire) {
+            setIsLoadingTenants(false);
+            return;
+          }
+
+          // Récupérer le nombre de locataires actifs
+          const { data: locataires, error: locError } = await supabase
+            .from('locataires')
+            .select('id', { count: 'exact', head: false })
+            .eq('proprietaire_id', proprietaire.id)
+            .eq('actif', true);
+
+          if (!locError && locataires) {
+            const count = locataires.length;
+            setActiveTenantsCount(count);
+            
+            // Déterminer automatiquement le tier selon le nombre de locataires
+            if (count > 0) {
+              const autoTier = getTierFromTenantCount(count);
+              setTenantTier(autoTier);
+              localStorage.setItem('tenant_tier', autoTier);
+            }
+          }
+        } else {
+          // Si pas connecté, essayer de trouver par email
+          const { data: proprietaire, error: propError } = await supabase
+            .from('proprietaires')
+            .select('id')
+            .eq('email', emailToUse)
+            .maybeSingle();
+
+          if (!propError && proprietaire) {
+            const { data: locataires, error: locError } = await supabase
+              .from('locataires')
+              .select('id', { count: 'exact', head: false })
+              .eq('proprietaire_id', proprietaire.id)
+              .eq('actif', true);
+
+            if (!locError && locataires) {
+              const count = locataires.length;
+              setActiveTenantsCount(count);
+              
+              if (count > 0) {
+                const autoTier = getTierFromTenantCount(count);
+                setTenantTier(autoTier);
+                localStorage.setItem('tenant_tier', autoTier);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des locataires:', error);
+      } finally {
+        setIsLoadingTenants(false);
+      }
+    };
+
+    loadActiveTenants();
+  }, [isOpen, prefilledEmail]);
 
   useEffect(() => {
     if (prefilledEmail) {
@@ -126,8 +303,45 @@ const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
       return;
     }
 
+    // Vérifier la validation du tier avant de procéder au paiement
+    const validation = getTierValidation();
+    if (validation && !validation.canProceed) {
+      setError(validation.message);
+      return;
+    }
+
+    if (!stripePriceId) {
+      setError('Configuration des tarifs manquante. Vérifiez les variables VITE_STRIPE_PRICE_* dans .env');
+      return;
+    }
+
     setIsProcessing(true);
     setError('');
+
+    const payload = {
+      email,
+      plan: selectedPlan,
+      billingCycle,
+      tenantTier,
+      stripePriceId,
+    };
+    const debugInfo = {
+      stripePriceId,
+      tenantTier,
+      billingCycle,
+      tousLesEnv: {
+        tier1: import.meta.env.VITE_STRIPE_PRICE_AUTO_TIER1,
+        tier2: import.meta.env.VITE_STRIPE_PRICE_AUTO_TIER2,
+        tier3: import.meta.env.VITE_STRIPE_PRICE_AUTO_TIER3,
+        tier1Y: import.meta.env.VITE_STRIPE_PRICE_AUTO_TIER1_YEARLY,
+        tier2Y: import.meta.env.VITE_STRIPE_PRICE_AUTO_TIER2_YEARLY,
+        tier3Y: import.meta.env.VITE_STRIPE_PRICE_AUTO_TIER3_YEARLY,
+      },
+    };
+    console.log('[QuickPayment] Envoi vers quick-checkout:', debugInfo);
+    try {
+      localStorage.setItem('lastQuickPaymentDebug', JSON.stringify(debugInfo, null, 2));
+    } catch (_) {}
 
     try {
       const response = await fetch(
@@ -138,26 +352,33 @@ const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           },
-          body: JSON.stringify({
-            email,
-            plan: selectedPlan,
-            billingCycle,
-            tenantTier,
-          }),
+          body: JSON.stringify(payload),
         }
       );
 
       const data = await response.json();
 
       if (!response.ok) {
-        console.log('[Analytics] checkout_cancel_auto', { error: data.error });
-        if (typeof window !== 'undefined' && (window as any).dataLayer) {
-          (window as any).dataLayer.push({
-            event: 'checkout_cancel_auto',
-            error: data.error
-          });
+        const isSessionIdError =
+          data.error === 'session_id is required' ||
+          data.code === 'missing_session_id' ||
+          (data.error && String(data.error).toLowerCase().includes('session_id'));
+        if (!isSessionIdError) {
+          console.log('[Analytics] checkout_cancel_auto', { error: data.error });
+          if (typeof window !== 'undefined' && (window as any).dataLayer) {
+            (window as any).dataLayer.push({
+              event: 'checkout_cancel_auto',
+              error: data.error
+            });
+          }
+        } else {
+          console.warn('[QuickPayment] Réponse inattendue (session_id requis) — possible mauvaise URL d’API.');
         }
-        throw new Error(data.error || 'Erreur lors du paiement');
+        throw new Error(
+          isSessionIdError
+            ? 'Erreur de configuration du paiement. Veuillez réessayer ou contacter le support.'
+            : (data.error || 'Erreur lors du paiement')
+        );
       }
 
       console.log('[Analytics] checkout_success_auto', { tier: tenantTier, cycle: billingCycle });
@@ -170,6 +391,7 @@ const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
       }
 
       if (data.url) {
+        localStorage.setItem('lastQuickPaymentDebug', JSON.stringify(debugInfo, null, 2));
         window.location.href = data.url;
       } else {
         throw new Error('URL de paiement manquante');
@@ -210,6 +432,8 @@ const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
             email,
             plan: selectedPlan,
             billingCycle,
+            tenantTier,
+            stripePriceId,
             expressCheckout: true,
           }),
         }
@@ -327,6 +551,19 @@ const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
             </h2>
 
             <div className="bg-[#fefdf9] rounded-2xl p-4 mb-4 border border-gray-200">
+              {/* Message informatif sur le nombre de locataires détectés */}
+              {activeTenantsCount !== null && activeTenantsCount > 0 && (
+                <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm font-semibold text-[#1a1f20]">
+                    Vous avez <span className="text-[#ed7862]">{activeTenantsCount}</span> locataire{activeTenantsCount > 1 ? 's' : ''} actif{activeTenantsCount > 1 ? 's' : ''}
+                  </p>
+                  <p className="text-xs text-[#545454] mt-1">
+                    Prix : <span className="font-semibold text-[#ed7862]">{monthlyEquivalent}€/mois</span>
+                    {billingCycle === 'yearly' && ` (${price.toFixed(2)}€/an)`}
+                  </p>
+                </div>
+              )}
+
               <div className="flex justify-between items-start mb-3">
                 <span className="text-sm font-semibold text-[#1a1f20]">{planName}</span>
                 <div className="text-right">
@@ -370,23 +607,71 @@ const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
               </div>
 
               <div className="mb-3">
-                <label className="text-xs font-medium text-[#545454] mb-2 block">Nombre de locataires</label>
+                <label className="text-xs font-medium text-[#545454] mb-2 block">
+                  Nombre de locataires
+                  {isLoadingTenants && (
+                    <span className="ml-2 text-xs text-[#545454]">(chargement...)</span>
+                  )}
+                </label>
                 <div className="flex gap-2">
-                  {(['1-2', '3-5', '5+'] as const).map((tier) => (
-                    <button
-                      key={tier}
-                      type="button"
-                      onClick={() => handleTenantTierChange(tier)}
-                      className={`flex-1 py-2 text-xs font-semibold rounded-lg border-2 transition-all ${
-                        tenantTier === tier
-                          ? 'border-[#ed7862] bg-[#ed7862] text-white'
-                          : 'border-gray-200 text-[#545454] hover:border-[#ed7862]'
-                      }`}
-                    >
-                      {tier}
-                    </button>
-                  ))}
+                  {(['1-2', '3-5', '5+'] as const).map((tier) => {
+                    const tierLimits = getTierLimits(tier);
+                    const isIncompatible = activeTenantsCount !== null && activeTenantsCount > tierLimits.max;
+                    // Afficher "6+" au lieu de "5+" pour le tier supérieur
+                    const displayLabel = tier === '5+' ? '6+' : tier;
+                    
+                    return (
+                      <button
+                        key={tier}
+                        type="button"
+                        onClick={() => handleTenantTierChange(tier)}
+                        className={`flex-1 py-2 text-xs font-semibold rounded-lg border-2 transition-all ${
+                          tenantTier === tier
+                            ? isIncompatible
+                              ? 'border-red-500 bg-red-50 text-red-700'
+                              : 'border-[#ed7862] bg-[#ed7862] text-white'
+                            : isIncompatible
+                              ? 'border-red-200 text-red-600 hover:border-red-300'
+                              : 'border-gray-200 text-[#545454] hover:border-[#ed7862]'
+                        }`}
+                        title={isIncompatible ? `Incompatible avec ${activeTenantsCount} locataire${activeTenantsCount > 1 ? 's' : ''}` : ''}
+                      >
+                        {displayLabel}
+                      </button>
+                    );
+                  })}
                 </div>
+                
+                {/* Messages de validation */}
+                {tierValidation && (
+                  <div className={`mt-3 p-3 rounded-lg border ${
+                    tierValidation.type === 'error'
+                      ? 'bg-red-50 border-red-200'
+                      : 'bg-amber-50 border-amber-200'
+                  }`}>
+                    <p className={`text-xs font-medium ${
+                      tierValidation.type === 'error'
+                        ? 'text-red-800'
+                        : 'text-amber-800'
+                    }`}>
+                      {tierValidation.type === 'error' && '⚠️ '}
+                      {tierValidation.type === 'warning' && 'ℹ️ '}
+                      {tierValidation.message}
+                    </p>
+                    {tierValidation.type === 'error' && (
+                      <a
+                        href="/dashboard"
+                        className="mt-2 inline-block text-xs font-semibold text-red-700 hover:text-red-800 underline"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          window.location.href = '/dashboard';
+                        }}
+                      >
+                        Accéder à mon espace bailleur pour gérer mes locataires
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="mt-3 space-y-1.5">
                 <div className="flex items-center text-xs text-[#545454]">
@@ -459,7 +744,7 @@ const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
 
               <button
                 onClick={handleQuickPayment}
-                disabled={isProcessing || !email}
+                disabled={isProcessing || !email || (tierValidation?.canProceed === false)}
                 className="w-full py-4 rounded-xl bg-[#ed7862] hover:bg-[#e56651] text-white font-bold text-base transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isProcessing ? (

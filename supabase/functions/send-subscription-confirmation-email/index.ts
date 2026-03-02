@@ -121,8 +121,10 @@ Deno.serve(async (req) => {
               <p style="margin: 0 0 20px; color: #666; font-size: 14px;">
                 Des questions ? Contactez-nous à <a href="mailto:contact@quittancesimple.fr" style="color: #7CAA89; text-decoration: none;">contact@quittancesimple.fr</a>
               </p>
-              <p style="margin: 0; color: #999; font-size: 12px;">
-                © ${new Date().getFullYear()} Quittance Simple. Tous droits réservés.
+              <p style="margin: 0; color: #666; font-size: 12px;">
+                <strong>QS – Espace Bailleur</strong><br/>
+                Un service édité par Quittance Simple<br/>
+                <a href="https://quittancesimple.fr">quittancesimple.fr</a>
               </p>
             </td>
           </tr>
@@ -158,7 +160,7 @@ Des questions ? Contactez-nous à contact@quittancesimple.fr
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Quittance Simple <noreply@quittancesimple.fr>',
+        from: 'QS - Espace Bailleur <noreply@quittancesimple.fr>',
         to: [email],
         subject: 'Votre accès à Quittance Simple',
         html: htmlContent,

@@ -166,10 +166,13 @@ Deno.serve(async (req: Request) => {
           <tr>
             <td style="padding: 30px; background-color: #f9fafb; text-align: center; border-top: 1px solid #e5e7eb;">
               <p style="margin: 0 0 5px 0; color: #2c2c2c; font-size: 14px; font-weight: 600;">
-                Quittance Simple
+                QS – Espace Bailleur
               </p>
               <p style="margin: 0; color: #666666; font-size: 12px;">
-                La solution de gestion locative des bailleurs modernes
+                Un service édité par Quittance Simple
+              </p>
+              <p style="margin: 5px 0 0 0; color: #666666; font-size: 12px;">
+                <a href="https://quittancesimple.fr">quittancesimple.fr</a>
               </p>
               <p style="margin: 15px 0 0 0; color: #999999; font-size: 11px;">
                 Vous recevez cet email car vous avez utilisé notre calculateur de révision de loyer
@@ -214,7 +217,9 @@ Automatisez l'envoi par email et SMS
 ✓ Support dédié en français
 
 À bientôt,
-L'équipe Quittance Simple`;
+QS – Espace Bailleur
+Un service édité par Quittance Simple
+quittancesimple.fr`;
 
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
 
@@ -229,7 +234,7 @@ L'équipe Quittance Simple`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Quittance Simple <noreply@quittancesimple.fr>',
+        from: 'QS - Espace Bailleur <noreply@quittancesimple.fr>',
         to: [email],
         subject: 'Votre lettre de révision de loyer (IRL)',
         html: emailHtml,

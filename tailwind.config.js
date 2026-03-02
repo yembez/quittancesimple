@@ -3,6 +3,9 @@ export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
+      screens: {
+        xs: '360px',
+      },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
       },
@@ -29,6 +32,9 @@ export default {
         'coral': '#ED7862',
         'charcoal': '#2D3436',
         'green-dynamic': '#4CAF50',
+
+        // Bleu foncé charte (sidebar + onglets actifs)
+        'charte-bleu': '#1e3a5f',
 
         // Gradient signature (pour accents visuels)
         'grad-from': '#FFD76F',     // Jaune vif

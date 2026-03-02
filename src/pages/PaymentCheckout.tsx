@@ -19,11 +19,11 @@ const PaymentCheckout = () => {
 
   const calculatePrice = (tenants: number) => {
     if (tenants >= 1 && tenants <= 2) {
-      return 0.99;
-    } else if (tenants >= 3 && tenants <= 4) {
-      return 1.99;
+      return 3.90;
+    } else if (tenants >= 3 && tenants <= 5) {
+      return 5.90;
     } else {
-      return 2.99;
+      return 8.90;
     }
   };
 
@@ -51,24 +51,75 @@ const PaymentCheckout = () => {
   };
 
   useEffect(() => {
-    const data = localStorage.getItem('automationSetupData');
-    if (!data) {
-      navigate('/automation-setup');
-      return;
+    const trialParam = searchParams.get('trial');
+    const reactivateParam = searchParams.get('reactivate');
+    const emailParam = searchParams.get('email');
+
+    // Si c'est une conversion d'essai ou une réactivation, charger les données depuis Supabase
+    if ((trialParam === 'true' || reactivateParam === 'true') && emailParam) {
+      const loadProprietaireData = async () => {
+        try {
+          const { data: proprietaire, error } = await supabase
+            .from('proprietaires')
+            .select('id, email, nombre_locataires')
+            .eq('email', emailParam)
+            .maybeSingle();
+
+          if (error || !proprietaire) {
+            console.error('Erreur chargement propriétaire:', error);
+            navigate('/automation-setup');
+            return;
+          }
+
+          // Charger les locataires du propriétaire
+          const { data: locataires, error: locError } = await supabase
+            .from('locataires')
+            .select('*')
+            .eq('proprietaire_id', proprietaire.id);
+
+          if (locError) {
+            console.error('Erreur chargement locataires:', locError);
+          }
+
+          // Créer les données de setup à partir des données existantes
+          const setupDataFromDb = {
+            email: proprietaire.email,
+            locataires: locataires || [],
+          };
+
+          setSetupData(setupDataFromDb);
+          setSelectedPlan('automatique');
+          
+          // Par défaut, choisir le cycle annuel pour les conversions d'essai
+          setBillingCycle('yearly');
+        } catch (err) {
+          console.error('Erreur:', err);
+          navigate('/automation-setup');
+        }
+      };
+
+      loadProprietaireData();
+    } else {
+      // Comportement normal : charger depuis localStorage
+      const data = localStorage.getItem('automationSetupData');
+      if (!data) {
+        navigate('/automation-setup');
+        return;
+      }
+
+      const parsed = JSON.parse(data);
+      setSetupData(parsed);
+
+      // Default to automatique plan
+      setSelectedPlan('automatique');
+
+      // Get billing cycle from localStorage
+      const storedBillingCycle = localStorage.getItem('billingCycle') as 'monthly' | 'yearly';
+      if (storedBillingCycle) {
+        setBillingCycle(storedBillingCycle);
+      }
     }
-
-    const parsed = JSON.parse(data);
-    setSetupData(parsed);
-
-    // Default to automatique plan
-    setSelectedPlan('automatique');
-
-    // Get billing cycle from localStorage
-    const storedBillingCycle = localStorage.getItem('billingCycle') as 'monthly' | 'yearly';
-    if (storedBillingCycle) {
-      setBillingCycle(storedBillingCycle);
-    }
-  }, [navigate]);
+  }, [navigate, searchParams]);
 
   const handlePayment = async () => {
     if (!setupData) return;
@@ -115,6 +166,11 @@ const PaymentCheckout = () => {
         }
       }
 
+      // Vérifier si c'est une conversion d'essai ou une réactivation
+      const trialParam = searchParams.get('trial');
+      const reactivateParam = searchParams.get('reactivate');
+      const isTrialConversion = trialParam === 'true' || reactivateParam === 'true';
+
       // Call Stripe checkout
       const { data: session, error: checkoutError } = await supabase.functions.invoke('stripe-checkout', {
         body: {
@@ -124,7 +180,8 @@ const PaymentCheckout = () => {
           cancel_url: `${window.location.origin}/payment-cancelled`,
           metadata: {
             plan_name: plan.name,
-            num_tenants: numTenants.toString()
+            num_tenants: numTenants.toString(),
+            trial_conversion: isTrialConversion ? 'true' : 'false'
           }
         }
       });

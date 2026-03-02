@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; color: #333333; line-height: 1.6; background-color: #f9f9f9; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: #ffffff; padding: 40px; border-radius: 8px; border: 1px solid #eeeeee; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+        .logo { font-size: 22px; font-weight: bold; color: #2563eb; margin-bottom: 30px; text-decoration: none; }
+        .button { display: inline-block; padding: 14px 28px; background-color: #2563eb; color: #ffffff !important; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 25px; }
+        .footer { margin-top: 40px; font-size: 12px; color: #999999; border-top: 1px solid #eeeeee; padding-top: 20px; }
+        .highlight { color: #2563eb; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">Quittance Simple</div>
+        
+        <p>Bonjour {{firstname}},</p>
+        
+        <p>Voilà déjà une semaine que vous avez rejoint <strong>Quittance Simple</strong>. J'espère que l'outil vous aide déjà à y voir plus clair dans votre gestion locative.</p>
+        
+        <p>Il vous reste encore <span class="highlight">23 jours</span> pour profiter sereinement du <strong>Pack Automatique</strong>. C'est l'occasion idéale pour tester sans stress :</p>
+        
+        <ul style="padding-left: 20px;">
+            <li>L'envoi automatisé de vos quittances chaque mois.</li>
+            <li>Le calcul des révisions de loyer (indices IRL).</li>
+            <li>Le stockage sécurisé de vos documents importants.</li>
+        </ul>
+        
+        <p><strong>Une question ? Un doute sur un dossier ?</strong> Répondez simplement à cet e-mail, je suis là pour vous aider personnellement.</p>
+        
+        <a href="https://quittancesimple.fr/espace" class="button">Accéder à mon espace propriétaire</a>
+        
+        <p style="margin-top: 40px;">À très vite,<br>
+        <strong>L'équipe Quittance Simple</strong></p>
+        
+        <div class="footer">
+            Vous recevez cet e-mail car vous avez créé un compte sur Quittance Simple.<br>
+            <a href="{{unsubscribe_url}}" style="color: #2563eb; text-decoration: none;">Se désabonner</a> • <a href="https://quittancesimple.fr/contact" style="color: #2563eb; text-decoration: none;">Nous contacter</a><br>
+            © 2026 Quittance Simple
+        </div>
+    </div>
+</body>
+</html>

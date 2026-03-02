@@ -1,24 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { Check, Shield, Zap, Bell, Smartphone, Mail, RefreshCw, TrendingUp } from 'lucide-react';
+import { Check, Shield, Zap, ArrowRight, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import SEOHead from '../components/SEOHead';
 import LoginModal from '../components/LoginModal';
 import NotifyMeModal from '../components/NotifyMeModal';
 import QuickPaymentModal from '../components/QuickPaymentModal';
+import PackActivationFlow from '../components/PackActivationFlow';
 import { supabase } from '../lib/supabase';
 import { useIsMobile, detectMobileDevice } from '../hooks/useIsMobile';
+import { trackCtaClick } from '../utils/analytics';
+import { getPricing, formatPrice } from '../utils/pricing';
 
 const Pricing = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loginMode, setLoginMode] = useState<'login' | 'signup'>('signup');
   const [simulatedTenants, setSimulatedTenants] = useState(1);
   const [currentPlan, setCurrentPlan] = useState<string>('');
+  const [isInTrialPeriod, setIsInTrialPeriod] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<'auto' | 'plus'>('auto');
   const [isNotifyMeModalOpen, setIsNotifyMeModalOpen] = useState(false);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
   const [isQuickPaymentModalOpen, setIsQuickPaymentModalOpen] = useState(false);
+  const [isPackActivationFlowOpen, setIsPackActivationFlowOpen] = useState(false);
   const isMobile = useIsMobile();
   const isMobileDevice = detectMobileDevice();
 
@@ -29,14 +34,14 @@ const Pricing = () => {
     "offers": [
       {
         "@type": "Offer",
-        "name": "Automatique",
-        "price": "1",
+        "name": "Gratuit",
+        "price": "0",
         "priceCurrency": "EUR"
       },
       {
         "@type": "Offer",
-        "name": "Connectée+",
-        "price": "1.50",
+        "name": "Pack Automatique",
+        "price": "3.90",
         "priceCurrency": "EUR"
       }
     ]
@@ -48,544 +53,312 @@ const Pricing = () => {
       setUserEmail(email);
       loadUserSubscription(email);
     }
+
+    // Debug : afficher le dernier envoi quick-checkout si présent (après retour de Stripe)
+    try {
+      const raw = localStorage.getItem('lastQuickPaymentDebug');
+      if (raw) {
+        const last = JSON.parse(raw);
+        console.log('[Pricing] Dernier envoi quick-checkout (après retour Stripe) :', last);
+        console.log('[Pricing] stripePriceId envoyé:', last.stripePriceId);
+        console.log('[Pricing] Variables env VITE_STRIPE_PRICE_*:', last.tousLesEnv);
+      }
+    } catch (_) {}
   }, []);
 
   const loadUserSubscription = async (email: string) => {
     const { data, error } = await supabase
       .from('proprietaires')
-      .select('plan_actuel, abonnement_actif')
+      .select('plan_actuel, abonnement_actif, date_fin_essai')
       .eq('email', email)
       .maybeSingle();
 
     if (!error && data && data.abonnement_actif) {
       setCurrentPlan(data.plan_actuel || '');
+      // Essai gratuit = date_fin_essai renseignée et dans le futur
+      const inTrial =
+        data.date_fin_essai != null &&
+        new Date(data.date_fin_essai) > new Date();
+      setIsInTrialPeriod(!!inTrial);
     }
   };
 
   const openModal = async (plan: string) => {
-    if (userEmail && currentPlan) {
+    // Abonnement payant actif (pas en essai) : on bloque et on redirige vers "Gérer mon abonnement"
+    if (userEmail && currentPlan && !isInTrialPeriod) {
       alert('Vous avez déjà un abonnement actif. Pour changer d\'abonnement, veuillez d\'abord annuler votre abonnement actuel depuis la page "Gérer mon abonnement", puis souscrire à une nouvelle formule.');
       return;
     }
 
-    if (plan === 'Quittance Connectée+') {
-      setSelectedPlan('plus');
-    } else {
+    // Compte existant (essai gratuit ou pas encore d'abonnement) : ouvrir le modal de paiement (locataires + palier + prix)
+    if (userEmail) {
       setSelectedPlan('auto');
+      trackCtaClick('pack_automatique_activation', 'pricing', 'quick_payment_modal');
+      setIsQuickPaymentModalOpen(true);
+      return;
     }
 
-    if (isMobile || isMobileDevice) {
-      setIsQuickPaymentModalOpen(true);
-    } else {
-      setLoginMode('signup');
-      setIsModalOpen(true);
-    }
+    // Nouveau visiteur : flow d'activation avec essai gratuit
+    trackCtaClick('pack_automatique_activation', 'pricing', 'pack_activation_flow');
+    setIsPackActivationFlowOpen(true);
   };
 
   const calculateAutoPrice = (tenants: number, cycle: 'monthly' | 'yearly' = 'monthly') => {
-    let monthlyPrice = 0;
-
-    if (tenants >= 1 && tenants <= 2) {
-      monthlyPrice = 0.99;
-    } else if (tenants >= 3 && tenants <= 5) {
-      monthlyPrice = 1.49;
-    } else {
-      monthlyPrice = 2.49;
-    }
-
-    return cycle === 'yearly' ? monthlyPrice * 10 : monthlyPrice;
-  };
-
-  const calculateBankPrice = (tenants: number, cycle: 'monthly' | 'yearly' = 'monthly') => {
-    let monthlyPrice = 0;
-
-    if (tenants >= 1 && tenants <= 2) {
-      monthlyPrice = 1.49;
-    } else if (tenants >= 3 && tenants <= 4) {
-      monthlyPrice = 2.49;
-    } else if (tenants >= 5 && tenants <= 8) {
-      monthlyPrice = 3.49;
-    } else {
-      monthlyPrice = 3.49;
-    }
-
-    return cycle === 'yearly' ? monthlyPrice * 10 : monthlyPrice;
+    const pricing = getPricing(tenants);
+    return cycle === 'yearly' ? pricing.yearlyPrice : pricing.monthlyPrice;
   };
 
   const getMonthlyEquivalent = (yearlyPrice: number) => {
-    return (Math.floor((yearlyPrice / 12) * 100) / 100).toFixed(2);
+    if (yearlyPrice === 39.00) return '3.25';
+    if (yearlyPrice === 59.00) return '4.92';
+    if (yearlyPrice === 89.00) return '7.42';
+    
+    const monthlyRaw = yearlyPrice / 12;
+    if (monthlyRaw % 0.1 < 0.05) {
+      return (Math.round(monthlyRaw * 10) / 10).toFixed(1);
+    }
+    return (Math.round(monthlyRaw * 100) / 100).toFixed(2);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#fafafa]">
       <SEOHead
-        title="Tarifs Quittance Simple | Automatisation dès 0,99€/mois pour 1-2 logements"
-        description="Tarifs dégressifs selon le nombre de logements : 0,99€ pour 1-2 logements, 1,49€ pour 3-4, 2,49€ pour 5+ logements."
-        keywords="tarifs quittance loyer, automatisation quittance, abonnement quittance, prix quittance automatique"
+        title="Tarifs Quittance Simple | Plan Gratuit et Pack Automatique dès 3,90€/mois"
+        description="Générateur de quittance gratuit ou Pack Automatique avec envoi automatique : 3,90€ pour 1-2 locataires, 5,90€ pour 3-5, 8,90€ pour 6+ locataires."
+        keywords="tarifs quittance loyer, automatisation quittance, abonnement quittance, prix quittance automatique, générateur quittance gratuit"
         schema={schema}
         canonical="https://quittance-simple.fr/pricing"
       />
 
-      {/* Hero */}
-      <section className="pt-20 pb-6 bg-[#fefdf9]">
-        <div className="max-w-7xl mx-auto px-5 lg:px-7">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center max-w-4xl mx-auto"
-          >
-            <h1 className="text-xl lg:text-3xl font-bold text-[#1a1f20] mb-3 leading-tight">
-            Détail des tarifs <br />
-            </h1>
-            <p className="text-base lg:text-xl font-bold text-[#ed7862] mb-2">
-              Tarifs de lancement*
-            </p>
-          
-
-          </motion.div>
-        </div>
-      </section>
-
-{/* Toggle Mensuel/Annuel */}
-<section className="pt-6 pb-3">
-  <div className="max-w-10xl mx-auto px-5 lg:px-7">
-    <div className="flex justify-center items-center gap-4 mb-0">
-      <motion.div
-        className="bg-white rounded-full p-1.5 shadow-lg border border-gray-200 inline-flex items-center gap-2"
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <button
-          onClick={() => setBillingCycle('monthly')}
-          className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${
-            billingCycle === 'monthly'
-              ? 'bg-[#ed7862] text-white shadow-md'
-              : 'text-[#545454] hover:text-[#1a1f20]'
-          }`}
-        >
-          Mensuel
-        </button>
-        <button
-          onClick={() => setBillingCycle('yearly')}
-          className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
-            billingCycle === 'yearly'
-              ? 'bg-[#ed7862] text-white shadow-md'
-              : 'text-[#545454] hover:text-[#1a1f20]'
-          }`}
-        >
-          Annuel
-          <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
-            -17%
-          </span>
-        </button>
-      </motion.div>
-    </div>
-  </div>
-</section>
-
-{/* Plans */}
-<section className="py-9">
-  <div className="max-w-7xl mx-auto px-5 lg:px-7">
-
-    {/* Grille asymétrique : gros bloc principal + petit bloc secondaire */}
-    <div className="grid md:grid-cols-[1.7fr_1fr] gap-6 max-w-5xl mx-auto items-start">
-
-      {/* Plan Automatique */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        viewport={{ once: true }}
-        className="bg-white rounded-3xl border-2 border-[#ed7862]/20 p-6 shadow-xl relative overflow-hidden"
-      >
-        <div className="absolute top-0 right-0 w-20 h-20 bg-[#ed7862]/10 rounded-full -mr-10 -mt-10"></div>
-
-        <div className="relative">
-         
-
-          <h2 className="text-xl font-bold text-[#1a1f20] mb-1.5">Pack Automatique</h2>
-          <p className="text-xs text-[#545454] mb-4"><Link to="/automation" className="text-[#ed7862] hover:underline text-xs font-semibold ml-1">Détail</Link></p>
-
-          <AnimatePresence mode="wait">
+      {/* Plans - mobile: Pack en premier (order), desktop: Gratuit | Pack */}
+      <section className="pt-12 sm:pt-16 pb-28 md:pb-12 bg-[#fafafa]">
+        <div className="max-w-[980px] mx-auto px-5 sm:px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+            
+            {/* Plan Gratuit - ordre 2 sur mobile pour afficher Pack en premier */}
             <motion.div
-              key={billingCycle}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
-              className="mb-5"
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              viewport={{ once: true }}
+              className="order-2 lg:order-1 bg-white rounded-2xl border border-[#d2d2d7] shadow-[0_2px_10px_rgba(0,0,0,0.04)] p-6 sm:p-8 relative"
             >
-              {billingCycle === 'monthly' ? (
-                <>
-                  <div className="flex items-baseline mb-1">
-                    <span className="text-xl font-bold text-[#ed7862]">0,99€/mois</span>
-                    <span className="text-xs text-[#545454] ml-2">— offre de lancement pour 1–2 locataires</span>
+              <div className="mb-5">
+                <h2 className="text-xl font-semibold text-[#1d1d1f] tracking-tight mb-1">Outils Gratuits</h2>
+                <p className="text-sm text-[#6e6e73] mb-4">Générateur de quittance simple et efficace</p>
+                
+                <div className="mb-5">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-3xl font-semibold text-[#1d1d1f] tracking-tight">0€</span>
+                    <span className="text-base text-[#6e6e73]">/mois</span>
                   </div>
-                  <p className="text-xs text-[#545454] mb-2 line-through opacity-60">
-                    (au lieu de 1,49 € / mois ensuite)
-                  </p>
-
-                  <p className="text-sm text-[#545454]">
-                    <span className="text-[#ed7862]">1,49€/mois</span>  <span className="text-xs text-[#545454] ml-2">— offre de lancement (3–5 locataires)</span>
-                  </p>
-                  <p className="text-xs text-[#545454] mb-2 line-through opacity-60">
-                    (au lieu de 2,49 € / mois ensuite)
-                  </p>
-
-                  <p className="text-sm text-[#545454]">
-                    <span className="text-[#ed7862]">2,49€/mois</span> <span className="text-xs text-[#545454] ml-2">— offre de lancement (5+ locataires)</span>
-                  </p>
-                  <p className="text-xs text-[#545454] line-through opacity-60">
-                    (au lieu de 3,99 € / mois ensuite)
-                  </p>
-                </>
-              ) : (
-                <>
-                  <div className="flex items-baseline mb-1">
-                    <span className="text-xl font-bold text-[#ed7862]">0,82€/mois</span>
-                    <span className="text-xs text-[#545454] ml-2">(9,90€/an) — offre de lancement pour 1 à 2 locataires</span>
-                  </div>
-                  <p className="text-xs text-[#545454] mb-2 line-through opacity-60">
-                    (au lieu de 14,90 € / an ensuite)
-                  </p>
-
-                  <p className="text-sm text-[#545454]">
-                    <span className="text-[#ed7862]">1,24€/mois</span> <span className="text-xs">(14,90€/an)</span> <span className="text-xs text-[#545454] ml-2">— offre de lancement (3–5 locataires)</span> 
-                  </p>
-                  <p className="text-xs text-[#545454] mb-2 line-through opacity-60">
-                    (au lieu de 24,90 € / an ensuite)
-                  </p>
-
-                  <p className="text-sm text-[#545454]">
-                    <span className="text-[#ed7862]">2,07€/mois</span> <span className="text-xs">(24,90€/an)</span> <span className="text-xs text-[#545454] ml-2">— offre de lancement (5+ locataires)</span> 
-                  </p>
-                  <p className="text-xs text-[#545454] line-through opacity-60">
-                    (au lieu de 39,90 € / an ensuite)
-                  </p>
-                </>
-              )}
-            </motion.div>
-          </AnimatePresence>
-
-          <ul className="space-y-2.5 mb-5">
-            <li className="flex items-start">
-              <Check className="w-3.5 h-3.5 text-[#2D3436] mr-2 mt-0.5 flex-shrink-0" />
-              <span className="text-xs text-[#545454]"><strong>Quittance automatiques</strong></span>
-            </li>
-            <li className="flex items-start">
-              <Check className="w-3.5 h-3.5 text-[#2D3436] mr-2 mt-0.5 flex-shrink-0" />
-              <span className="text-xs text-[#545454]"><strong>Calcul IRL</strong> + courrier automatique</span>
-            </li>
-            <li className="flex items-start">
-              <Check className="w-3.5 h-3.5 text-[#2D3436] mr-2 mt-0.5 flex-shrink-0" />
-              <span className="text-xs text-[#545454]"><strong>Bilan annuel</strong> / CA prêt</span>
-            </li>
-            <li className="flex items-start">
-              <Check className="w-3.5 h-3.5 text-[#2D3436] mr-2 mt-0.5 flex-shrink-0" />
-              <span className="text-xs text-[#545454]"><strong>Historique</strong> + stockage documents</span>
-            </li>
-          </ul>
-
-          <button
-            onClick={() => openModal('Pack Automatique')}
-            className="w-full py-2.5 rounded-full bg-[#ed7862] hover:bg-[#e56651] text-white text-xs font-bold transition-all transform hover:scale-105 shadow-lg"
-          >
-            Activer le Pack Automatique
-          </button>
-
-          <p className="text-xs text-center text-[#7CAA89] mt-3 font-semibold">
-            💡 Vous conservez ce tarif tant que votre abonnement reste actif.
-          </p>
-
-          <p className="text-[10px] text-center text-[#545454] mt-2">Sans engagement</p>
-        </div>
-      </motion.div>
-
-      {/* Plan Connectée+ — Option A (plus petit + décalé + discret) */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-        viewport={{ once: true }}
-        className="bg-white/60 rounded-3xl border border-gray-200 p-3 shadow-sm relative overflow-hidden opacity-70 scale-85 mt-10"
-      >
-        <div className="absolute top-2.5 right-2.5 bg-gray-600 text-white px-2 py-0.5 rounded-full text-[10px] font-semibold shadow-md">
-          Bientôt disponible
-        </div>
-
-        <div className="relative">
-          <div className="w-9 h-9 bg-gray-300 rounded-2xl flex items-center justify-center mb-2.5">
-            <RefreshCw className="w-4 h-4 text-gray-500" />
-          </div>
-
-          <h2 className="text-base font-semibold text-gray-600 mb-1">
-            Quittance Connectée<span className="text-gray-500 text-2xl">+</span>
-          </h2>
-
-          <p className="text-[10px] text-gray-500 mb-3">
-            La tranquillité totale grâce à la synchronisation bancaire automatique.
-          </p>
-
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={billingCycle}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
-              className="mb-3"
-            >
-              {billingCycle === 'monthly' ? (
-                <>
-                  <div className="flex items-baseline mb-0.5">
-                    <span className="text-lg font-semibold text-gray-600">1,49€</span>
-                    <span className="text-[10px] text-gray-500 ml-1.5">/mois TTC — 1-2 logements</span>
-                  </div>
-                  <p className="text-xs text-gray-500 font-medium">
-                    2,49€/mois pour 3-4 logements
-                  </p>
-                  <p className="text-xs text-gray-500 font-medium">
-                    3,49€/mois pour 5-8 logements
-                  </p>
-                </>
-              ) : (
-                <>
-                  <div className="flex items-baseline mb-0.5">
-                    <span className="text-lg font-semibold text-gray-600">1,24€/mois</span>
-                    <span className="text-[10px] text-gray-500 ml-1.5">(14,90€/an) — 1-2 logements</span>
-                  </div>
-                  <p className="text-xs text-gray-500 font-medium">
-                    2,07€/mois (24,90€/an) pour 3-4 logements
-                  </p>
-                  <p className="text-xs text-gray-500 font-medium">
-                    2,91€/mois (34,90€/an) pour 5-8 logements
-                  </p>
-                </>
-              )}
-            </motion.div>
-          </AnimatePresence>
-
-          <ul className="space-y-1.5 mb-3 text-gray-500 text-[10px]">
-            <li className="flex items-start">
-              <Check className="w-3 h-3 text-gray-400 mr-1 mt-0.5" />
-              Synchronisation bancaire (PSD2)
-            </li>
-            <li className="flex items-start">
-              <Check className="w-3 h-3 text-gray-400 mr-1 mt-0.5" />
-              Détection automatique du paiement du loyer
-            </li>
-            <li className="flex items-start">
-              <Check className="w-3 h-3 text-gray-400 mr-1 mt-0.5" />
-              Envoi 100% automatisé
-            </li>
-          </ul>
-
-          <button
-            onClick={() => setIsNotifyMeModalOpen(true)}
-            className="w-full py-1.5 rounded-full bg-gray-600 hover:bg-gray-700 text-white font-semibold transition-all text-[10px] shadow-sm"
-          >
-            Me tenir informé
-          </button>
-
-          <p className="text-[10px] text-center text-gray-500 mt-2.5">Lancement prochainement</p>
-        </div>
-      </motion.div>
-
-    </div>
-  </div>
-</section>
-
-
-      {/* Simulateur */}
-      <section className="py-12 bg-white">
-        <div className="max-w-4xl mx-auto px-5 lg:px-7">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            className="text-center mb-9"
-          >
-            <h2 className="text-2xl font-bold text-[#1a1f20] mb-3">
-              Simuler votre coût mensuel
-            </h2>
-            <p className="text-sm text-[#545454]">
-              Ajustez le nombre de logements pour voir le prix exact
-            </p>
-          </motion.div>
-
-          <div className="bg-[#fefdf9] rounded-3xl p-6 border border-gray-200">
-            <div className="mb-6">
-              <label className="block text-base font-bold text-[#1a1f20] mb-3">
-                Nombre de logements : <span className="text-[#2D3436]">{simulatedTenants}</span>
-              </label>
-              <input
-                type="range"
-                min="1"
-                max="10"
-                value={simulatedTenants}
-                onChange={(e) => setSimulatedTenants(parseInt(e.target.value))}
-                className="w-full h-2.5 rounded-lg appearance-none cursor-pointer bg-gray-300"
-                style={{
-                  accentColor: '#2D3436',
-                  background: `linear-gradient(to right, #2D3436 0%, #2D3436 ${((simulatedTenants - 1) / 9) * 100}%, #d1d5db ${((simulatedTenants - 1) / 9) * 100}%, #d1d5db 100%)`
-                }}
-              />
-              <div className="flex justify-between text-xs text-[#545454] mt-1.5">
-                <span>1</span>
-                <span>10</span>
+                  <p className="text-sm text-[#6e6e73] mt-0.5">Pour toujours</p>
+                </div>
               </div>
-            </div>
 
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={billingCycle}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="grid md:grid-cols-[1.3fr_1fr] gap-5 mb-6"
+              <ul className="space-y-3 mb-6">
+                <li className="flex items-start gap-3">
+                  <Check className="w-4 h-4 text-[#34c759] mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-[#1d1d1f] leading-snug"><strong className="font-medium">Quittance Simple Generator</strong> — Génération illimitée de quittances PDF</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="w-4 h-4 text-[#34c759] mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-[#1d1d1f] leading-snug"><strong className="font-medium">Réception sur e-mail perso</strong> — Recevez vos quittances par email</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="w-4 h-4 text-[#34c759] mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-[#1d1d1f] leading-snug"><strong className="font-medium">Signature automatique</strong> — Quittances signées électroniquement</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="w-4 h-4 text-[#34c759] mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-[#1d1d1f] leading-snug"><strong className="font-medium">Calculateur de pro rata</strong> — Calcul automatique des quittances au prorata</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="w-4 h-4 text-[#34c759] mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-[#1d1d1f] leading-snug"><strong className="font-medium">Calculateur IRL</strong> — Calcul des révisions de loyer selon l'INSEE</span>
+                </li>
+              </ul>
+
+              <Link
+                to="/"
+                onClick={() => trackCtaClick('utiliser_gratuit_pricing', 'pricing', '/')}
+                className="w-full py-3 rounded-xl bg-[#1d1d1f] hover:bg-[#424245] text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
               >
-                <div className="bg-white rounded-xl p-5 border-2 border-[#ed7862]/20">
-                  <h3 className="font-bold text-[#1a1f20] mb-3 text-sm">Pack Automatique</h3>
-                  {billingCycle === 'monthly' ? (
-                    <>
-                      <div className="text-3xl font-bold text-[#ed7862] mb-1.5">
-                        {calculateAutoPrice(simulatedTenants, billingCycle).toFixed(2)}€
-                      </div>
-                      <p className="text-xs text-[#545454]">par mois</p>
-                    </>
-                  ) : (
-                    <>
-                      <div className="text-3xl font-bold text-[#ed7862] mb-1.5">
-                        {getMonthlyEquivalent(calculateAutoPrice(simulatedTenants, billingCycle)).replace('.', ',')}€
-                      </div>
-                      <p className="text-xs text-[#545454] mb-0.5">par mois</p>
-                      <p className="text-xs text-gray-500">
-                        ({calculateAutoPrice(simulatedTenants, billingCycle).toFixed(2).replace('.', ',')}€/an)
-                      </p>
-                    </>
-                  )}
-                </div>
+                Utiliser gratuitement
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </motion.div>
 
-                <div className="bg-white/60 rounded-xl p-4 border border-gray-300 opacity-70 relative">
-                  <div className="absolute top-1.5 right-1.5 bg-gray-600 text-white px-1.5 py-0.5 rounded-full text-[10px] font-semibold">
-                    Bientôt
+            {/* Pack Automatique - ordre 1 sur mobile (affiché en premier) */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.05 }}
+              viewport={{ once: true }}
+              className="order-1 lg:order-2 bg-white rounded-2xl border border-[#d2d2d7] shadow-[0_2px_10px_rgba(0,0,0,0.04)] p-5 sm:p-6 relative lg:ring-1 lg:ring-[#1d1d1f] lg:ring-offset-0 overflow-visible"
+            >
+              {/* Badge 30 jours gratuits à cheval sur la bordure */}
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10 inline-flex items-center gap-1.5 rounded-full bg-[#E65F3F] text-white px-3 py-1.5 text-xs font-medium shadow-sm border-2 border-white">
+                <Sparkles className="w-3.5 h-3.5" />
+                30 jours gratuits · Sans CB
+              </div>
+
+              {/* Ligne 1 : Titre à gauche, Toggle + Prix à droite */}
+              <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-[#1d1d1f] tracking-tight">Pack Automatique complet</h2>
+                  <p className="text-xs text-[#6e6e73] mt-0.5">La boite à outils "simples et intelligents" du bailleur </p>
+                </div>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <div className="inline-flex rounded-full bg-[#f5f5f7] p-0.5">
+                    <button
+                      onClick={() => setBillingCycle('monthly')}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+                        billingCycle === 'monthly' ? 'bg-white text-[#1d1d1f] shadow-sm' : 'text-[#6e6e73] hover:text-[#1d1d1f]'
+                      }`}
+                    >
+                      Mensuel
+                    </button>
+                    <button
+                      onClick={() => setBillingCycle('yearly')}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+                        billingCycle === 'yearly' ? 'bg-white text-[#1d1d1f] shadow-sm' : 'text-[#6e6e73] hover:text-[#1d1d1f]'
+                      }`}
+                    >
+                      Annuel
+                    </button>
                   </div>
-                  <h3 className="font-semibold text-gray-600 mb-2.5 text-xs">Quittance Connectée+</h3>
-                  {billingCycle === 'monthly' ? (
-                    <>
-                      <div className="text-2xl font-bold text-gray-600 mb-0.5">
-                        {calculateBankPrice(simulatedTenants, billingCycle).toFixed(2)}€
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={`${billingCycle}-${simulatedTenants}`}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="text-right"
+                    >
+                      <div className="flex items-baseline gap-1 justify-end">
+                        <span className="text-xl font-semibold text-[#1d1d1f] tracking-tight">{billingCycle === 'monthly' ? formatPrice(getPricing(simulatedTenants).monthlyPrice) : formatPrice(getPricing(simulatedTenants).monthlyEquivalent)}€</span>
+                        <span className="text-sm text-[#6e6e73]">/mois</span>
                       </div>
-                      <p className="text-[10px] text-gray-500">par mois</p>
-                    </>
-                  ) : (
-                    <>
-                      <div className="text-2xl font-bold text-gray-600 mb-0.5">
-                        {getMonthlyEquivalent(calculateBankPrice(simulatedTenants, billingCycle)).replace('.', ',')}€
-                      </div>
-                      <p className="text-[10px] text-gray-500 mb-0.5">par mois</p>
-                      <p className="text-[10px] text-gray-500">
-                        ({calculateBankPrice(simulatedTenants, billingCycle).toFixed(2).replace('.', ',')}€/an)
+                      <p className="text-[10px] text-[#6e6e73] mt-0.5">
+                        {billingCycle === 'monthly'
+                          ? (simulatedTenants <= 2 ? '1-2 loc.' : simulatedTenants <= 5 ? '3-5 loc.' : '6+ loc.')
+                          : `${formatPrice(getPricing(simulatedTenants).yearlyPrice)}€/an`}
+                        {billingCycle === 'yearly' && getPricing(simulatedTenants).savings && (
+                          <span className="text-[#34c759] font-medium ml-1">· −{formatPrice(getPricing(simulatedTenants).savings!)}€</span>
+                        )}
                       </p>
-                    </>
-                  )}
+                    </motion.div>
+                  </AnimatePresence>
                 </div>
-              </motion.div>
-            </AnimatePresence>
+              </div>
+
+              {/* Sélecteur nombre de locataires */}
+              <div className="mb-3">
+                <p className="text-xs font-medium text-[#1d1d1f] mb-1.5">Nombre de locataires</p>
+                <div className="flex gap-1.5">
+                  {([2, 5, 6] as const).map((n) => (
+                    <button
+                      key={n}
+                      onClick={() => setSimulatedTenants(n)}
+                      className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                        (n === 2 && simulatedTenants <= 2) || (n === 5 && simulatedTenants >= 3 && simulatedTenants <= 5) || (n === 6 && simulatedTenants >= 6)
+                          ? 'bg-[#1d1d1f] text-white'
+                          : 'bg-[#f5f5f7] text-[#6e6e73] hover:bg-[#e8e8ed]'
+                      }`}
+                    >
+                      {n === 2 ? '1-2' : n === 5 ? '3-5' : '6+'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <ul className="space-y-2 mb-4">
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-3.5 h-3.5 text-[#34c759] mt-0.5 flex-shrink-0" />
+                  <span className="text-xs text-[#1d1d1f] leading-snug"><strong className="font-medium">Envoi automatique des quittances ou rappels</strong> — Générées et envoyées chaque mois. Vous validez en un clic.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-3.5 h-3.5 text-[#34c759] mt-0.5 flex-shrink-0" />
+                  <span className="text-xs text-[#1d1d1f] leading-snug"><strong className="font-medium">Historique toujours disponible</strong> — Plus jamais à chercher un PDF.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-3.5 h-3.5 text-[#34c759] mt-0.5 flex-shrink-0" />
+                  <span className="text-xs text-[#1d1d1f] leading-snug"><strong className="font-medium">Espace stockage privé</strong> — Déposez tous vos documents au même endroit.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-3.5 h-3.5 text-[#34c759] mt-0.5 flex-shrink-0" />
+                  <span className="text-xs text-[#1d1d1f] leading-snug"><strong className="font-medium">Révisions IRL automatiques</strong> — Calcul conforme INSEE, rappel à la bonne date, lettre prête à envoyer.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-3.5 h-3.5 text-[#34c759] mt-0.5 flex-shrink-0" />
+                  <span className="text-xs text-[#1d1d1f] leading-snug"><strong className="font-medium">Bail Facile</strong> — Modèle de bail à remplir ou à télécharger vierge avec aide au remplissage.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-3.5 h-3.5 text-[#34c759] mt-0.5 flex-shrink-0" />
+                  <span className="text-xs text-[#1d1d1f] leading-snug"><strong className="font-medium">Bilan annuel simplifié / report fiscal</strong> — Déclaration prête en quelques clics.</span>
+                </li>
+              </ul>
+
+              <button
+                onClick={() => {
+                  trackCtaClick('activer_pack_automatique_pricing_card', 'pricing', 'pack_automatique_modal');
+                  openModal('Pack Automatique');
+                }}
+                className="w-full py-2.5 rounded-xl bg-[#E65F3F] hover:bg-[#d95530] text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                Activer le Pack Automatique
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </motion.div>
+
           </div>
         </div>
       </section>
 
-      {/* Bloc comparaison prix */}
-      <section className="py-9 bg-white">
-        <div className="max-w-4xl mx-auto px-5 lg:px-7">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            className="bg-[#7CAA89]/10 rounded-3xl p-6 lg:p-8 border-[#7CAA89]"
-          >
-            <h2 className="text-2xl font-bold text-[#1a1f20] mb-4">
-              Pourquoi des prix aussi accessibles ?
-            </h2>
-
-            <p className="text-base text-[#415052] leading-relaxed mb-4">
-              Le Pack Outils Automatisés est en moyenne <strong>6 fois moins cher</strong> que des solutions comme Pmylo, Qalimo, BailFacile ou Dooradoora.
-            </p>
-
-            <p className="text-base text-[#415052] leading-relaxed">
-              <strong>👉 Un choix volontaire :</strong><br />
-              Car nous avons délibérément choisi le maximum de simplicité, et non pas "une usine à gaz". On se concentre sur l'essentiel : un outil vraiment utile sans fonctionalités chères (et parfois inutiles), avec en plus en ce moment un prix de lancement encore plus accessible pour tout le monde : petits bailleurs, SCI, agents immobiliers ou plus gros portefeuilles immobiliers.
-            </p>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Réassurance */}
-      <section className="py-9 bg-[#fefdf9]">
-        <div className="max-w-7xl mx-auto px-5 lg:px-7">
-          <div className="flex flex-wrap justify-center items-center gap-6 text-[#545454]">
-            <div className="flex items-center">
-              <Shield className="w-5 h-5 text-[#2D3436] mr-1.5" />
-              <span className="text-sm font-semibold">Paiement sécurisé</span>
+      {/* Réassurance sobre */}
+      <section className="py-10 sm:py-12 bg-white">
+        <div className="max-w-[980px] mx-auto px-5 sm:px-6">
+          <div className="flex flex-wrap justify-center items-center gap-8 sm:gap-12 text-[#6e6e73]">
+            <div className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-[#1d1d1f]" />
+              <span className="text-sm font-medium">Paiement sécurisé</span>
             </div>
-            <div className="flex items-center">
-              <Zap className="w-5 h-5 text-[#2D3436] mr-1.5" />
-              <span className="text-sm font-semibold">Sans engagement</span>
+            <div className="flex items-center gap-2">
+              <Zap className="w-5 h-5 text-[#1d1d1f]" />
+              <span className="text-sm font-medium">Sans engagement</span>
             </div>
-            <div className="flex items-center">
-              <Shield className="w-5 h-5 text-[#2D3436] mr-1.5" />
-              <span className="text-sm font-semibold">Données sécurisées (RGPD & PSD2)</span>
+            <div className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-[#1d1d1f]" />
+              <span className="text-sm font-medium">Données sécurisées (RGPD)</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Section réassurance tarifs */}
-      <section className="py-9 bg-white">
-        <div className="max-w-4xl mx-auto px-5 lg:px-7">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            className="bg-[#ed7862]/10 rounded-3xl p-6 lg:p-8 border-2 border-[#ed7862]/20 text-center"
-          >
-            <p className="text-base text-[#1a1f20] leading-relaxed font-semibold mb-3">
-              🔒 Les tarifs évolueront pour les nouveaux abonnés.
-            </p>
-            <p className="text-base text-[#415052] leading-relaxed">
-              Les premiers abonnés conservent leur tarif de lancement<br />
-              tant que leur abonnement reste actif.
-             
-            </p>
-          </motion.div>
+      {/* Note tarifs */}
+      <section className="py-10 sm:py-12 bg-[#fafafa]">
+        <div className="max-w-[980px] mx-auto px-5 sm:px-6 text-center">
+          <p className="text-sm text-[#6e6e73]">
+            Les tarifs pourront évoluer pour les nouveaux abonnés. Vous conservez le vôtre tant que votre abonnement reste actif.
+          </p>
         </div>
       </section>
-
-      {/* Footnote */}
-      <div className="bg-[#fefdf9] pb-6">
-        <div className="max-w-7xl mx-auto px-5 lg:px-7 text-center">
-          <p className="text-xs text-[#545454]/70">*tant que l'offre est affichée</p>
-        </div>
-      </div>
 
       {/* Sticky Mobile CTA */}
       {(isMobile || isMobileDevice) && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 p-4 shadow-2xl z-40 md:hidden">
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-[#e8e7ef] p-4 shadow-2xl z-40 md:hidden">
           <button
-            onClick={() => openModal('Pack Automatique')}
-            className="w-full py-4 rounded-full bg-gradient-to-r from-[#ed7862] to-[#e56651] hover:from-[#e56651] hover:to-[#d85540] text-white font-bold text-base transition-all shadow-lg flex items-center justify-center gap-2"
+            onClick={() => {
+              trackCtaClick('passer_pack_automatique_pricing_mobile', 'pricing', 'pack_automatique_modal');
+              openModal('Pack Automatique');
+            }}
+            className="w-full py-4 rounded-xl bg-[#E65F3F] hover:bg-[#d95530] text-white font-bold text-base transition-colors shadow-lg flex items-center justify-center gap-2"
           >
-           
-            Passez en Pack Automatique
+            Activer le Pack Automatique
+            <ArrowRight className="w-5 h-5" />
           </button>
-        
         </div>
       )}
 
@@ -603,12 +376,19 @@ const Pricing = () => {
         onClose={() => setIsQuickPaymentModalOpen(false)}
         selectedPlan={selectedPlan}
         billingCycle={billingCycle}
+        prefilledEmail={userEmail || undefined}
       />
 
       <NotifyMeModal
         isOpen={isNotifyMeModalOpen}
         onClose={() => setIsNotifyMeModalOpen(false)}
         sourcePage="pricing"
+      />
+
+      <PackActivationFlow
+        isOpen={isPackActivationFlowOpen}
+        onClose={() => setIsPackActivationFlowOpen(false)}
+        prefillEmail={userEmail || undefined}
       />
     </div>
   );

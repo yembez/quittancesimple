@@ -121,21 +121,41 @@ ${baillorName}`;
             const periodeDebut = new Date(year, month, 1).toISOString().split('T')[0];
             const periodeFin = new Date(year, month + 1, 0).toISOString().split('T')[0];
 
+            // Vérifier si la quittance existe déjà
+            const { data: existingQuittance } = await supabase
+              .from('quittances')
+              .select('date_generation')
+              .eq('proprietaire_id', locataireData.proprietaire_id)
+              .eq('locataire_id', locataireId)
+              .eq('periode_debut', periodeDebut)
+              .eq('periode_fin', periodeFin)
+              .maybeSingle();
+
+            const now = new Date().toISOString();
+            const updateData: any = {
+              proprietaire_id: locataireData.proprietaire_id,
+              locataire_id: locataireId,
+              periode_debut: periodeDebut,
+              periode_fin: periodeFin,
+              loyer: loyer,
+              charges: charges,
+              date_envoi: now,
+              pdf_url: pdfUrl,
+              statut: 'envoyee',
+              source: 'email'
+            };
+
+            // Préserver date_generation si la quittance existe déjà
+            if (existingQuittance?.date_generation) {
+              updateData.date_generation = existingQuittance.date_generation;
+            } else {
+              updateData.date_generation = now;
+            }
+
             // Créer ou mettre à jour la quittance dans l'historique
             const { error: quittanceError } = await supabase
               .from('quittances')
-              .upsert({
-                proprietaire_id: locataireData.proprietaire_id,
-                locataire_id: locataireId,
-                periode_debut: periodeDebut,
-                periode_fin: periodeFin,
-                loyer: loyer,
-                charges: charges,
-                date_generation: new Date().toISOString(),
-                pdf_url: pdfUrl,
-                statut: 'envoye',
-                source: 'email'
-              }, {
+              .upsert(updateData, {
                 onConflict: 'proprietaire_id,locataire_id,periode_debut,periode_fin',
                 ignoreDuplicates: false
               });

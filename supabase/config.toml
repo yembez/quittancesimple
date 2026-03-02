@@ -1,0 +1,14 @@
+# Configuration des Edge Functions pour la signature électronique
+# Ces endpoints sont appelés par les locataires (non connectés) via le lien email
+
+[functions.signatures-get]
+verify_jwt = false
+
+[functions.signatures-send-otp]
+verify_jwt = false
+
+[functions.signatures-sign]
+verify_jwt = false
+
+[functions.signatures-request-modification]
+verify_jwt = false

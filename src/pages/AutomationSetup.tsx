@@ -700,7 +700,7 @@ const AutomationSetup = () => {
                   <div className="mb-4">
                     <div className="flex items-baseline gap-1">
                       <span className="text-3xl font-bold text-gray-900">
-                        {locataires.length <= 2 ? '0.99' : locataires.length <= 5 ? '1.49' : '2.49'} €
+                        {locataires.length <= 2 ? '3.90' : locataires.length <= 5 ? '5.90' : '8.90'} €
                       </span>
                       <span className="text-gray-600">/mois</span>
                     </div>

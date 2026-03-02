@@ -12,8 +12,19 @@ interface RequestBody {
   plan: 'auto' | 'plus';
   billingCycle: 'monthly' | 'yearly';
   tenantTier?: '1-2' | '3-5' | '5+';
+  stripePriceId?: string;
   expressCheckout?: boolean;
 }
+
+// IDs autorisés Pack Automatique (alignés avec checkout-success PRICE_TO_PLAN)
+const ALLOWED_PACK_AUTO_PRICE_IDS = new Set([
+  'price_1T2a6NB1aSt8zL1nyNy1v2gT',   // 1-2 mensuel
+  'price_1T2a8DB1aSt8zL1n1T0H7NPy',   // 3-5 mensuel
+  'price_1T2a8sB1aSt8zL1nbkpWQdp6',   // 6+ mensuel
+  'price_1T0sYUB1aSt8zL1nm3DDI9F3',   // 1-2 annuel
+  'price_1T2e1uB1aSt8zL1nlIrT3UdR',   // 3-5 annuel
+  'price_1Sqj3DB1aSt8zL1nyy6Hf5N7',   // 6+ annuel
+]);
 
 const generateSecurePassword = (): string => {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
@@ -48,7 +59,7 @@ Deno.serve(async (req: Request) => {
     });
 
     const body: RequestBody = await req.json();
-    const { email, plan, billingCycle, tenantTier = '1-2', expressCheckout } = body;
+    const { email, plan, billingCycle, tenantTier = '1-2', stripePriceId: clientPriceId, expressCheckout } = body;
 
     if (!email || !email.includes('@')) {
       return new Response(
@@ -60,16 +71,35 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const getTierPrice = (tier: string, cycle: 'monthly' | 'yearly') => {
-      const prices: Record<string, { monthly: number; yearly: number }> = {
-        '1-2': { monthly: 0.99, yearly: 9.90 },
-        '3-5': { monthly: 1.49, yearly: 14.90 },
-        '5+': { monthly: 2.49, yearly: 24.90 },
+    // Prix : priorité au stripePriceId envoyé par le client (depuis .env VITE_STRIPE_*), puis fallback env Supabase
+    let stripePriceId = '';
+    if (clientPriceId && ALLOWED_PACK_AUTO_PRICE_IDS.has(clientPriceId)) {
+      stripePriceId = clientPriceId;
+    }
+    if (!stripePriceId) {
+      const getStripePriceIdFromEnv = (tier: string, cycle: 'monthly' | 'yearly'): string => {
+        if (cycle === 'yearly') {
+          if (tier === '1-2') return Deno.env.get('STRIPE_PRICE_AUTO_TIER1_YEARLY') || '';
+          if (tier === '3-5') return Deno.env.get('STRIPE_PRICE_AUTO_TIER2_YEARLY') || '';
+          return Deno.env.get('STRIPE_PRICE_AUTO_TIER3_YEARLY') || '';
+        }
+        if (tier === '1-2') return Deno.env.get('STRIPE_PRICE_AUTO_TIER1') || '';
+        if (tier === '3-5') return Deno.env.get('STRIPE_PRICE_AUTO_TIER2') || '';
+        return Deno.env.get('STRIPE_PRICE_AUTO_TIER3') || '';
       };
-      return prices[tier][cycle];
-    };
+      stripePriceId = getStripePriceIdFromEnv(tenantTier, billingCycle);
+    }
 
-    const price = getTierPrice(tenantTier, billingCycle);
+    if (!stripePriceId) {
+      return new Response(
+        JSON.stringify({ error: 'Configuration Stripe manquante pour ce tier. Définissez VITE_STRIPE_PRICE_* dans .env ou les secrets Supabase.' }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
     const planName = 'Pack Automatique';
     const cycleLabel = billingCycle === 'monthly' ? 'Mensuel' : 'Annuel';
 
@@ -83,17 +113,7 @@ Deno.serve(async (req: Request) => {
       payment_method_types: ['card'],
       line_items: [
         {
-          price_data: {
-            currency: 'eur',
-            product_data: {
-              name: `${planName} - ${cycleLabel}`,
-              description: 'Automatisation des quittances et rappels',
-            },
-            unit_amount: Math.round(price * 100),
-            recurring: billingCycle === 'monthly'
-              ? { interval: 'month' }
-              : { interval: 'year' },
-          },
+          price: stripePriceId,
           quantity: 1,
         },
       ],
