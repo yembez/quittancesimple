@@ -14,20 +14,28 @@ interface Locataire {
 
 interface Props {
   locataire: Locataire;
+  bailleurTelephone?: string;
   onClose: () => void;
   onSave: (updated: Partial<Locataire>) => void;
 }
 
-const EditRappelModal = ({ locataire, onClose, onSave }: Props) => {
+const EditRappelModal = ({ locataire, bailleurTelephone, onClose, onSave }: Props) => {
   const [dateRappel, setDateRappel] = useState(locataire.date_rappel?.toString() || '1');
   const [heureRappel, setHeureRappel] = useState(locataire.heure_rappel?.toString() || '9');
   const [minuteRappel, setMinuteRappel] = useState(locataire.minute_rappel?.toString() || '0');
   const [saving, setSaving] = useState(false);
 
+  const hasNoEmailLocataire = !locataire.email || !String(locataire.email).trim();
+  const hasNoTelBailleur = !bailleurTelephone || !String(bailleurTelephone).trim();
+  const hasAlerts = hasNoEmailLocataire || hasNoTelBailleur;
+
   const handleSave = async () => {
-    const hasNoEmail = !locataire.email || !String(locataire.email).trim();
-    if (hasNoEmail && !window.confirm('Sans e-mail du locataire, le rappel et l\'envoi de la quittance ne pourront pas fonctionner. Enregistrer quand même ?')) {
-      return;
+    if (hasAlerts) {
+      const parts: string[] = [];
+      if (hasNoEmailLocataire) parts.push("l'e-mail du locataire");
+      if (hasNoTelBailleur) parts.push('le téléphone du bailleur');
+      const msg = `Sans ${parts.join(' et sans ')}, le rappel (SMS) et l'envoi de la quittance ne pourront pas fonctionner. Enregistrer quand même ?`;
+      if (!window.confirm(msg)) return;
     }
     setSaving(true);
     try {
@@ -79,12 +87,17 @@ const EditRappelModal = ({ locataire, onClose, onSave }: Props) => {
             </p>
           </div>
 
-          {(!locataire.email || !String(locataire.email).trim()) && (
+          {hasAlerts && (
             <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 flex gap-3">
               <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-amber-800">
-                <strong>E-mail du locataire manquant.</strong> Pour que le rappel fonctionne et que la quittance soit envoyée au locataire, renseignez son adresse e-mail dans la fiche locataire (modifier le locataire).
-              </p>
+              <div className="text-sm text-amber-800 space-y-1">
+                {hasNoEmailLocataire && (
+                  <p><strong>E-mail du locataire manquant.</strong> Pour que la quittance soit envoyée au locataire, renseignez son adresse e-mail dans la fiche locataire (modifier le locataire).</p>
+                )}
+                {hasNoTelBailleur && (
+                  <p><strong>Téléphone du bailleur manquant.</strong> Pour recevoir le rappel par SMS, renseignez votre numéro de téléphone dans votre profil (modifier le propriétaire).</p>
+                )}
+              </div>
             </div>
           )}
 

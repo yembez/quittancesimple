@@ -1414,6 +1414,7 @@ const handleResendAccessLink = async () => {
       {editingRappel && (
         <EditRappelModal
           locataire={editingRappel}
+          bailleurTelephone={proprietaire?.telephone}
           onClose={() => setEditingRappel(null)}
           onSave={async (updates) => {
             await handleUpdateLocataire(editingRappel.id, updates);

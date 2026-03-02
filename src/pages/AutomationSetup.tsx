@@ -511,7 +511,7 @@ const AutomationSetup = () => {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Téléphone
+                  Téléphone {!proprietaire.telephone?.trim() && <span className="font-normal text-amber-700 bg-amber-50 px-2 py-0.5 rounded">Non renseigné</span>}
                 </label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -525,8 +525,12 @@ const AutomationSetup = () => {
                         alert('⚠️ Format invalide. Utilisez +33612345678 (mobile français)');
                       }
                     }}
-                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                    placeholder="+33612345678"
+                    className={`w-full pl-12 pr-4 py-3 rounded-xl border transition-all focus:ring-2 focus:ring-blue-200 ${
+                      !proprietaire.telephone?.trim()
+                        ? 'bg-amber-50 border-amber-300 text-amber-800 placeholder:text-amber-600 focus:border-amber-400'
+                        : 'border-gray-300 focus:border-blue-500'
+                    }`}
+                    placeholder={proprietaire.telephone?.trim() ? '+33612345678' : 'Non renseigné — nécessaire pour le rappel SMS'}
                   />
                 </div>
               </div>
@@ -615,14 +619,18 @@ const AutomationSetup = () => {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Email
+                        Email {!locataire.email?.trim() && <span className="font-normal text-amber-700 bg-amber-50 px-2 py-0.5 rounded">Non renseigné</span>}
                       </label>
                       <input
                         type="email"
                         value={locataire.email}
                         onChange={(e) => handleLocataireChange(index, 'email', e.target.value)}
-                        className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                        placeholder="marie.martin@email.com"
+                        className={`w-full px-3 py-2 rounded-lg border transition-all focus:ring-2 focus:ring-blue-200 ${
+                          !locataire.email?.trim()
+                            ? 'bg-amber-50 border-amber-300 text-amber-800 placeholder:text-amber-600 focus:border-amber-400'
+                            : 'border-gray-300 focus:border-blue-500'
+                        }`}
+                        placeholder={locataire.email?.trim() ? 'marie.martin@email.com' : 'Non renseigné — nécessaire pour envoyer la quittance au locataire'}
                       />
                     </div>
 
