@@ -83,7 +83,8 @@ Deno.serve(async (req: Request) => {
     const bodyHtml = buildWelcomeBodyHtml();
     // Pré-remplissage de l'e-mail dans la modale de connexion si l'utilisateur n'est pas connecté
     // On utilise le hash pour éviter de mettre l'email en query string (moins exposé côté logs).
-    const ctaUrl = `${DASHBOARD_URL}#loginEmail=${encodeURIComponent(email.trim())}`;
+    // Lien vers l'accueil avec hash pour ouvrir le modal de connexion (évite de passer par /dashboard sans session)
+    const ctaUrl = `${SITE_URL}/#loginEmail=${encodeURIComponent(email.trim())}`;
     const html = buildEmailHtml({
       title: "QS- Espace Bailleur",
       bodyHtml,

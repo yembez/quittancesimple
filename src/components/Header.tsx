@@ -52,6 +52,25 @@ const Header = () => {
     }
   }, [location.state, location.pathname, navigate]);
 
+  // CTA mail de bienvenue : ouvrir le modal de connexion si on arrive sur l'accueil avec #loginEmail=...
+  useEffect(() => {
+    if (location.pathname !== '/') return;
+    const hash = typeof window !== 'undefined' ? window.location.hash : '';
+    if (!hash || !hash.toLowerCase().includes('loginemail=')) return;
+    try {
+      const params = new URLSearchParams(hash.slice(1));
+      const email = (params.get('loginEmail') || '').trim();
+      if (email) {
+        setLoginPrefilledEmail(email);
+        setLoginMode('login');
+        setIsLoginModalOpen(true);
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+    } catch (_) {
+      // ignore
+    }
+  }, [location.pathname]);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
