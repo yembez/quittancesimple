@@ -100,6 +100,21 @@ function App() {
     checkAuthErrorHash();
   }, [checkAuthErrorHash, location.pathname]);
 
+  // CTA mail de bienvenue : sur l'accueil avec #loginEmail=..., ouvrir le modal de connexion via state (Header le gère)
+  React.useEffect(() => {
+    if (location.pathname !== '/') return;
+    const hash = typeof window !== 'undefined' ? window.location.hash : '';
+    if (!hash || !hash.toLowerCase().includes('loginemail=')) return;
+    try {
+      const params = new URLSearchParams(hash.slice(1));
+      const email = (params.get('loginEmail') || '').trim();
+      if (email) {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search || '/');
+        navigate('/', { replace: true, state: { openLogin: true, prefilledEmail: email } });
+      }
+    } catch (_) { /* ignore */ }
+  }, [location.pathname, navigate]);
+
   React.useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
