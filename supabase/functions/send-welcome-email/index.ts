@@ -15,12 +15,8 @@ interface WelcomeEmailRequest {
 
 const SITE_URL = "https://www.quittancesimple.fr";
 const DASHBOARD_URL = `${SITE_URL}/dashboard`;
-
-const GUILHEM_PHOTO_CID = "guilhem-photo";
-// Image mini (64px) encodée en base64, envoyée en pièce jointe inline (CID)
-// pour être affichée directement dans la signature.
-const GUILHEM_PHOTO_BASE64 =
-  "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";
+/** Photo de signature servie par le site (affichage fiable dans tous les clients mail) */
+const GUILHEM_SIGNATURE_IMAGE_URL = `${SITE_URL}/images/guilhem-signature.png`;
 
 function buildWelcomeBodyHtml(): string {
   return `
@@ -94,18 +90,22 @@ Deno.serve(async (req: Request) => {
       ctaText: "Explorer mon Espace Bailleur",
       ctaUrl,
       closingHtml: `
-        <span style="display: inline-block; vertical-align: middle; margin-right: 10px;">
-          <img
-            src="cid:${GUILHEM_PHOTO_CID}"
-            width="34"
-            height="34"
-            alt="Guilhem"
-            style="display: inline-block; width: 34px; height: 34px; border-radius: 9999px; object-fit: cover; vertical-align: middle;"
-          />
-        </span>
-        <span style="display: inline-block; vertical-align: middle;">
-          À très vite dans votre Espace Bailleur,<br><strong>Guilhem de Quittance Simple</strong>
-        </span>
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse: collapse;">
+          <tr>
+            <td style="padding: 0; padding-right: 10px; vertical-align: middle;">
+              <img
+                src="${GUILHEM_SIGNATURE_IMAGE_URL}"
+                width="40"
+                height="40"
+                alt="Guilhem"
+                style="display: block; width: 40px; height: 40px; border-radius: 9999px; object-fit: cover; object-position: center top;"
+              />
+            </td>
+            <td style="padding: 0; vertical-align: middle;">
+              À très vite dans votre Espace Bailleur,<br><strong>Guilhem de Quittance Simple</strong>
+            </td>
+          </tr>
+        </table>
       `.trim(),
       footerReason: "Vous recevez cet e-mail car vous avez créé un compte Espace Bailleur sur Quittance Simple. Des questions ? Des suggestions ? Nous serions ravis d'avoir vos retours :",
     });
@@ -121,14 +121,6 @@ Deno.serve(async (req: Request) => {
         to: [email.trim()],
         subject: "Bienvenue sur votre Espace Bailleur — Quittance Simple",
         html,
-        attachments: [
-          {
-            filename: "guilhem.jpg",
-            content: GUILHEM_PHOTO_BASE64,
-            content_type: "image/jpeg",
-            content_id: GUILHEM_PHOTO_CID,
-          },
-        ],
       }),
     });
 
