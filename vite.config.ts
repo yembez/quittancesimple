@@ -9,7 +9,8 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      external: ['canvg', 'html2canvas', 'dompurify']
+      // Ne pas mettre html2canvas en external : en prod (Vercel) le navigateur ne peut pas résoudre les bare specifiers, → page blanche.
+      // external: ['canvg', 'html2canvas', 'dompurify']
     }
   }
 });
