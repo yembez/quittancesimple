@@ -30,10 +30,13 @@ export interface EmailTemplateOptions {
   year?: number;
   /** Ligne supplémentaire dans le footer (ex. raison de l'envoi) */
   footerReason?: string;
+  /** URL de désabonnement (optionnelle, par défaut page de désabonnement QS) */
+  unsubscribeUrl?: string;
 }
 
 const DEFAULT_CONTACT_URL = 'mailto:contact@quittancesimple.fr';
-const DEFAULT_FOOTER_REASON = "Vous recevez cet e-mail car vous avez créé un compte Espace Bailleur sur Quittance Simple. Des questions ? Des suggestions ? Nous serions ravis d'avoir vos retours :";
+const DEFAULT_UNSUBSCRIBE_URL = 'https://www.quittancesimple.fr/unsubscribe';
+const DEFAULT_FOOTER_REASON = "Vous recevez cet e-mail dans le cadre d'une communication Quittance Simple.";
 
 /**
  * Génère le HTML complet d'un e-mail selon le modèle design commun.
@@ -45,7 +48,7 @@ export function buildEmailHtml(options: EmailTemplateOptions): string {
     ctaText,
     ctaUrl,
     closingHtml = `À très vite,<br><strong>Guilhem de Quittance Simple</strong>`,
-    unsubscribeUrl,
+    unsubscribeUrl = DEFAULT_UNSUBSCRIBE_URL,
     contactUrl = DEFAULT_CONTACT_URL,
     year = new Date().getFullYear(),
     footerReason = DEFAULT_FOOTER_REASON,
@@ -55,10 +58,6 @@ export function buildEmailHtml(options: EmailTemplateOptions): string {
     ctaText && ctaUrl
       ? `<p style="margin-top: 25px; text-align: center;"><a href="${ctaUrl}" class="button">${ctaText}</a></p>`
       : '';
-
-  const footerLinks = unsubscribeUrl
-    ? `<a href="${unsubscribeUrl}" style="color: ${EMAIL_BLEU_VIF}; text-decoration: none;">Se désabonner</a> • <a href="${contactUrl}" style="color: ${EMAIL_BLEU_VIF}; text-decoration: none;">Nous contacter</a>`
-    : `<a href="${contactUrl}" style="color: ${EMAIL_BLEU_VIF}; text-decoration: none;">Nous contacter</a>`;
 
   return `<!DOCTYPE html>
 <html lang="fr">
@@ -85,7 +84,9 @@ ${ctaBlock}
 
     <div class="footer">
       ${footerReason}<br>
-      ${footerLinks}<br>
+      Des questions ? Des suggestions ? Nous serions ravis d'avoir vos retours :
+      <a href="${contactUrl}" style="color: ${EMAIL_BLEU_VIF}; text-decoration: none;">Nous contacter</a><br>
+      <a href="${unsubscribeUrl}" style="color: ${EMAIL_BLEU_VIF}; text-decoration: none;">Se désabonner</a><br>
       © ${year} Quittance Simple
     </div>
   </div>

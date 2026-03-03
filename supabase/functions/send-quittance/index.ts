@@ -3,6 +3,8 @@ import { encodeBase64 } from 'https://deno.land/std@0.208.0/encoding/base64.ts';
 import { jsPDF } from 'npm:jspdf@2.5.1';
 import { buildEmailHtml } from '../_shared/email-template.ts';
 
+const SITE_URL = 'https://www.quittancesimple.fr';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -623,6 +625,11 @@ Deno.serve(async (req) => {
     });
 
     // Template email destiné au PROPRIÉTAIRE (quittance gratuite) — contenu adapté au contexte
+    const emailForCta = (data.baillorEmail ?? '').toString().trim();
+    const ctaUrlPack = emailForCta
+      ? `${SITE_URL}/#loginEmail=${encodeURIComponent(emailForCta)}&mode=signup`
+      : `${SITE_URL}/`;
+
     const htmlEmail = buildEmailHtml({
       title: 'Quittance Simple',
       bodyHtml: `
@@ -640,7 +647,7 @@ Deno.serve(async (req) => {
         <p><strong>Une question ? Un doute ?</strong> Écrivez-nous à <a href="mailto:contact@quittancesimple.fr">contact@quittancesimple.fr</a>, nous sommes là pour vous aider personnellement.</p>
       `,
       ctaText: 'Tester gratuitement le Pack Automatique',
-      ctaUrl: 'https://quittancesimple.fr/automation',
+      ctaUrl: ctaUrlPack,
       closingHtml: "À très vite,<br><strong>Guilhem de Quittance Simple</strong>",
       footerReason: "Vous recevez cet e-mail car vous avez créé un compte ou généré une quittance sur Quittance Simple.",
     });

@@ -211,8 +211,8 @@ Corps (à passer en `bodyHtml`, avec `[Prénom]` ou `{{ prenom }}` pour la perso
 
 ```html
 <p>Bonjour {{ prenom }},</p>
-<p>Vous avez utilisé notre générateur de quittances par le passé et je vous en remercie.</p>
-<p>Aujourd'hui, on passe à la vitesse supérieure. On vous donne l'accès à votre espace Espace Bailleur - QS : une plateforme complète pour automatiser votre gestion (Quittances en 3s, Annonces IA, Signature de bail conforme et simplifiée, Révision de loyer...).</p>
+<p>Vous avez utilisé notre générateur de quittances gratuit et je vous en remercie.</p>
+<p>Aujourd'hui, on passe à la vitesse supérieure. On vous donne l'accès à votre espace Espace Bailleur - QS : une plateforme complète pour automatiser votre gestion (Quittances en 3 secondes, Annonces IA, Signature de bail simple et conforme, Révision de loyer...).</p>
 <p>Pour vous remercier d'avoir été parmi nos premiers utilisateurs, votre compte « Essai Gratuit » est déjà pré-configuré.</p>
 ```
 
@@ -226,7 +226,7 @@ curl -X POST "https://TON_PROJECT.supabase.co/functions/v1/send-bulk-mailing" \
   -H "X-Mailing-List-Secret: TA_SECRET" \
   -d '{
     "subject": "Votre accès à l'\''Espace Bailleur 2026 est ouvert 🗝️",
-    "bodyHtml": "<p>Bonjour {{ prenom }},</p><p>Vous avez utilisé notre générateur de quittances par le passé et je vous en remercie.</p><p>Aujourd'\''hui, on passe à la vitesse supérieure. On vous donne l'\''accès à votre espace Espace Bailleur - QS : une plateforme complète pour automatiser votre gestion (Quittances en 3s, Annonces IA, Signature de bail conforme et simplifiée, Révision de loyer...).</p><p>Pour vous remercier d'\''avoir été parmi nos premiers utilisateurs, votre compte « Essai Gratuit » est déjà pré-configuré.</p>",
+    "bodyHtml": "<p>Bonjour {{ prenom }},</p><p>Vous avez utilisé notre générateur de quittances par le passé et je vous en remercie.</p><p>Aujourd'\''hui, on passe à la vitesse supérieure. On vous donne l'\''accès à votre espace Espace Bailleur - QS : une plateforme complète pour automatiser votre gestion (Quittances en 3 secondes, Annonces IA, Signature de bail simple et conforme, Révision de loyer automatisé...).</p><p>Pour vous remercier d'\''avoir été parmi nos premiers utilisateurs, votre compte « Essai Gratuit » est déjà pré-configuré.</p>",
     "ctaText": "Découvrir mon nouvel espace",
     "ctaUrl": "https://www.quittancesimple.fr/",
     "testEmails": ["ton-email@exemple.fr"]
