@@ -3,5 +3,5 @@
   "bodyHtml": "<p>Bonjour {{ prenom }},</p><p>Vous avez utilisé notre générateur de quittances par le passé et je vous en remercie.</p><p>Aujourd'hui, on passe à la vitesse supérieure. On vous donne l'accès à votre espace Espace Bailleur - QS : une plateforme complète pour automatiser votre gestion (Quittances en 3s, Annonces IA, Signature de bail conforme et simplifiée, Révision de loyer...).</p><p>Pour vous remercier d'avoir été parmi nos premiers utilisateurs, votre compte « Essai Gratuit » est déjà pré-configuré.</p>",
   "ctaText": "Découvrir mon nouvel espace",
   "ctaUrl": "https://www.quittancesimple.fr/#loginEmail={{ email }}&mode=signup",
-  "testEmails": ["bailleur10@maildrop.cc"]
+  "testEmails": ["bailleur11@maildrop.cc"]
 }
