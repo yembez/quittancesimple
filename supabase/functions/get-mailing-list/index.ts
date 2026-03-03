@@ -67,7 +67,8 @@ Deno.serve(async (req: Request) => {
       .from("proprietaires")
       .select("id, email, nom, prenom, lead_statut, created_at, date_fin_essai, abonnement_actif")
       .not("email", "is", null)
-      .not("email", "ilike", "%" + DOMAINE_TEST + "%");
+      .not("email", "ilike", "%" + DOMAINE_TEST + "%")
+      .or("mailing_desabonne.is.null,mailing_desabonne.eq.false");
 
     if (segment === "leads") {
       query = query.eq("lead_statut", "free_quittance_pdf");
@@ -87,7 +88,15 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const filtered = (rows || []).filter((r: { email?: string }) => isEmailValidePourMailing(r.email || ""));
+    const { data: desabonnesRows } = await supabase.from("mailing_desabonnes").select("email");
+    const desabonnesSet = new Set(
+      (desabonnesRows || []).map((r: { email: string }) => r.email?.toLowerCase()).filter(Boolean)
+    );
+
+    const filtered = (rows || []).filter((r: { email?: string }) => {
+      const e = (r.email || "").trim().toLowerCase();
+      return isEmailValidePourMailing(r.email || "") && !desabonnesSet.has(e);
+    });
 
     if (format === "csv") {
       const header = "email;nom;prenom;lead_statut;created_at\n";

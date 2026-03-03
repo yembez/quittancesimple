@@ -85,11 +85,13 @@ Deno.serve(async (req: Request) => {
     // On utilise le hash pour éviter de mettre l'email en query string (moins exposé côté logs).
     // Lien vers l'accueil avec hash pour ouvrir le modal de connexion (évite de passer par /dashboard sans session)
     const ctaUrl = `${SITE_URL}/#loginEmail=${encodeURIComponent(email.trim())}`;
+    const unsubscribeUrl = `${SITE_URL}/unsubscribe?email=${encodeURIComponent(email.trim())}`;
     const html = buildEmailHtml({
       title: "QS- Espace Bailleur",
       bodyHtml,
       ctaText: "Explorer mon Espace Bailleur",
       ctaUrl,
+      unsubscribeUrl,
       closingHtml: `
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse: collapse;">
           <tr>
@@ -108,7 +110,6 @@ Deno.serve(async (req: Request) => {
           </tr>
         </table>
       `.trim(),
-      footerReason: "Vous recevez cet e-mail car vous avez créé un compte Espace Bailleur sur Quittance Simple. Des questions ? Des suggestions ? Nous serions ravis d'avoir vos retours :",
     });
 
     const response = await fetch("https://api.resend.com/emails", {

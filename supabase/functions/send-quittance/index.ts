@@ -621,7 +621,7 @@ Deno.serve(async (req) => {
       ctaText: 'Accéder à l\'espace bailleur',
       ctaUrl: dashboardUrl,
       closingHtml: `Cordialement,<br><strong>${fullName || 'Votre bailleur'}</strong>`,
-      footerReason: 'Vous recevez cet e-mail car votre bailleur vous a envoyé une quittance via Quittance Simple.',
+      unsubscribeUrl: `${SITE_URL}/unsubscribe?email=${encodeURIComponent(recipientEmail)}`,
     });
 
     // Template email destiné au PROPRIÉTAIRE (quittance gratuite) — contenu adapté au contexte
@@ -649,7 +649,7 @@ Deno.serve(async (req) => {
       ctaText: 'Tester gratuitement le Pack Automatique',
       ctaUrl: ctaUrlPack,
       closingHtml: "À très vite,<br><strong>Guilhem de Quittance Simple</strong>",
-      footerReason: "Vous recevez cet e-mail car vous avez créé un compte ou généré une quittance sur Quittance Simple.",
+      unsubscribeUrl: emailForCta ? `${SITE_URL}/unsubscribe?email=${encodeURIComponent(emailForCta)}` : undefined,
     });
 
     const emailData = {
@@ -705,7 +705,7 @@ Deno.serve(async (req) => {
         ctaText: 'Accéder à mon espace',
         ctaUrl: dashboardUrl,
         closingHtml: `Cordialement,<br><strong>L'équipe Quittance Simple</strong>`,
-        footerReason: 'Vous recevez cet e-mail car vous avez envoyé une quittance via le lien de confirmation (SMS ou e-mail).',
+        unsubscribeUrl: bailleurEmail ? `${SITE_URL}/unsubscribe?email=${encodeURIComponent(bailleurEmail)}` : undefined,
       });
       const copyToBailleur = {
         from: 'Quittance Simple <noreply@quittancesimple.fr>',

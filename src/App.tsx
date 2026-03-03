@@ -51,7 +51,8 @@ import Admin from './pages/Admin';
 import QuittanceSuccess from './pages/QuittanceSuccess';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentCancelled from './pages/PaymentCancelled';
-import SetPassword from './pages/SetPassword'; // ← NOUVELLE LIGNE
+import SetPassword from './pages/SetPassword';
+import Unsubscribe from './pages/Unsubscribe';
 import BailWeb from './pages/BailWeb';
 import BailMeubleWeb from './pages/BailMeubleWeb';
 import Overview from './pages/Overview';
@@ -231,7 +232,8 @@ function App() {
           <Route path="/c/:code" element={<ShortLinkRedirect />} />
           <Route path="/inscription" element={<FreeSignup />} />
           <Route path="/signup" element={<FreeSignup />} />
-          <Route path="/set-password" element={<SetPassword />} /> {/* ← NOUVELLE ROUTE */}
+          <Route path="/set-password" element={<SetPassword />} />
+          <Route path="/unsubscribe" element={<Unsubscribe />} />
           <Route path="/sign/:token" element={<SignatureSignPage />} />
           <Route path="/quittance-success" element={<QuittanceSuccess />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />

@@ -102,8 +102,6 @@ Deno.serve(async (req: Request) => {
   }
 
   const delayMs = Math.max(500, payload.delayMs ?? DEFAULT_DELAY_MS);
-  const footerReason =
-    "Vous recevez cet e-mail dans le cadre d'une communication Quittance Simple. Des questions ? Des suggestions ? Nous serions ravis d'avoir vos retours :";
 
   // Mode test : envoi uniquement aux adresses fournies (pour prévisualiser avant campagne)
   const rawTestEmails = payload.testEmails;
@@ -141,6 +139,7 @@ Deno.serve(async (req: Request) => {
       .select("id, email, nom, prenom")
       .not("email", "is", null)
       .not("email", "ilike", "%" + DOMAINE_TEST + "%")
+      .or("mailing_desabonne.is.null,mailing_desabonne.eq.false")
       .order("created_at", { ascending: true });
 
     if (segment === "leads") {
@@ -156,8 +155,16 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    const { data: desabonnesRows } = await supabase.from("mailing_desabonnes").select("email");
+    const desabonnesSet = new Set(
+      (desabonnesRows || []).map((r: { email: string }) => r.email?.toLowerCase()).filter(Boolean)
+    );
+
     list = (rows || [])
-      .filter((r: { email?: string }) => isEmailValidePourMailing(r.email || ""))
+      .filter((r: { email?: string }) => {
+        const e = (r.email || "").trim().toLowerCase();
+        return isEmailValidePourMailing(r.email || "") && !desabonnesSet.has(e);
+      })
       .map((r: { email: string; prenom?: string; nom?: string }) => ({
         email: r.email,
         prenom: (r.prenom || "").trim() || "Propriétaire",
@@ -178,12 +185,15 @@ Deno.serve(async (req: Request) => {
     const ctaUrlPersonalized = ctaUrlRaw
       .replace(/\{\{\s*email\s*\}\}/gi, encodeURIComponent(r.email.trim()));
 
+    const SITE_URL = "https://www.quittancesimple.fr";
+    const unsubscribeUrl = `${SITE_URL}/unsubscribe?email=${encodeURIComponent(r.email.trim())}`;
+
     const html = buildEmailHtml({
       title: "Quittance Simple",
       bodyHtml: bodyPersonalized,
       ctaText: payload.ctaText,
       ctaUrl: ctaUrlPersonalized || undefined,
-      footerReason,
+      unsubscribeUrl,
     });
 
     try {

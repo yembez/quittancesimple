@@ -423,6 +423,5 @@ Vos données sont toujours là. Vous pouvez réactiver votre compte à tout mome
     closingHtml: closing,
     unsubscribeUrl,
     contactUrl,
-    footerReason: "Vous recevez cet e-mail suite à votre essai gratuit sur Quittance Simple.",
   });
 }

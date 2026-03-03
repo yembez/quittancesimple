@@ -86,8 +86,7 @@ ${ctaBlock}
       ${footerReason}<br>
       Des questions ? Des suggestions ? Nous serions ravis d'avoir vos retours :
       <a href="${contactUrl}" style="color: ${EMAIL_BLEU_VIF}; text-decoration: none;">Nous contacter</a><br>
-      <a href="${unsubscribeUrl}" style="color: ${EMAIL_BLEU_VIF}; text-decoration: none;">Se désabonner</a><br>
-      © ${year} Quittance Simple
+      <a href="${unsubscribeUrl}" style="color: ${EMAIL_BLEU_VIF}; text-decoration: none;">Se désabonner</a> © 2026 Quittance Simple
     </div>
   </div>
 </body>
