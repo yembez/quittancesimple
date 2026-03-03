@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Home, FileText, Download, Settings, Edit2, CreditCard, UserPlus, Building2, Lock, CheckCircle, Info, TrendingUp, Euro, Sparkles, Zap } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -83,6 +83,7 @@ const Dashboard = () => {
   const [quittances, setQuittances] = useState<Quittance[]>([]);
   const [relances, setRelances] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const hasCheckedSnapshotRef = useRef(false);
   const [previewQuittance, setPreviewQuittance] = useState<any>(null);
   const [showEditProprietaire, setShowEditProprietaire] = useState(false);
   const [editingLocataire, setEditingLocataire] = useState<Locataire | null>(null);
@@ -161,6 +162,73 @@ const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
     }
     loadDashboardData(proprietaire.id);
   }, [proprietaire?.id, proprietaire?.plan_type, proprietaire?.email, navigate]);
+
+  // Pré-remplissage "Wow" : si le lead a déjà généré une quittance gratuite (ex. CTA campagne), créer le 1er locataire depuis le snapshot
+  useEffect(() => {
+    if (!proprietaire?.id || loading || locataires.length > 0 || hasCheckedSnapshotRef.current) return;
+    hasCheckedSnapshotRef.current = true;
+
+    const applyFreeQuittanceSnapshot = async () => {
+      const email = (proprietaire.email || '').trim().toLowerCase();
+      if (!email) return;
+
+      const { data: snapshot, error: snapErr } = await supabase
+        .from('free_quittance_snapshots')
+        .select('*')
+        .eq('email', email)
+        .is('applied_at', null)
+        .maybeSingle();
+
+      if (snapErr || !snapshot) return;
+
+      // Pré-remplir le propriétaire (adresse, nom, prénom) si vides (effet "wow" campagne)
+      const updates: { adresse?: string; nom?: string; prenom?: string } = {};
+      if (snapshot.baillor_address && !(proprietaire.adresse || '').trim()) updates.adresse = String(snapshot.baillor_address).trim();
+      if (snapshot.baillor_nom && !(proprietaire.nom || '').trim()) updates.nom = String(snapshot.baillor_nom).trim();
+      if (snapshot.baillor_prenom && !(proprietaire.prenom || '').trim()) updates.prenom = String(snapshot.baillor_prenom).trim();
+      if (Object.keys(updates).length > 0) {
+        await supabase.from('proprietaires').update(updates).eq('id', proprietaire.id);
+        refetchProprietaire?.();
+      }
+
+      const nom = (snapshot.locataire_nom || '').trim() || 'Locataire';
+      const adresse = (snapshot.locataire_address || '').trim();
+      if (!adresse) return;
+
+      const { error: insertErr } = await supabase.from('locataires').insert({
+        proprietaire_id: proprietaire.id,
+        nom,
+        prenom: (snapshot.locataire_prenom || '').trim() || null,
+        email: null,
+        telephone: null,
+        adresse_logement: adresse,
+        detail_adresse: null,
+        loyer_mensuel: Number(snapshot.loyer) || 0,
+        charges_mensuelles: Number(snapshot.charges) || 0,
+        caution_initiale: null,
+        date_rappel: 5,
+        heure_rappel: 9,
+        minute_rappel: 0,
+        periodicite: 'mensuel',
+        statut: 'en_attente',
+        actif: true,
+      });
+
+      if (insertErr) {
+        hasCheckedSnapshotRef.current = false;
+        return;
+      }
+
+      await supabase
+        .from('free_quittance_snapshots')
+        .update({ applied_at: new Date().toISOString() })
+        .eq('id', snapshot.id);
+
+      await loadDashboardData(proprietaire.id);
+    };
+
+    applyFreeQuittanceSnapshot();
+  }, [proprietaire?.id, proprietaire?.email, loading, locataires.length]);
 
   useEffect(() => {
     const handlePowensCallback = async () => {

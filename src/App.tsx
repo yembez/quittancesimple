@@ -100,17 +100,20 @@ function App() {
     checkAuthErrorHash();
   }, [checkAuthErrorHash, location.pathname]);
 
-  // CTA mail de bienvenue : sur l'accueil avec #loginEmail=..., ouvrir le modal de connexion via state (Header le gère)
+  // CTA mail campagne / essai gratuit : sur l'accueil avec #loginEmail=... → ouvrir le modal INSCRIPTION (création de compte).
   React.useEffect(() => {
     if (location.pathname !== '/') return;
     const hash = typeof window !== 'undefined' ? window.location.hash : '';
     if (!hash || !hash.toLowerCase().includes('loginemail=')) return;
     try {
       const params = new URLSearchParams(hash.slice(1));
-      const email = (params.get('loginEmail') || '').trim();
-      if (email) {
+      const raw = (params.get('loginEmail') || '').trim();
+      const isPlaceholder = /^\s*\{\{\s*email\s*\}\}\s*$/i.test(raw) || raw.includes('{{') || raw.includes('}}');
+      const email = isPlaceholder ? '' : raw;
+      const signupMode = params.get('mode') === 'signup' || !!email;
+      if (email || signupMode) {
         window.history.replaceState(null, '', window.location.pathname + window.location.search || '/');
-        navigate('/', { replace: true, state: { openLogin: true, prefilledEmail: email } });
+        navigate('/', { replace: true, state: { openLogin: true, prefilledEmail: email || undefined, signupMode: true } });
       }
     } catch (_) { /* ignore */ }
   }, [location.pathname, navigate]);

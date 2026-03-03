@@ -40,29 +40,34 @@ const Header = () => {
   }, [location]);
 
   useEffect(() => {
-    const state = location.state as { openLogin?: boolean; prefilledEmail?: string } | null;
+    const state = location.state as { openLogin?: boolean; prefilledEmail?: string; signupMode?: boolean } | null;
     if (state?.openLogin) {
       if (state.prefilledEmail) {
         setLoginPrefilledEmail(state.prefilledEmail);
       }
-      setLoginMode('login');
+      // CTA campagne / essai gratuit = inscription ; sinon connexion
+      setLoginMode(state.signupMode ? 'signup' : 'login');
       setIsLoginModalOpen(true);
       // Nettoyer le state pour éviter de rouvrir le modal au prochain rendu
       navigate(location.pathname || '/', { replace: true, state: {} });
     }
   }, [location.state, location.pathname, navigate]);
 
-  // CTA mail de bienvenue : ouvrir le modal de connexion si on arrive sur l'accueil avec #loginEmail=...
+  // CTA mail campagne / essai gratuit : ouvrir le modal INSCRIPTION (création de compte) avec email pré-rempli
   useEffect(() => {
     if (location.pathname !== '/') return;
     const hash = typeof window !== 'undefined' ? window.location.hash : '';
     if (!hash || !hash.toLowerCase().includes('loginemail=')) return;
     try {
       const params = new URLSearchParams(hash.slice(1));
-      const email = (params.get('loginEmail') || '').trim();
-      if (email) {
-        setLoginPrefilledEmail(email);
-        setLoginMode('login');
+      const raw = (params.get('loginEmail') || '').trim();
+      const isPlaceholder = /^\s*\{\{\s*email\s*\}\}\s*$/i.test(raw) || raw.includes('{{') || raw.includes('}}');
+      const email = isPlaceholder ? '' : raw;
+      // Lien avec loginEmail = CTA pour nouveaux (campagne, essai gratuit) → toujours ouvrir en mode inscription
+      const openSignup = params.get('mode') === 'signup' || !!email;
+      if (email || openSignup) {
+        setLoginPrefilledEmail(email || '');
+        setLoginMode('signup');
         setIsLoginModalOpen(true);
         window.history.replaceState(null, '', window.location.pathname + window.location.search);
       }

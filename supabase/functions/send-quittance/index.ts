@@ -508,6 +508,33 @@ Deno.serve(async (req) => {
 
     await supabase.from('proprietaires').upsert(proprietaireData, { onConflict: 'email' });
 
+    // Snapshot pour pré-remplir l’Espace Bailleur à l’inscription (CTA campagne, etc.)
+    const locataireNameRaw = (data.locataireName || '').toString().trim();
+    let locatairePrenom = '';
+    let locataireNom = '';
+    if (locataireNameRaw) {
+      const parts = locataireNameRaw.split(/\s+/);
+      if (parts.length >= 2) {
+        locatairePrenom = parts[0];
+        locataireNom = parts.slice(1).join(' ');
+      } else {
+        locataireNom = locataireNameRaw;
+      }
+    }
+    const snapshotRow = {
+      email: (data.baillorEmail || '').toString().trim().toLowerCase(),
+      baillor_address: (data.baillorAddress || '').toString().trim() || null,
+      baillor_nom: proprietaireData.nom || null,
+      baillor_prenom: proprietaireData.prenom || null,
+      locataire_nom: locataireNom || null,
+      locataire_prenom: locatairePrenom || null,
+      locataire_address: (data.logementAddress || data.locataireAddress || '').toString().trim() || null,
+      loyer: typeof data.loyer === 'number' ? data.loyer : parseFloat(data.loyer) || null,
+      charges: typeof data.charges === 'number' ? data.charges : parseFloat(data.charges) || null,
+      applied_at: null,
+    };
+    await supabase.from('free_quittance_snapshots').upsert(snapshotRow, { onConflict: 'email' });
+
     // Récupérer nom, email et adresse du logement du locataire depuis la DB si locataireId est présent
     let locataireEmailFromPayload = (data.locataireEmail ?? data.locataire_email ?? '').toString().trim();
     let locataireNameFromDb = '';
