@@ -421,7 +421,7 @@ const QuittanceSuccess = () => {
                       <motion.img
                         src="/images/icone_doigt_main_simple.png"
                         alt=""
-                        className="absolute left-[8%] md:left-[8%] top-[52%] md:top-[54%] w-9 md:w-10 h-auto pointer-events-none"
+                        className="absolute left-[8%] md:left-[8%] top-[52%] md:top-[54%] w-7 md:w-10 h-auto pointer-events-none"
                         initial={false}
                         animate={{
                           opacity: (handPhase === 'moving' || handPhase === 'onButton') && bubbleStep !== 'fly' ? 1 : 0,
@@ -438,7 +438,7 @@ const QuittanceSuccess = () => {
                       <motion.img
                         src="/images/icone_doigt_main_FX.png"
                         alt=""
-                        className="absolute left-[8%] md:left-[8%] top-[52%] md:top-[54%] w-9 md:w-10 h-auto pointer-events-none"
+                        className="absolute left-[8%] md:left-[8%] top-[52%] md:top-[54%] w-7 md:w-10 h-auto pointer-events-none"
                         initial={false}
                         animate={{
                           opacity: bubbleStep === 'tap' ? 1 : 0,

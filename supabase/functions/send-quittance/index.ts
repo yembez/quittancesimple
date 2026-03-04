@@ -636,15 +636,15 @@ Deno.serve(async (req) => {
         <p>Bonjour ${prenom},</p>
         <p>Votre quittance de loyer pour la période <strong>${data.periode}</strong> est en pièce jointe.</p>
         <p>Vous venez de générer votre quittance, mais le mois prochain il faudra recommencer… :(</p>
-        <p>Ou vous pouvez tester gratuitement l'envoi automatique, sans carte bancaire.</p>
-        <p>30 jours pour profiter sereinement du <strong>Pack Automatique</strong>. C'est l'occasion idéale pour tester sans stress :</p>
+        <p>Ça vous dirait de tester gratuitement l'envoi automatique ?</p>
+        <p>Et profiter sereinement du <strong>Pack Automatique ?</strong>. C'est l'occasion idéale pour tester sans stress :</p>
         <ul style="padding-left: 20px;">
           <li>L'envoi automatisé de vos quittances chaque mois.</li>
           <li>La génération d'annonces assistée par IA.</li>
           <li>Le calcul et les rappels de révisions de loyer et charges.</li>
           <li>Et plein d'autres choses…</li>
         </ul>
-        <p><strong>Une question ? Un doute ?</strong> Écrivez-nous à <a href="mailto:contact@quittancesimple.fr">contact@quittancesimple.fr</a>, nous sommes là pour vous aider personnellement.</p>
+        <p><strong>Une question ? Une suggestion ?</strong> Écrivez-nous à <a href="mailto:contact@quittancesimple.fr">contact@quittancesimple.fr</a>.</p>
       `,
       ctaText: 'Tester gratuitement le Pack Automatique',
       ctaUrl: ctaUrlPack,
