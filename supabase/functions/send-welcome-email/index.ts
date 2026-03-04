@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
 import { buildEmailHtml } from "../_shared/email-template.ts";
 
 const corsHeaders = {
@@ -137,6 +138,16 @@ Deno.serve(async (req: Request) => {
 
     const data = await response.json();
     console.log("✅ Email de bienvenue envoyé à:", email);
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (supabaseUrl && serviceKey) {
+      const supabase = createClient(supabaseUrl, serviceKey);
+      await supabase
+        .from("proprietaires")
+        .update({ welcome_email_sent_at: new Date().toISOString() })
+        .eq("email", email.trim());
+    }
 
     return new Response(
       JSON.stringify({

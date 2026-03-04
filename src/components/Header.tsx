@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, FileText, User, LogOut, CreditCard, FileCheck, Settings, Check, ArrowLeft, ChevronDown } from 'lucide-react';
 import LoginModal from './LoginModal';
+import PackActivationFlow from './PackActivationFlow';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -12,6 +13,8 @@ const Header = () => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginMode, setLoginMode] = useState<'login' | 'signup'>('login');
   const [loginPrefilledEmail, setLoginPrefilledEmail] = useState<string | null>(null);
+  const [isPackActivationFlowOpen, setIsPackActivationFlowOpen] = useState(false);
+  const [packActivationPrefillEmail, setPackActivationPrefillEmail] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const toolsMenuRef = useRef<HTMLDivElement>(null);
@@ -42,18 +45,20 @@ const Header = () => {
   useEffect(() => {
     const state = location.state as { openLogin?: boolean; prefilledEmail?: string; signupMode?: boolean } | null;
     if (state?.openLogin) {
-      if (state.prefilledEmail) {
-        setLoginPrefilledEmail(state.prefilledEmail);
+      const email = (state.prefilledEmail || '').trim();
+      if (state.signupMode && email) {
+        setPackActivationPrefillEmail(email);
+        setIsPackActivationFlowOpen(true);
+      } else {
+        if (email) setLoginPrefilledEmail(email);
+        setLoginMode(state.signupMode ? 'signup' : 'login');
+        setIsLoginModalOpen(true);
       }
-      // CTA campagne / essai gratuit = inscription ; sinon connexion
-      setLoginMode(state.signupMode ? 'signup' : 'login');
-      setIsLoginModalOpen(true);
-      // Nettoyer le state pour éviter de rouvrir le modal au prochain rendu
       navigate(location.pathname || '/', { replace: true, state: {} });
     }
   }, [location.state, location.pathname, navigate]);
 
-  // CTA mail campagne / essai gratuit : ouvrir le modal INSCRIPTION (création de compte) avec email pré-rempli
+  // CTA mail campagne / quittance gratuite : ouvrir le modal orange "Espace Bailleur + Pack Automatique" (pas le LoginModal)
   useEffect(() => {
     if (location.pathname !== '/') return;
     const hash = typeof window !== 'undefined' ? window.location.hash : '';
@@ -63,12 +68,10 @@ const Header = () => {
       const raw = (params.get('loginEmail') || '').trim();
       const isPlaceholder = /^\s*\{\{\s*email\s*\}\}\s*$/i.test(raw) || raw.includes('{{') || raw.includes('}}');
       const email = isPlaceholder ? '' : raw;
-      // Lien avec loginEmail = CTA pour nouveaux (campagne, essai gratuit) → toujours ouvrir en mode inscription
       const openSignup = params.get('mode') === 'signup' || !!email;
       if (email || openSignup) {
-        setLoginPrefilledEmail(email || '');
-        setLoginMode('signup');
-        setIsLoginModalOpen(true);
+        setPackActivationPrefillEmail(email || '');
+        setIsPackActivationFlowOpen(true);
         window.history.replaceState(null, '', window.location.pathname + window.location.search);
       }
     } catch (_) {
@@ -449,6 +452,12 @@ const Header = () => {
         mode={loginMode}
         onModeChange={setLoginMode}
         initialEmail={loginPrefilledEmail ?? undefined}
+      />
+
+      <PackActivationFlow
+        isOpen={isPackActivationFlowOpen}
+        onClose={() => { setIsPackActivationFlowOpen(false); setPackActivationPrefillEmail(null); }}
+        prefillEmail={packActivationPrefillEmail ?? undefined}
       />
     </header>
   );

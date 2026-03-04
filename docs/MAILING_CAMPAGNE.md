@@ -288,3 +288,52 @@ Dans le body JSON, ajoute **`testEmails`** (tableau d’adresses, max 5) :
 - Tu reçois le mail tel qu’il sera envoyé en campagne. Une fois satisfait, **retire** `testEmails` du body et utilise `limit` / `offset` pour lancer l’envoi réel.
 
 Un exemple complet pour le premier e-mail de campagne est dans **`docs/mailing-preview-premier-email.json`** : remplace `VOTRE_EMAIL_ICI@exemple.com` par ton adresse, puis appelle la fonction avec ce body pour recevoir le mail de test.
+
+---
+
+## 8. Vérifier welcome email et origine du lead
+
+### Savoir si le welcome email a bien été envoyé
+
+À partir de la migration **`20260221100000_add_welcome_email_sent_at`**, la table `proprietaires` a une colonne **`welcome_email_sent_at`** (timestamptz, nullable).
+
+- **Renseignée** : la fonction `send-welcome-email` a été appelée avec succès pour cet email (Resend a accepté l’envoi). La date indique quand.
+- **NULL** : pas d’envoi enregistré (compte créé avant la mise en place de la colonne, ou échec d’envoi, ou envoi non déclenché).
+
+**Exemple SQL (Supabase → SQL Editor) :**
+
+```sql
+SELECT id, email, nom, prenom, lead_statut, date_inscription, welcome_email_sent_at
+FROM proprietaires
+WHERE lead_statut = 'QA_1st_interested'
+ORDER BY date_inscription DESC
+LIMIT 50;
+```
+
+Tu peux aussi vérifier les envois côté **Resend** (dashboard Resend → Logs / Emails) pour voir les statuts de livraison (delivered / bounced / etc.).
+
+### Savoir si le lead vient de la quittance gratuite ou est « vierge »
+
+- **`lead_statut`** : après création de compte essai, il est mis à **`QA_1st_interested`** (par PackActivationFlow). On ne conserve donc pas en base l’ancien statut `free_quittance_pdf` au moment de l’inscription.
+
+- **Origine « quittance gratuite »** : si l’email figure dans la table **`free_quittance_snapshots`** (avec ou sans `applied_at`), le lead a au moins une fois généré une quittance gratuite (donc **pas** vierge).
+
+- **Origine « vierge »** : aucun enregistrement pour cet email dans `free_quittance_snapshots` → le compte a été créé sans passage par le générateur de quittance gratuite (ex. CTA page Pack Automatique ou Tarifs).
+
+**Exemple SQL : quittance gratuite vs vierge**
+
+```sql
+SELECT
+  p.id,
+  p.email,
+  p.lead_statut,
+  p.welcome_email_sent_at,
+  p.date_inscription,
+  CASE WHEN s.email IS NOT NULL THEN 'quittance gratuite' ELSE 'vierge' END AS origine
+FROM proprietaires p
+LEFT JOIN free_quittance_snapshots s ON s.email = p.email
+WHERE p.lead_statut = 'QA_1st_interested'
+ORDER BY p.date_inscription DESC;
+```
+
+Après déploiement de la migration et de la fonction **`send-welcome-email`** (mise à jour pour renseigner `welcome_email_sent_at`), les nouveaux comptes essai gratuit auront cette trace, et la jointure ci-dessus te donnera welcome email + origine pour chaque lead.
