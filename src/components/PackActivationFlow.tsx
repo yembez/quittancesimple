@@ -304,7 +304,7 @@ const PackActivationFlow: React.FC<PackActivationFlowProps> = ({
             <div className="flex items-start justify-between mb-4 sm:mb-6">
               <div className="flex-1 pr-2">
                 <h2 className="text-xl sm:text-2xl font-bold text-[#212a3e] leading-tight">
-                  Créez votre espace bailleur et activer Pack Automatique
+                  Créez votre Espace Bailleur <br /> Pack Automatique activé
                 </h2>
                 <p className="text-xs sm:text-sm text-[#5e6478] mt-1">
                 mot passe + e-mail et c'est tout !
@@ -319,15 +319,7 @@ const PackActivationFlow: React.FC<PackActivationFlowProps> = ({
             </div>
 
             {/* Badge essai gratuit */}
-            <div className="mb-4 sm:mb-6 bg-gradient-to-r from-[#E65F3F]/10 to-[#f97316]/10 border border-[#E65F3F]/20 rounded-xl p-3 sm:p-4">
-              <div className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-[#E65F3F] mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-sm font-semibold text-[#212a3e]">30 jours d'essai gratuit</p>
-                  <p className="text-sm font-medium text-[#212a3e] mt-1">Sans CB, sans engagement.</p>
-                </div>
-              </div>
-            </div>
+           
 
             {error && (
               <motion.div
