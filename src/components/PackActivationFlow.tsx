@@ -304,10 +304,10 @@ const PackActivationFlow: React.FC<PackActivationFlowProps> = ({
             <div className="flex items-start justify-between mb-4 sm:mb-6">
               <div className="flex-1 pr-2">
                 <h2 className="text-xl sm:text-2xl font-bold text-[#212a3e] leading-tight">
-                  Créez votre Espace Bailleur <br /> Pack Automatique activé
+                  Accès à votre Espace Bailleur <br /> Pack Automatique activé
                 </h2>
                 <p className="text-xs sm:text-sm text-[#5e6478] mt-1">
-                mot passe + e-mail et c'est tout !
+                Mot de passe + e-mail et c'est tout !
                 </p>
               </div>
               <button
@@ -424,7 +424,7 @@ const PackActivationFlow: React.FC<PackActivationFlowProps> = ({
               disabled={isLoading}
               className="w-full py-3.5 sm:py-4 rounded-xl bg-[#E65F3F] hover:bg-[#d95530] text-white font-semibold text-sm sm:text-base transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg"
             >
-              {isLoading ? 'Création...' : 'Créez mon espace gratuit'}
+              {isLoading ? 'Création...' : 'Mon espace gratuit'}
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
