@@ -38,6 +38,7 @@ const QuittanceSuccess = () => {
   const [feedback, setFeedback] = useState('');
   const [photoAnimStep, setPhotoAnimStep] = useState(0); // 0: rien, 1: phrase1, 2: phrase1+2, 3: hold, 4: disparition
   const [bubbleStep, setBubbleStep] = useState<'idle' | 'appear' | 'visible' | 'tap' | 'release' | 'fly'>('idle'); // bulle : apparition → clic (tap) → relâche (release) → envol
+  const [handPhase, setHandPhase] = useState<'hidden' | 'moving' | 'onButton'>('hidden'); // main : cachée → en déplacement (2s) → sur le bouton
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
   const [reducedMotion, setReducedMotion] = useState(false);
 
@@ -68,26 +69,45 @@ const QuittanceSuccess = () => {
     }
   }, [email]);
 
-  // Boucle : texte apparaît → reste affiché → bulle joue (texte toujours visible) → texte disparaît → recommence (~5–5.5s)
+  // Boucle : bulle visible → main part du coin bas-droit → arrive au bouton (1,4 s) → clic dès l'arrivée → envol
+  const HAND_START_MOVE_MS = 2000; // délai après "visible" avant que la main commence à bouger vers le bouton
+  const HAND_MOVE_DURATION_MS = 1400; // durée du trajet main (doit correspondre au duration 1.4 de l'animation)
+  const TAP_AT_MS = HAND_START_MOVE_MS + HAND_MOVE_DURATION_MS; // clic déclenché dès que le doigt est à position finale
+  const BUBBLE_END_MS = BUBBLE_APPEAR_MS + TAP_AT_MS + 200 + 120 + 500; // tap(200) → release(120) → fly(500) → idle
+  const TEXT_APPEAR_DELAY_MS = 200;
+
   useEffect(() => {
     const timeouts: ReturnType<typeof setTimeout>[] = [];
 
     const runFullCycle = () => {
-      setBubbleStep('idle');
-      timeouts.push(setTimeout(() => setPhotoAnimStep(1), 0));        // 1ère phrase
-      timeouts.push(setTimeout(() => setPhotoAnimStep(2), 480));      // 2e phrase (stagger)
-      timeouts.push(setTimeout(() => setPhotoAnimStep(3), 1000));     // hold
-      timeouts.push(setTimeout(() => setBubbleStep('appear'), 1100)); // bulle sort progressivement du téléphone
-      timeouts.push(setTimeout(() => setBubbleStep('visible'), 1100 + BUBBLE_APPEAR_MS)); // arrivée
-      timeouts.push(setTimeout(() => setBubbleStep('tap'), 1100 + BUBBLE_APPEAR_MS + 1320));   // tap Envoyer
-      timeouts.push(setTimeout(() => setBubbleStep('release'), 1100 + BUBBLE_APPEAR_MS + 1520)); // relâche (bulle revient à la normale)
-      timeouts.push(setTimeout(() => setBubbleStep('fly'), 1100 + BUBBLE_APPEAR_MS + 1640));   // envol
-      timeouts.push(setTimeout(() => setBubbleStep('idle'), 1100 + BUBBLE_APPEAR_MS + 2140));   // fin bulle
-      timeouts.push(setTimeout(() => setPhotoAnimStep(4), 1100 + BUBBLE_APPEAR_MS + 2300));     // texte disparaît
+      setPhotoAnimStep(0);
+      setHandPhase('hidden');
+      setBubbleStep('appear');
+      timeouts.push(setTimeout(() => {
+        setBubbleStep('visible');
+        setHandPhase('moving'); // main apparaît en bas à droite, opacité 100%
+      }, BUBBLE_APPEAR_MS));
+      timeouts.push(setTimeout(() => setHandPhase('onButton'), BUBBLE_APPEAR_MS + HAND_START_MOVE_MS)); // main part vers le bouton
+      timeouts.push(setTimeout(() => setBubbleStep('tap'), BUBBLE_APPEAR_MS + TAP_AT_MS)); // clic dès arrivée du doigt
+      timeouts.push(setTimeout(() => setBubbleStep('release'), BUBBLE_APPEAR_MS + TAP_AT_MS + 200));
+      timeouts.push(setTimeout(() => setBubbleStep('fly'), BUBBLE_APPEAR_MS + TAP_AT_MS + 320));
+      timeouts.push(setTimeout(() => {
+        setBubbleStep('idle');
+        setHandPhase('hidden');
+      }, BUBBLE_END_MS));
+      const afterBubble = BUBBLE_END_MS + TEXT_APPEAR_DELAY_MS;
+      // Apparition progressive des deux lignes
+      timeouts.push(setTimeout(() => setPhotoAnimStep(1), afterBubble));
+      timeouts.push(setTimeout(() => setPhotoAnimStep(2), afterBubble + 480));
+      // Phase "en place" plus longue pour que le texte reste bien lisible
+      timeouts.push(setTimeout(() => setPhotoAnimStep(3), afterBubble + 2200));
+      // Disparition du texte
+      timeouts.push(setTimeout(() => setPhotoAnimStep(4), afterBubble + 2200 + 1000));
+      // Petite pause avant de relancer un cycle complet
       timeouts.push(setTimeout(() => {
         setPhotoAnimStep(0);
-        timeouts.push(setTimeout(runFullCycle, reducedMotion ? 600 : 420));
-      }, 1100 + BUBBLE_APPEAR_MS + 2720));
+        timeouts.push(setTimeout(runFullCycle, reducedMotion ? 900 : 800));
+      }, afterBubble + 2200 + 1000 + 400));
     };
 
     timeouts.push(setTimeout(runFullCycle, 320));
@@ -273,7 +293,7 @@ const QuittanceSuccess = () => {
             transition={{ duration: reducedMotion ? 0.25 : 0.3, delay: reducedMotion ? 0 : (STAGGER_MS * 2) / 1000, ease: EASE_PREMIUM }}
             className="text-base md:text-lg text-[#111827] font-normal leading-relaxed mt-2"
           >
-            C'est fait... mais pourquoi le faire encore à la main ?
+            Vous faites encore tout à la main ?
           </motion.p>
         </div>
 
@@ -310,12 +330,20 @@ const QuittanceSuccess = () => {
                       ...(reducedMotion ? {} : { filter: 'blur(0px)' }),
                     }}
                     animate={{
-                      left: reducedMotion ? '52%' : (bubbleStep === 'fly' ? '92%' : '52%'),
+                      left: reducedMotion
+                        ? '52%'
+                        : bubbleStep === 'fly'
+                          ? '92%'
+                          : isMobile
+                            ? '45%'
+                            : '52%',
                       bottom: reducedMotion
                         ? '47%'
-                        : isMobile
-                          ? (bubbleStep === 'fly' ? '96%' : '47%')
-                          : (bubbleStep === 'fly' ? '96%' : '47%'),
+                        : bubbleStep === 'fly'
+                          ? '96%'
+                          : isMobile
+                            ? '40%'
+                            : '47%',
                       scale:
                         reducedMotion
                           ? (isMobile ? 1.8 : 2.16)
@@ -324,7 +352,7 @@ const QuittanceSuccess = () => {
                             : bubbleStep === 'appear'
                               ? (isMobile ? 1.8 : 2.16)
                               : bubbleStep === 'tap'
-                                ? (isMobile ? 1.73 : 2.08)
+                                ? (isMobile ? 1.6 : 1.95) // tap plus marqué pour mieux sentir le clic
                                 : bubbleStep === 'release'
                                   ? (isMobile ? 1.8 : 2.16)
                                   : (isMobile ? 1.8 : 2.16),
@@ -355,7 +383,13 @@ const QuittanceSuccess = () => {
                     }
                     style={{ transformOrigin: '0% 100%' }}
                   >
-                    <div className="relative inline-block scale-[1.2] md:scale-100 origin-[0%_100%]">
+                    <motion.div
+                      className="relative inline-block origin-[0%_100%]"
+                      animate={{
+                        scale: isMobile ? 1.2 : 1,
+                      }}
+                      transition={{ duration: 0.25, ease: EASE_PREMIUM }}
+                    >
                       <img
                         src="https://jfpbddtdblqakabyjxkq.supabase.co/storage/v1/object/public/website-images/bulle_message_envoi_auto_transp2.png"
                         alt="Quittance envoyée !"
@@ -363,15 +397,17 @@ const QuittanceSuccess = () => {
                       />
                       {/* Bouton Envoyer ancré dans la bulle, juste au-dessus de la zone bouton dans l'image */}
                       <motion.div
-                        className="absolute left-[0%] md:left-[1%] top-[40%] md:top-[53%] -translate-y-1/2 pointer-events-none"
+                        className="absolute left-[3%] md:left-[0%] top-[44%] md:top-[53%] -translate-y-1/2 pointer-events-none"
                         initial={false}
                         animate={{
-                          scale: bubbleStep === 'tap' ? 0.74 : 0.81,
+                          scale: isMobile
+                            ? 1 // en mobile, taille fixe : pas de micro-ajustement propre au bouton
+                            : (bubbleStep === 'tap' ? 0.74 : 0.81), // comportement historique en desktop
                           opacity: (bubbleStep === 'appear' || bubbleStep === 'visible' || bubbleStep === 'tap' || bubbleStep === 'release') ? 1 : 0,
                           filter: bubbleStep === 'tap' ? 'brightness(0.92)' : 'brightness(1)',
                         }}
                         transition={{
-                          duration: bubbleStep === 'tap' ? 0.1 : bubbleStep === 'release' ? 0.18 : 0.18,
+                          duration: bubbleStep === 'tap' ? 0.1 : 0.01, // changement quasi instantané hors tap → pas de petit saut
                           ease: bubbleStep === 'tap' ? [0.25, 0.1, 0.25, 1] : EASE_PREMIUM,
                         }}
                       >
@@ -380,34 +416,77 @@ const QuittanceSuccess = () => {
                           Envoyer
                         </span>
                       </motion.div>
-                    </div>
+
+                      {/* Main : apparaît en bas à droite (opacité 100%), met 2s à arriver, reste sur le bouton, disparaît avec la bulle */}
+                      <motion.img
+                        src="/images/icone_doigt_main_simple.png"
+                        alt=""
+                        className="absolute left-[8%] md:left-[8%] top-[52%] md:top-[54%] w-9 md:w-10 h-auto pointer-events-none"
+                        initial={false}
+                        animate={{
+                          opacity: (handPhase === 'moving' || handPhase === 'onButton') && bubbleStep !== 'fly' ? 1 : 0,
+                          x: handPhase === 'onButton' ? 0 : 90,
+                          y: handPhase === 'onButton' ? 0 : 90,
+                          scale: handPhase === 'onButton' ? 1 : 0.45,
+                        }}
+                        transition={{
+                          duration: handPhase === 'onButton' ? (reducedMotion ? 0.5 : 1.4) : 0.25, // fin de course légèrement accélérée
+                          ease: EASE_PREMIUM,
+                        }}
+                      />
+                      {/* Variante avec traits FX au moment du clic ; disparaît avec la bulle */}
+                      <motion.img
+                        src="/images/icone_doigt_main_FX.png"
+                        alt=""
+                        className="absolute left-[8%] md:left-[8%] top-[52%] md:top-[54%] w-9 md:w-10 h-auto pointer-events-none"
+                        initial={false}
+                        animate={{
+                          opacity: bubbleStep === 'tap' ? 1 : 0,
+                          scale: bubbleStep === 'tap' ? [1, 1.05, 1] : 0.9,
+                        }}
+                        transition={{
+                          duration: 0.22,
+                          ease: EASE_PREMIUM,
+                        }}
+                      />
+                    </motion.div>
                   </motion.div>
                 </>
               )}
 
               <motion.div
-                className="absolute inset-x-0 bottom-0 pt-6 pb-3 px-4 bg-gradient-to-t from-black/75 to-transparent flex flex-col items-center justify-center gap-1"
+                className="absolute inset-x-0 bottom-[-8%] md:bottom-[-4%] pb-4 md:pb-6 px-4 flex items-end justify-center pointer-events-none"
               >
-                <motion.p
-                  animate={{
-                    opacity: photoAnimStep >= 1 && photoAnimStep <= 3 ? 1 : 0,
-                    ...(reducedMotion ? {} : { y: photoAnimStep >= 1 && photoAnimStep <= 3 ? 0 : 6 }),
-                  }}
+                <motion.div
+                  animate={{ opacity: photoAnimStep >= 1 && photoAnimStep <= 3 ? 1 : 0 }}
                   transition={{ duration: reducedMotion ? 0.25 : 0.28, ease: EASE_PREMIUM }}
-                  className="text-sm md:text-base font-medium text-white text-center"
-                >
-                  Génération et envoi
-                </motion.p>
-                <motion.p
-                  animate={{
-                    opacity: photoAnimStep >= 2 && photoAnimStep <= 3 ? 1 : 0,
-                    ...(reducedMotion ? {} : { y: photoAnimStep >= 2 && photoAnimStep <= 3 ? 0 : 5 }),
+                  className="flex flex-col items-center justify-center gap-1 px-4 py-3 md:px-6 md:py-4 rounded-[2rem] max-w-xs md:max-w-none"
+                  style={{
+                    background: 'rgba(55, 65, 81, 0.88)', // même bleu que le bandeau, avec légère transparence
+                    boxShadow: '0 18px 36px rgba(0,0,0,0.45)',
                   }}
-                  transition={{ duration: reducedMotion ? 0.25 : 0.28, delay: reducedMotion ? 0 : STAGGER_MS / 1000, ease: EASE_PREMIUM }}
-                  className="text-sm md:text-base font-medium text-white text-center"
                 >
-                  en 5 secondes
-                </motion.p>
+                  <motion.p
+                    animate={{
+                      opacity: photoAnimStep >= 1 && photoAnimStep <= 3 ? 1 : 0,
+                      ...(reducedMotion ? {} : { y: photoAnimStep >= 1 && photoAnimStep <= 3 ? 0 : 4 }),
+                    }}
+                    transition={{ duration: reducedMotion ? 0.25 : 0.28, ease: EASE_PREMIUM }}
+                    className="text-lg md:text-2xl font-semibold text-white text-center"
+                  >
+                    Génération et envoi
+                  </motion.p>
+                  <motion.p
+                    animate={{
+                      opacity: photoAnimStep >= 2 && photoAnimStep <= 3 ? 1 : 0,
+                      ...(reducedMotion ? {} : { y: photoAnimStep >= 2 && photoAnimStep <= 3 ? 0 : 3 }),
+                    }}
+                    transition={{ duration: reducedMotion ? 0.25 : 0.28, delay: reducedMotion ? 0 : STAGGER_MS / 1000, ease: EASE_PREMIUM }}
+                    className="text-lg md:text-2xl font-semibold text-white text-center"
+                  >
+                    en 3 secondes
+                  </motion.p>
+                </motion.div>
               </motion.div>
             </div>
           </div>
@@ -421,10 +500,10 @@ const QuittanceSuccess = () => {
           className="mb-20 md:mb-6 px-1"
         >
           <p className="text-base md:text-lg text-[#111827]  leading-loose tracking-normal mb-3">
-            Compris dans l'essai gratuit :
+            Essayez, c'est gratuit avec :
           </p>
           <p className="text-[15px] text-[#4b5563] leading-relaxed my-4 mx-0">
-            L'automate <span className="font-semibold text-[#1e3a5f]">Quittance Express, plus la boîte à outils intelligents :</span>
+            L'automate <span className="font-semibold text-[#1e3a5f]">Quittance Automatique + la boîte à outils intelligents :</span>
           </p>
           <ul className="space-y-1.5 mb-5 pl-0">
             <li className="flex items-start gap-2 text-[15px] text-[#4b5563]">
