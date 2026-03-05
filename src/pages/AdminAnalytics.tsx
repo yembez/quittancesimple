@@ -39,7 +39,7 @@ const AdminAnalytics: React.FC = () => {
   const [segmentFilter, setSegmentFilter] = useState<string>('all');
   const [showTriggerModal, setShowTriggerModal] = useState(false);
   const [triggerCampaign, setTriggerCampaign] = useState<'j2' | 'j5' | 'j8' | null>(null);
-  const [triggerPassword, setTriggerPassword] = useState('');
+  const [triggerLimit, setTriggerLimit] = useState<number>(50);
   const [triggerLoading, setTriggerLoading] = useState(false);
   const [triggerError, setTriggerError] = useState<string>('');
   const [triggerResult, setTriggerResult] = useState<{ sent?: number; message?: string } | null>(null);
@@ -56,6 +56,7 @@ const AdminAnalytics: React.FC = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editViewBody, setEditViewBody] = useState<'source' | 'preview'>('preview');
   const [editViewSignature, setEditViewSignature] = useState<'source' | 'preview'>('preview');
+  const [ctaClicks, setCtaClicks] = useState<{ j2: number; j5: number; j8: number; total: number } | null>(null);
 
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,9 +97,37 @@ const AdminAnalytics: React.FC = () => {
     }
   }, []);
 
+  const fetchCtaStats = useCallback(async () => {
+    try {
+      const { data, error: err } = await supabase.functions.invoke('get-campaign-cta-stats', {
+        body: { adminPassword: ADMIN_PASSWORD },
+      });
+      if (err) {
+        setCtaClicks(null);
+        return;
+      }
+      const d = data as { j2?: number; j5?: number; j8?: number; total?: number } | null;
+      if (d && typeof d.j2 === 'number' && typeof d.j5 === 'number' && typeof d.j8 === 'number') {
+        setCtaClicks({
+          j2: d.j2,
+          j5: d.j5,
+          j8: d.j8,
+          total: typeof d.total === 'number' ? d.total : d.j2 + d.j5 + d.j8,
+        });
+      } else {
+        setCtaClicks(null);
+      }
+    } catch {
+      setCtaClicks(null);
+    }
+  }, []);
+
   useEffect(() => {
-    if (authenticated) fetchAndAnalyze();
-  }, [authenticated, fetchAndAnalyze]);
+    if (authenticated) {
+      fetchAndAnalyze();
+      fetchCtaStats();
+    }
+  }, [authenticated, fetchAndAnalyze, fetchCtaStats]);
 
   const handleExportAllValid = () => {
     if (!result) return;
@@ -113,16 +142,35 @@ const AdminAnalytics: React.FC = () => {
   const freeLeadsWithQuittances = result
     ? result.validLeads.filter((l) => l.nombre_quittances >= 1)
     : [];
+  const sentJ2Leads = freeLeadsWithQuittances.filter((l) => !!l.campaign_j2_sent_at);
+  const sentJ5Leads = freeLeadsWithQuittances.filter((l) => !!l.campaign_j5_sent_at);
+  const sentJ8Leads = freeLeadsWithQuittances.filter((l) => !!l.campaign_j8_sent_at);
   const pendingJ2 = freeLeadsWithQuittances.filter((l) => !l.campaign_j2_sent_at).length;
-  const sentJ2 = freeLeadsWithQuittances.filter((l) => !!l.campaign_j2_sent_at).length;
+  const sentJ2 = sentJ2Leads.length;
   const pendingJ5 = freeLeadsWithQuittances.filter((l) => !l.campaign_j5_sent_at).length;
-  const sentJ5 = freeLeadsWithQuittances.filter((l) => !!l.campaign_j5_sent_at).length;
+  const sentJ5 = sentJ5Leads.length;
   const pendingJ8 = freeLeadsWithQuittances.filter((l) => !l.campaign_j8_sent_at).length;
-  const sentJ8 = freeLeadsWithQuittances.filter((l) => !!l.campaign_j8_sent_at).length;
+  const sentJ8 = sentJ8Leads.length;
+
+  const exportSentCampaignCSV = (leads: LeadSegment[], campaignLabel: string, dateField: 'campaign_j2_sent_at' | 'campaign_j5_sent_at' | 'campaign_j8_sent_at') => {
+    const date = new Date().toISOString().slice(0, 10);
+    const header = 'email;nom;prenom;date_envoi\n';
+    const lines = leads.map((l) => {
+      const sentAt = l[dateField] ? new Date(l[dateField]!).toLocaleString('fr-FR') : '';
+      return `"${(l.email || '').replace(/"/g, '""')}";"${(l.nom || '').replace(/"/g, '""')}";"${(l.prenom || '').replace(/"/g, '""')}";"${sentAt}"`;
+    });
+    const csv = '\uFEFF' + header + lines.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `campagne_${campaignLabel}_destinataires_${date}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const openTriggerModal = (campaign: 'j2' | 'j5' | 'j8') => {
     setTriggerCampaign(campaign);
-    setTriggerPassword('');
     setTriggerError('');
     setTriggerResult(null);
     setShowTriggerModal(true);
@@ -273,18 +321,18 @@ const AdminAnalytics: React.FC = () => {
     setTriggerResult(null);
     try {
       const { data, error } = await supabase.functions.invoke('admin-trigger-campaign', {
-        body: { adminPassword: triggerPassword, campaign: triggerCampaign },
+        body: { campaign: triggerCampaign, limit: triggerLimit },
       });
       if (error) {
         setTriggerError(error.message || 'Erreur inconnue');
         return;
       }
       if (data?.error) {
-        setTriggerError(data.error);
+        const msg = [data.error, (data as { hint?: string }).hint].filter(Boolean).join(' ');
+        setTriggerError(msg);
         return;
       }
       setTriggerResult({ sent: data?.sent, message: data?.message });
-      setTriggerPassword('');
       fetchAndAnalyze();
     } catch (err) {
       setTriggerError(err instanceof Error ? err.message : String(err));
@@ -388,7 +436,7 @@ const AdminAnalytics: React.FC = () => {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={fetchAndAnalyze}
+              onClick={() => { fetchAndAnalyze(); fetchCtaStats(); }}
               disabled={loading}
               className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium bg-[#2563eb] text-white hover:bg-[#1d4ed8] disabled:opacity-60 transition-colors"
             >
@@ -604,6 +652,159 @@ const AdminAnalytics: React.FC = () => {
                   </div>
                 </div>
               </div>
+              {/* Clics sur le CTA */}
+              {ctaClicks && (
+                <div className="p-4 border-t border-[#e5e7eb] bg-[#f0f9ff]/50">
+                  <h3 className="text-sm font-semibold text-[#111827] mb-1">Clics sur le CTA des e-mails</h3>
+                  <p className="text-xs text-[#6b7280] mb-2">
+                    Nombre de clics sur le bouton principal (ex. « Découvrir mon espace ») par campagne.
+                  </p>
+                  <p className="text-sm text-[#374151]">
+                    J+2 : <strong>{ctaClicks.j2}</strong> · J+5 : <strong>{ctaClicks.j5}</strong> · J+8 : <strong>{ctaClicks.j8}</strong>
+                    {ctaClicks.total > 0 && (
+                      <span className="text-[#6b7280] ml-2">(total : {ctaClicks.total})</span>
+                    )}
+                  </p>
+                </div>
+              )}
+              {/* Destinataires ayant reçu chaque campagne */}
+              <div className="p-4 border-t border-[#e5e7eb]">
+                <h3 className="text-sm font-semibold text-[#111827] mb-3">Destinataires ayant reçu les e-mails</h3>
+                <p className="text-xs text-[#6b7280] mb-3">
+                  Liste des adresses à qui chaque campagne a déjà été envoyée (avec date d&apos;envoi). Les envois passés sont enregistrés en base après chaque campagne. Cliquez sur <strong>Rafraîchir</strong> en haut de page pour voir les derniers envois.
+                </p>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  <div className="border border-[#e5e7eb] rounded-lg overflow-hidden">
+                    <div className="bg-orange-50 px-3 py-2 flex items-center justify-between">
+                      <span className="text-sm font-medium text-[#111827]">J+2</span>
+                      <span className="text-xs text-[#6b7280]">{sentJ2} adresse(s)</span>
+                      <button
+                        type="button"
+                        onClick={() => exportSentCampaignCSV(sentJ2Leads, 'j2', 'campaign_j2_sent_at')}
+                        disabled={sentJ2 === 0}
+                        className="text-xs font-medium text-[#2563eb] hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Export CSV
+                      </button>
+                    </div>
+                    <div className="max-h-40 overflow-y-auto">
+                      {sentJ2 === 0 ? (
+                        <p className="p-2 text-xs text-[#6b7280]">Aucun envoi pour l&apos;instant.</p>
+                      ) : (
+                        <table className="min-w-full text-xs">
+                          <thead className="bg-[#f9fafb] sticky top-0">
+                            <tr>
+                              <th className="px-2 py-1 text-left font-medium text-[#6b7280]">E-mail</th>
+                              <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Date envoi</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sentJ2Leads.slice(0, 50).map((l) => (
+                              <tr key={String(l.id)} className="border-t border-[#f3f4f6]">
+                                <td className="px-2 py-1 text-[#111827] truncate max-w-[140px]" title={l.email}>{l.email}</td>
+                                <td className="px-2 py-1 text-[#6b7280] whitespace-nowrap">
+                                  {l.campaign_j2_sent_at ? new Date(l.campaign_j2_sent_at).toLocaleDateString('fr-FR') : '—'}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                    {sentJ2 > 50 && (
+                      <p className="p-2 text-xs text-[#6b7280] border-t border-[#e5e7eb]">
+                        … et {sentJ2 - 50} autre(s). Voir tout via Export CSV.
+                      </p>
+                    )}
+                  </div>
+                  <div className="border border-[#e5e7eb] rounded-lg overflow-hidden">
+                    <div className="bg-amber-50 px-3 py-2 flex items-center justify-between">
+                      <span className="text-sm font-medium text-[#111827]">J+5</span>
+                      <span className="text-xs text-[#6b7280]">{sentJ5} adresse(s)</span>
+                      <button
+                        type="button"
+                        onClick={() => exportSentCampaignCSV(sentJ5Leads, 'j5', 'campaign_j5_sent_at')}
+                        disabled={sentJ5 === 0}
+                        className="text-xs font-medium text-[#2563eb] hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Export CSV
+                      </button>
+                    </div>
+                    <div className="max-h-40 overflow-y-auto">
+                      {sentJ5 === 0 ? (
+                        <p className="p-2 text-xs text-[#6b7280]">Aucun envoi pour l&apos;instant.</p>
+                      ) : (
+                        <table className="min-w-full text-xs">
+                          <thead className="bg-[#f9fafb] sticky top-0">
+                            <tr>
+                              <th className="px-2 py-1 text-left font-medium text-[#6b7280]">E-mail</th>
+                              <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Date envoi</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sentJ5Leads.slice(0, 50).map((l) => (
+                              <tr key={String(l.id)} className="border-t border-[#f3f4f6]">
+                                <td className="px-2 py-1 text-[#111827] truncate max-w-[140px]" title={l.email}>{l.email}</td>
+                                <td className="px-2 py-1 text-[#6b7280] whitespace-nowrap">
+                                  {l.campaign_j5_sent_at ? new Date(l.campaign_j5_sent_at).toLocaleDateString('fr-FR') : '—'}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                    {sentJ5 > 50 && (
+                      <p className="p-2 text-xs text-[#6b7280] border-t border-[#e5e7eb]">
+                        … et {sentJ5 - 50} autre(s). Voir tout via Export CSV.
+                      </p>
+                    )}
+                  </div>
+                  <div className="border border-[#e5e7eb] rounded-lg overflow-hidden">
+                    <div className="bg-sky-50 px-3 py-2 flex items-center justify-between">
+                      <span className="text-sm font-medium text-[#111827]">J+8</span>
+                      <span className="text-xs text-[#6b7280]">{sentJ8} adresse(s)</span>
+                      <button
+                        type="button"
+                        onClick={() => exportSentCampaignCSV(sentJ8Leads, 'j8', 'campaign_j8_sent_at')}
+                        disabled={sentJ8 === 0}
+                        className="text-xs font-medium text-[#2563eb] hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Export CSV
+                      </button>
+                    </div>
+                    <div className="max-h-40 overflow-y-auto">
+                      {sentJ8 === 0 ? (
+                        <p className="p-2 text-xs text-[#6b7280]">Aucun envoi pour l&apos;instant.</p>
+                      ) : (
+                        <table className="min-w-full text-xs">
+                          <thead className="bg-[#f9fafb] sticky top-0">
+                            <tr>
+                              <th className="px-2 py-1 text-left font-medium text-[#6b7280]">E-mail</th>
+                              <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Date envoi</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sentJ8Leads.slice(0, 50).map((l) => (
+                              <tr key={String(l.id)} className="border-t border-[#f3f4f6]">
+                                <td className="px-2 py-1 text-[#111827] truncate max-w-[140px]" title={l.email}>{l.email}</td>
+                                <td className="px-2 py-1 text-[#6b7280] whitespace-nowrap">
+                                  {l.campaign_j8_sent_at ? new Date(l.campaign_j8_sent_at).toLocaleDateString('fr-FR') : '—'}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                    {sentJ8 > 50 && (
+                      <p className="p-2 text-xs text-[#6b7280] border-t border-[#e5e7eb]">
+                        … et {sentJ8 - 50} autre(s). Voir tout via Export CSV.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Actions Rapides */}
@@ -713,24 +914,23 @@ const AdminAnalytics: React.FC = () => {
                         />
                       </div>
                       <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <label className="block text-sm font-medium text-[#374151]">Corps de l&apos;e-mail</label>
-                          <div className="flex rounded-lg border border-[#e5e7eb] overflow-hidden">
-                            <button
-                              type="button"
-                              onClick={() => setEditViewBody('preview')}
-                              className={`px-3 py-1.5 text-xs font-medium ${editViewBody === 'preview' ? 'bg-[#2563eb] text-white' : 'bg-white text-[#6b7280] hover:bg-[#f9fafb]'}`}
-                            >
-                              Aperçu
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setEditViewBody('source')}
-                              className={`px-3 py-1.5 text-xs font-medium ${editViewBody === 'source' ? 'bg-[#2563eb] text-white' : 'bg-white text-[#6b7280] hover:bg-[#f9fafb]'}`}
-                            >
-                              Code HTML
-                            </button>
-                          </div>
+                        <label className="block text-sm font-medium text-[#374151] mb-1">Corps de l&apos;e-mail</label>
+                        <p className="text-xs text-[#6b7280] mb-2">Choisir l&apos;affichage :</p>
+                        <div className="flex gap-2 mb-2">
+                          <button
+                            type="button"
+                            onClick={() => setEditViewBody('preview')}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-colors ${editViewBody === 'preview' ? 'bg-[#2563eb] text-white border-[#2563eb]' : 'bg-white text-[#6b7280] border-[#e5e7eb] hover:border-[#d1d5db] hover:bg-[#f9fafb]'}`}
+                          >
+                            Aperçu (texte)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditViewBody('source')}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-colors ${editViewBody === 'source' ? 'bg-[#2563eb] text-white border-[#2563eb]' : 'bg-white text-[#6b7280] border-[#e5e7eb] hover:border-[#d1d5db] hover:bg-[#f9fafb]'}`}
+                          >
+                            Code HTML
+                          </button>
                         </div>
                         {editViewBody === 'preview' ? (
                           <div
@@ -771,24 +971,23 @@ const AdminAnalytics: React.FC = () => {
                         </div>
                       </div>
                       <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <label className="block text-sm font-medium text-[#374151]">Signature / fin</label>
-                          <div className="flex rounded-lg border border-[#e5e7eb] overflow-hidden">
-                            <button
-                              type="button"
-                              onClick={() => setEditViewSignature('preview')}
-                              className={`px-3 py-1.5 text-xs font-medium ${editViewSignature === 'preview' ? 'bg-[#2563eb] text-white' : 'bg-white text-[#6b7280] hover:bg-[#f9fafb]'}`}
-                            >
-                              Aperçu
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setEditViewSignature('source')}
-                              className={`px-3 py-1.5 text-xs font-medium ${editViewSignature === 'source' ? 'bg-[#2563eb] text-white' : 'bg-white text-[#6b7280] hover:bg-[#f9fafb]'}`}
-                            >
-                              Code HTML
-                            </button>
-                          </div>
+                        <label className="block text-sm font-medium text-[#374151] mb-1">Signature / fin</label>
+                        <p className="text-xs text-[#6b7280] mb-2">Choisir l&apos;affichage :</p>
+                        <div className="flex gap-2 mb-2">
+                          <button
+                            type="button"
+                            onClick={() => setEditViewSignature('preview')}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-colors ${editViewSignature === 'preview' ? 'bg-[#2563eb] text-white border-[#2563eb]' : 'bg-white text-[#6b7280] border-[#e5e7eb] hover:border-[#d1d5db] hover:bg-[#f9fafb]'}`}
+                          >
+                            Aperçu (texte)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditViewSignature('source')}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-colors ${editViewSignature === 'source' ? 'bg-[#2563eb] text-white border-[#2563eb]' : 'bg-white text-[#6b7280] border-[#e5e7eb] hover:border-[#d1d5db] hover:bg-[#f9fafb]'}`}
+                          >
+                            Code HTML
+                          </button>
                         </div>
                         {editViewSignature === 'preview' ? (
                           <div
@@ -867,23 +1066,26 @@ const AdminAnalytics: React.FC = () => {
                     Envoyer la campagne J+{triggerCampaign === 'j2' ? '2' : triggerCampaign === 'j5' ? '5' : '8'}
                   </h3>
                   <p className="text-sm text-[#6b7280] mt-1">
-                    Confirmez avec votre mot de passe admin pour lancer l&apos;envoi (max 100 e-mails par clic).
+                    Choisissez la taille du lot puis lancez l&apos;envoi.
                   </p>
                   <form onSubmit={handleTriggerCampaign} className="mt-4 space-y-4">
                     <div>
-                      <label htmlFor="trigger-password" className="block text-sm font-medium text-[#374151] mb-1">
-                        Mot de passe admin
+                      <label htmlFor="trigger-limit" className="block text-sm font-medium text-[#374151] mb-1">
+                        Nombre d&apos;e-mails par envoi (tranche)
                       </label>
-                      <input
-                        id="trigger-password"
-                        type="password"
-                        value={triggerPassword}
-                        onChange={(e) => setTriggerPassword(e.target.value)}
-                        className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-[#111827]"
-                        placeholder="Mot de passe"
-                        autoComplete="current-password"
-                        required
-                      />
+                      <select
+                        id="trigger-limit"
+                        value={triggerLimit}
+                        onChange={(e) => setTriggerLimit(Number(e.target.value))}
+                        className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm text-[#111827] bg-white"
+                      >
+                        <option value={20}>20</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                      </select>
+                      <p className="text-xs text-[#6b7280] mt-1">
+                        Resend : max 100/jour. Espacement auto entre chaque e-mail (limite 2 req/s).
+                      </p>
                     </div>
                     {triggerError && (
                       <p className="text-sm text-red-600">{triggerError}</p>

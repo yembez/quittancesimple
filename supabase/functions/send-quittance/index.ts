@@ -596,9 +596,10 @@ Deno.serve(async (req) => {
     const isToTenant = !!locataireEmailRaw || data.action === 'auto_send';
     console.log('📧 [send-quittance] action=', data.action, 'recipient=', recipientEmail?.slice(0, 8) + '…', 'isToTenant=', isToTenant, 'template=', isToTenant ? 'LOCATAIRE' : 'PROPRIETAIRE');
 
-    // Extraire le prénom du propriétaire pour l'email (premier mot du nom complet)
+    // Extraire le prénom du propriétaire pour l'email (premier mot du nom complet) ; vide si inconnu
     const fullName = data.baillorName || data.proprietaireName || '';
-    const prenom = fullName.split(' ')[0].trim() || 'Propriétaire';
+    const prenom = fullName.split(' ')[0].trim() || '';
+    const greeting = prenom ? `Bonjour ${prenom},` : 'Bonjour,';
     // Utiliser le nom complet du locataire pour l'email
     const locataireName = data.locataireName || 'Locataire';
     const loyer = parseFloat(data.loyer) || 0;
@@ -633,7 +634,7 @@ Deno.serve(async (req) => {
     const htmlEmail = buildEmailHtml({
       title: 'Quittance Simple',
       bodyHtml: `
-        <p>Bonjour ${prenom},</p>
+        <p>${greeting}</p>
         <p>Votre quittance de loyer pour la période ${data.periode} est en pièce jointe.</p>
         <p>C’est fait, mais le mois prochain il faudra recommencer… :(</p>
         <p>Ça vous dirait de pouvoir utiliser l'envoi automatique gratuitement ?</p>
@@ -696,7 +697,7 @@ Deno.serve(async (req) => {
       const htmlEmailBailleurCopy = buildEmailHtml({
         title: 'QS- Espace Bailleur',
         bodyHtml: `
-          <p>Bonjour ${prenom},</p>
+          <p>${greeting}</p>
           <p>Ceci est une copie de la quittance de loyer envoyée à <strong>${locataireName}</strong> pour la période <strong>${data.periode}</strong>.</p>
           <ul style="padding-left: 20px;">
             <li>Loyer : ${loyer.toFixed(2)} €</li>

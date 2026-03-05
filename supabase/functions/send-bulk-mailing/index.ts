@@ -25,7 +25,10 @@ function isEmailValidePourMailing(email: string): boolean {
   return e.includes("@") && e.includes(".");
 }
 
-/** Délai entre chaque envoi (ms) pour rester sous 2 req/s Resend. */
+/**
+ * Resend : max 2 requêtes par seconde. On ne peut PAS envoyer 100 e-mails "en bloc" la même seconde :
+ * il faut espacer chaque envoi (au moins 500 ms entre chaque). 800 ms = ~1,25 envoi/s, large sous la limite.
+ */
 const DEFAULT_DELAY_MS = 800;
 /** Limite par défaut pour Resend gratuit (100/jour). */
 const DEFAULT_LIMIT_PER_RUN = 100;
@@ -67,32 +70,56 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  const secret = Deno.env.get("MAILING_LIST_SECRET");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const authHeader = req.headers.get("Authorization");
-  const customHeader = req.headers.get("X-Mailing-List-Secret");
-  const provided = customHeader || (authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null);
-  if (!secret || provided !== secret) {
+  const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : null;
+  const isInternalCall = !!serviceRoleKey && bearerToken === serviceRoleKey;
+
+  let bodyJson: Record<string, unknown>;
+  try {
+    bodyJson = await req.json();
+  } catch {
     return new Response(
-      JSON.stringify({ error: "Non autorisé" }),
-      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: "Body JSON invalide" }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
+
+  if (!isInternalCall) {
+    const secretRaw = Deno.env.get("MAILING_LIST_SECRET");
+    const secret = typeof secretRaw === "string" ? secretRaw.trim() : "";
+    const customHeader = req.headers.get("X-Mailing-List-Secret");
+    const bodySecret = typeof bodyJson._mailingSecret === "string" ? String(bodyJson._mailingSecret).trim() : null;
+    const providedRaw = customHeader || (bearerToken && bearerToken !== serviceRoleKey ? bearerToken : null) || bodySecret;
+    const provided = typeof providedRaw === "string" ? providedRaw.trim() : "";
+    if (!secret) {
+      return new Response(
+        JSON.stringify({
+          error: "Non autorisé (401)",
+          hint: "MAILING_LIST_SECRET n'est pas défini. Supabase → Edge Functions → Secrets → ajoutez MAILING_LIST_SECRET. Ou utilisez le déclenchement depuis l'admin (admin-trigger-campaign envoie avec la Service Role Key).",
+        }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    if (provided !== secret) {
+      return new Response(
+        JSON.stringify({
+          error: "Non autorisé (401)",
+          hint: "Le secret reçu ne correspond pas à MAILING_LIST_SECRET.",
+        }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+  }
+
+  delete bodyJson._mailingSecret;
+  const payload = bodyJson as BulkPayload;
 
   const resendKey = Deno.env.get("RESEND_API_KEY");
   if (!resendKey) {
     return new Response(
       JSON.stringify({ error: "RESEND_API_KEY manquante" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-
-  let payload: BulkPayload;
-  try {
-    payload = await req.json();
-  } catch {
-    return new Response(
-      JSON.stringify({ error: "Body JSON invalide" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
@@ -105,6 +132,7 @@ Deno.serve(async (req: Request) => {
     );
   }
 
+  // Minimum 500 ms entre chaque e-mail pour rester sous 2 req/s Resend (sinon 429 / blocage).
   const delayMs = Math.max(500, payload.delayMs ?? DEFAULT_DELAY_MS);
 
   // Mode test : envoi uniquement aux adresses fournies (pour prévisualiser avant campagne)
@@ -223,24 +251,40 @@ Deno.serve(async (req: Request) => {
       .map((r: { id?: number; email: string; prenom?: string; nom?: string }) => ({
         id: r.id,
         email: r.email,
-        prenom: (r.prenom || "").trim() || "Propriétaire",
+        prenom: (r.prenom || "").trim() || "",
       }));
   }
 
   let sent = 0;
-  const sentIds: number[] = [];
+  const sentIds: (string | number)[] = [];
   const failed: { email: string; error: string }[] = [];
 
   for (let i = 0; i < list.length; i++) {
     const r = list[i];
-    const prenom = (r.prenom || "").trim() || "Propriétaire";
-    const bodyPersonalized = bodyHtml
+    const prenom = (r.prenom || "").trim() || "";
+    let bodyPersonalized = bodyHtml
       .replace(/\{\{\s*prenom\s*\}\}/gi, prenom)
       .replace(/\[\s*Prénom\s*\]/gi, prenom);
+    if (!prenom) bodyPersonalized = bodyPersonalized.replace(/\bBonjour\s+,/gi, "Bonjour,");
 
     const ctaUrlRaw = payload.ctaUrl || "";
     const ctaUrlPersonalized = ctaUrlRaw
       .replace(/\{\{\s*email\s*\}\}/gi, encodeURIComponent(r.email.trim()));
+
+    const segment = payload.segment || "all";
+    const campaignKeyForTracking =
+      segment === "free_leads" || segment === "leads_j2" || segment === "leads_j2_catchup"
+        ? "j2"
+        : segment === "leads_j5"
+          ? "j5"
+          : segment === "leads_j8"
+            ? "j8"
+            : null;
+    const supabaseUrlForTracking = Deno.env.get("SUPABASE_URL");
+    const ctaUrlForEmail =
+      campaignKeyForTracking && ctaUrlPersonalized && supabaseUrlForTracking
+        ? `${supabaseUrlForTracking}/functions/v1/track-cta-click?campaign=${campaignKeyForTracking}&to=${encodeURIComponent(ctaUrlPersonalized)}`
+        : ctaUrlPersonalized || undefined;
 
     const SITE_URL = "https://www.quittancesimple.fr";
     const unsubscribeUrl = `${SITE_URL}/unsubscribe?email=${encodeURIComponent(r.email.trim())}`;
@@ -249,7 +293,7 @@ Deno.serve(async (req: Request) => {
       title: "Quittance Simple",
       bodyHtml: bodyPersonalized,
       ctaText: payload.ctaText,
-      ctaUrl: ctaUrlPersonalized || undefined,
+      ctaUrl: ctaUrlForEmail,
       closingHtml: payload.closingHtml,
       unsubscribeUrl,
     });
@@ -274,7 +318,7 @@ Deno.serve(async (req: Request) => {
         failed.push({ email: r.email, error: `${res.status}: ${errText.slice(0, 200)}` });
       } else {
         sent++;
-        if (!testEmails && typeof r.id === "number") {
+        if (!testEmails && r.id != null) {
           sentIds.push(r.id);
         }
       }

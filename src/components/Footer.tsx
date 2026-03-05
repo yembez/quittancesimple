@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { FileText, Mail, Phone, MapPin, Star, Heart } from 'lucide-react';
+import { FileText, Mail, MapPin, Star, Heart } from 'lucide-react';
 
 const Footer = () => {
   const [isUserConnected, setIsUserConnected] = useState(false);
@@ -18,6 +18,14 @@ const Footer = () => {
       { name: 'Automatisation', path: '/automation' },
       { name: 'Tarifs', path: '/pricing' },
       { name: 'Calculateur prorata', path: '/prorata' }
+    ],
+    guidesBailleurs: [
+      { name: 'Modèle quittance loyer', path: '/modele-quittance-loyer' },
+      { name: 'Exemple quittance loyer', path: '/exemple-quittance-loyer' },
+      { name: 'Quittance loyer CAF', path: '/quittance-loyer-caf' },
+      { name: 'Attestation loyer CAF', path: '/attestation-loyer-caf' },
+      { name: 'Comment faire une quittance', path: '/comment-faire-quittance-loyer' },
+      { name: 'Quittance loyer obligatoire', path: '/quittance-loyer-obligatoire' }
     ],
     resources: [
       { name: 'Quittance PDF gratuit', path: '/quittance-loyer-pdf-gratuit' },
@@ -42,7 +50,7 @@ const Footer = () => {
     <footer className="bg-[#2c3444] text-white">
       <div className="max-w-7xl mx-auto px-5 lg:px-7 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-10">
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-1">
             <Link to="/" className="flex items-center space-x-2 mb-5">
               <div className="w-8 h-8 bg-[#E65F3F] rounded-lg flex items-center justify-center shadow-lg">
                 <FileText className="w-4 h-4 text-white" />
@@ -88,6 +96,22 @@ const Footer = () => {
             <h3 className="text-sm font-bold mb-3 text-white uppercase tracking-wide">Produit</h3>
             <ul className="space-y-2">
               {footerLinks.product.map((link, index) => (
+                <li key={index}>
+                  <Link
+                    to={link.path}
+                    className="text-sm text-gray-300 hover:text-white transition-colors"
+                  >
+                    {link.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-bold mb-3 text-white uppercase tracking-wide">Guides bailleurs</h3>
+            <ul className="space-y-2">
+              {footerLinks.guidesBailleurs.map((link, index) => (
                 <li key={index}>
                   <Link
                     to={link.path}

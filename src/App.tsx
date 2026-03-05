@@ -63,6 +63,16 @@ import SignatureSignPage from './pages/SignatureSignPage';
 import BailSignatureValidationPage from './pages/BailSignatureValidationPage';
 import BailSignatureFlowPage from './pages/BailSignatureFlowPage';
 import EspaceBailleurLayout from './layouts/EspaceBailleurLayout';
+import ModeleQuittanceLoyerPage from './pages/seo/ModeleQuittanceLoyerPage';
+import QuittanceLoyerPdfPage from './pages/seo/QuittanceLoyerPdfPage';
+import GenerateurQuittanceLoyerPage from './pages/seo/GenerateurQuittanceLoyerPage';
+import ExempleQuittanceLoyerPage from './pages/seo/ExempleQuittanceLoyerPage';
+import QuittanceLoyerCafPage from './pages/seo/QuittanceLoyerCafPage';
+import AttestationLoyerCafPage from './pages/seo/AttestationLoyerCafPage';
+import QuittanceLoyerParticulierPage from './pages/seo/QuittanceLoyerParticulierPage';
+import QuittanceLoyerObligatoirePage from './pages/seo/QuittanceLoyerObligatoirePage';
+import CommentFaireQuittanceLoyerPage from './pages/seo/CommentFaireQuittanceLoyerPage';
+import QuittanceLoyerModeleGratuitPage from './pages/seo/QuittanceLoyerModeleGratuitPage';
 
 // Component to scroll to top on route change
 function ScrollToTop() {
@@ -132,7 +142,7 @@ function App() {
 
   const noLayoutPages = ['/billing', '/owner-confirmation', '/quick-confirm', '/quick-payment-confirm', '/sms-confirm', '/confirmation', '/quittance-success', '/payment-success', '/payment-cancelled', '/set-password', '/bail', '/bail-meuble', '/sign'];
   const noFooterPages = ['/billing', '/owner-confirmation', '/quick-confirm', '/quick-payment-confirm', '/sms-confirm', '/confirmation', '/dashboard', '/overview', '/free-dashboard', '/manage-subscription', '/historique', '/revision-irl', '/quittance-success', '/payment-success', '/payment-cancelled', '/set-password', '/bail', '/bail-meuble', '/documents', '/annonce-generator', '/etat-des-lieux', '/sign', '/dashboard/baux'];
-  const formPages = ['/generator', '/generateur-quittance-loyer'];
+  const formPages = ['/generator'];
 
   const userSpacePages = ['/dashboard', '/overview', '/free-dashboard', '/manage-subscription', '/historique', '/revision-irl', '/billing', '/documents', '/bail', '/bail-meuble', '/annonce-generator', '/etat-des-lieux', '/dashboard/baux'];
   const isUserSpacePage = userSpacePages.some(
@@ -173,7 +183,7 @@ function App() {
           <Route path="/version2" element={<HomeVersion2 />} />
           <Route path="/version3" element={<HomeVersion3 />} />
           <Route path="/generator" element={<Generator />} />
-          <Route path="/generateur-quittance-loyer" element={<Generator />} />
+          <Route path="/generateur-quittance-loyer" element={<GenerateurQuittanceLoyerPage />} />
           <Route path="/automation" element={<Automation />} />
           <Route path="/automation-setup" element={<AutomationSetup />} />
           <Route path="/automation-plus-setup" element={<AutomationPlusSetup />} />
@@ -190,8 +200,16 @@ function App() {
           <Route path="/quittance-loyer-meuble" element={<QuittanceLoyerMeuble />} />
           <Route path="/location-meublee-quittance" element={<QuittanceLoyerMeuble />} />
           <Route path="/modele-quittance-loyer-gratuit" element={<ModeleQuittanceLoyer />} />
-          <Route path="/modele-quittance-loyer" element={<ModeleQuittanceLoyer />} />
+          <Route path="/modele-quittance-loyer" element={<ModeleQuittanceLoyerPage />} />
           <Route path="/template-quittance-gratuit" element={<ModeleQuittanceLoyer />} />
+          <Route path="/quittance-loyer-pdf" element={<QuittanceLoyerPdfPage />} />
+          <Route path="/exemple-quittance-loyer" element={<ExempleQuittanceLoyerPage />} />
+          <Route path="/quittance-loyer-caf" element={<QuittanceLoyerCafPage />} />
+          <Route path="/attestation-loyer-caf" element={<AttestationLoyerCafPage />} />
+          <Route path="/quittance-loyer-particulier" element={<QuittanceLoyerParticulierPage />} />
+          <Route path="/quittance-loyer-obligatoire" element={<QuittanceLoyerObligatoirePage />} />
+          <Route path="/comment-faire-quittance-loyer" element={<CommentFaireQuittanceLoyerPage />} />
+          <Route path="/quittance-loyer-modele-gratuit" element={<QuittanceLoyerModeleGratuitPage />} />
           <Route path="/modele-quittance-word" element={<ModeleQuittanceWord />} />
           <Route path="/modele-quittance-excel" element={<ModeleQuittanceExcel />} />
           <Route path="/automatisation-envoi-quittances" element={<AutomatisationEnvoi />} />

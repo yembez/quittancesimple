@@ -171,8 +171,8 @@ Pour envoyer un même e-mail à tous les contacts valides **sans surcharger Rese
 
 ### Limites Resend (gratuit)
 
-- **100 e-mails / jour** (transactionnel)
-- **2 requêtes / seconde** → la fonction décale chaque envoi (défaut 800 ms entre chaque)
+- **100 e-mails / jour** (transactionnel).
+- **2 requêtes / seconde** : on ne peut pas envoyer 100 e-mails « en bloc » la même seconde. Resend bloquerait (erreur 429). La fonction **espace donc chaque envoi** : par défaut **800 ms entre chaque mail** (~1,25 envoi/s), soit environ **1 min 20 s** pour 100 e-mails.
 
 ### Déploiement
 
@@ -351,7 +351,22 @@ La page **`/admin/analytics`** (protégée par mot de passe admin) affiche :
 
 Pour **déclencher l’envoi J+2** depuis l’admin : cliquer sur « Envoyer la campagne J+2 », saisir le mot de passe admin dans le modal, valider. L’envoi est limité à **100 e-mails par clic** (limite Resend) ; relancer après rafraîchissement pour envoyer les suivants.
 
+**Qui a reçu les e-mails :**  
+Après chaque envoi, les destinataires sont enregistrés en base (`campaign_j2_sent_at`, `campaign_j5_sent_at`, `campaign_j8_sent_at` sur `proprietaires`). La section **« Destinataires ayant reçu les e-mails »** dans l’admin affiche la liste par campagne (avec export CSV). Cliquer sur **Rafraîchir** pour voir les derniers envois.
+
+**Suivi des clics sur le CTA :**  
+Les liens CTA des e-mails de campagne passent par la fonction **`track-cta-click`** : au clic, un enregistrement est créé dans la table **`campaign_cta_clicks`** (campagne + date), puis l’utilisateur est redirigé vers la destination réelle. Dans l’admin, la section **« Clics sur le CTA des e-mails »** affiche le nombre de clics par campagne (J+2, J+5, J+8). Déployer **`track-cta-click`** et la migration **`20260228000000_create_campaign_cta_clicks.sql`**, ainsi que **`get-campaign-cta-stats`** pour afficher les stats.
+
+**Rattraper les envois déjà faits via Resend (CSV) :**  
+Si des e-mails campagne J+2 ont été envoyés avant la correction du suivi en base, tu peux exporter la liste des e-mails envoyés depuis Resend (Dashboard → Emails → Export CSV), puis générer le SQL de mise à jour :
+
+```bash
+node scripts/sync-campaign-from-resend-csv.mjs /chemin/vers/emails-sent-xxx.csv > docs/update_campaign_j2_from_resend.sql
+```
+
+Ouvre `docs/update_campaign_j2_from_resend.sql` et exécute son contenu dans Supabase → SQL Editor. Cela met à jour `campaign_j2_sent_at` pour chaque destinataire dont le sujet contient « Votre Espace Bailleur est prêt ». Pour J+5/J+8, adapter les marqueurs de sujet dans le script si besoin.
+
 **Prérequis :**
 
-- Déployer la fonction Edge **`admin-trigger-campaign`**.
-- Dans Supabase (Edge Functions → Secrets), définir **`ADMIN_ANALYTICS_PASSWORD`** (même mot de passe que pour la connexion à la page Admin Analytics). La fonction vérifie ce mot de passe avant d’appeler `send-bulk-mailing` avec le secret **`MAILING_LIST_SECRET`** (jamais exposé au front).
+- Déployer les fonctions Edge **`admin-trigger-campaign`**, **`track-cta-click`**, **`get-campaign-cta-stats`**.
+- Dans Supabase (Edge Functions → Secrets), définir **`ADMIN_ANALYTICS_PASSWORD`** (même mot de passe que pour la connexion à la page Admin Analytics).
