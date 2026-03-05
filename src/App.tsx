@@ -49,6 +49,7 @@ import RevisionIRL from './pages/RevisionIRL';
 import FreeSignup from './pages/FreeSignup';
 import Admin from './pages/Admin';
 import AdminLeads from './pages/AdminLeads';
+import AdminAnalytics from './pages/AdminAnalytics';
 import QuittanceSuccess from './pages/QuittanceSuccess';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentCancelled from './pages/PaymentCancelled';
@@ -241,6 +242,7 @@ function App() {
           <Route path="/payment-cancelled" element={<PaymentCancelled />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/leads" element={<AdminLeads />} />
+          <Route path="/admin/analytics" element={<AdminAnalytics />} />
         </Routes>
       </main>
       {shouldShowFooter && <Footer />}
