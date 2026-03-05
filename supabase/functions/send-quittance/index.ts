@@ -634,10 +634,10 @@ Deno.serve(async (req) => {
       title: 'Quittance Simple',
       bodyHtml: `
         <p>Bonjour ${prenom},</p>
-        <p>Votre quittance de loyer pour la période <strong>${data.periode}</strong> est en pièce jointe.</p>
+        <p>Votre quittance de loyer pour la période ${data.periode} est en pièce jointe.</p>
         <p>C’est fait, mais le mois prochain il faudra recommencer… :(</p>
         <p>Ça vous dirait de pouvoir utiliser l'envoi automatique gratuitement ?</p>
-        <p><strong>Bonne nouvelle !</strong> Vous pouvez profiter sereinement et gratuitement du Pack Automatique et de votre Espace Bailleur. On vous ouvre l’accès, et le bonus : vos infos et celles du locataire sont déjà pré-configurées&nbsp;!</p>
+        <p>Bonne nouvelle ! Vous pouvez profiter sereinement et <strong>gratuitement</strong> du Pack Automatique et de votre Espace Bailleur. On vous ouvre l’accès, et le bonus : vos infos et celles du locataire sont déjà pré-configurées&nbsp;!</p>
         <p>En quelques secondes vous programmez votre envoi automatique de quittances.</p>
         <p>C'est aussi l'occasion idéale pour tester tranquillement :</p>
         <ul style="padding-left: 20px; margin-top: 8px; margin-bottom: 8px;">
