@@ -2,8 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { CheckCircle, Mail } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
 
 const Unsubscribe = () => {
   const [searchParams] = useSearchParams();
@@ -41,7 +39,7 @@ const Unsubscribe = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const email = formEmail.trim();
+    const email = (formEmail || emailFromUrl).trim();
     if (!email || !email.includes('@')) {
       setMessage('Veuillez entrer une adresse e-mail valide.');
       setStatus('error');
@@ -69,10 +67,8 @@ const Unsubscribe = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#faf9fc] flex flex-col">
-      <Header />
-      <main className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md bg-white rounded-xl shadow-sm border border-[#e8e7ef] p-8">
+    <div className="min-h-screen bg-[#faf9fc] flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md bg-white rounded-xl shadow-sm border border-[#e8e7ef] p-8">
           <h1 className="text-xl font-bold text-[#1e3a5f] mb-6 text-center">
             Désabonnement des communications
           </h1>
@@ -128,8 +124,6 @@ const Unsubscribe = () => {
             </form>
           )}
         </div>
-      </main>
-      <Footer />
     </div>
   );
 };
