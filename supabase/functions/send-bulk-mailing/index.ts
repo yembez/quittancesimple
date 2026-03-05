@@ -49,7 +49,7 @@ interface BulkPayload {
   offset?: number;
   /** Délai en ms entre chaque envoi (défaut 800). */
   delayMs?: number;
-  /** Segment: all | leads | leads_j2 | leads_j2_catchup | leads_j5 | leads_j8 (défaut all). */
+  /** Segment: all | leads | free_leads | leads_j2 | leads_j2_catchup | leads_j5 | leads_j8 (défaut all). */
   segment?: string;
   /** Envoi test : envoie uniquement à ces adresses (pas de liste BDD). Max 5. */
   testEmails?: string[];
@@ -143,8 +143,13 @@ Deno.serve(async (req: Request) => {
 
     let daysOffset: number | null = null;
     let isCatchupJ2 = false;
+    let isFreeLeads = false;
     let campaignField: "campaign_j2_sent_at" | "campaign_j5_sent_at" | "campaign_j8_sent_at" | null = null;
-    if (segment === "leads_j2") {
+    if (segment === "free_leads") {
+      // Free leads = tous les valid emails qui ont généré au moins une quittance (nombre_quittances >= 1)
+      isFreeLeads = true;
+      campaignField = "campaign_j2_sent_at";
+    } else if (segment === "leads_j2") {
       daysOffset = 2;
       campaignField = "campaign_j2_sent_at";
     } else if (segment === "leads_j2_catchup") {
@@ -162,17 +167,21 @@ Deno.serve(async (req: Request) => {
 
     let query = supabase
       .from("proprietaires")
-      .select("id, email, nom, prenom, created_at, lead_statut, campaign_j2_sent_at, campaign_j5_sent_at, campaign_j8_sent_at")
+      .select("id, email, nom, prenom, created_at, lead_statut, nombre_quittances, campaign_j2_sent_at, campaign_j5_sent_at, campaign_j8_sent_at")
       .not("email", "is", null)
       .not("email", "ilike", "%" + DOMAINE_TEST + "%")
       .or("mailing_desabonne.is.null,mailing_desabonne.eq.false")
       .order("created_at", { ascending: true });
 
-    if (segment === "leads" || segment.startsWith("leads_")) {
+    if (segment === "free_leads") {
+      query = query.gte("nombre_quittances", 1).is("campaign_j2_sent_at", null);
+    } else if (segment === "leads" || segment.startsWith("leads_")) {
       query = query.eq("lead_statut", "free_quittance_pdf");
     }
 
-    if (daysOffset !== null && campaignField) {
+    if (isFreeLeads) {
+      // Rien de plus : déjà filtré par nombre_quittances >= 1 et campaign_j2_sent_at IS NULL
+    } else if (daysOffset !== null && campaignField) {
       const targetStart = new Date(todayUtc);
       targetStart.setUTCDate(targetStart.getUTCDate() - daysOffset);
       const targetEnd = new Date(targetStart);
@@ -286,9 +295,10 @@ Deno.serve(async (req: Request) => {
       const supabase = createClient(supabaseUrl, serviceKey);
       const segment = payload.segment || "all";
       let field: string | null = null;
-      if (segment === "leads_j2") field = "campaign_j2_sent_at";
+      if (segment === "free_leads" || segment === "leads_j2") field = "campaign_j2_sent_at";
       if (segment === "leads_j5") field = "campaign_j5_sent_at";
       if (segment === "leads_j8") field = "campaign_j8_sent_at";
+      if (segment === "leads_j2_catchup") field = "campaign_j2_sent_at";
 
       if (field) {
         const updatePayload: Record<string, string> = {};

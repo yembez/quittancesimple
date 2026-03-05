@@ -22,6 +22,9 @@ export interface LeadSegment {
   segment: SegmentType;
   days_since_signup: number;
   device_type?: string | null;
+  campaign_j2_sent_at?: string | null;
+  campaign_j5_sent_at?: string | null;
+  campaign_j8_sent_at?: string | null;
 }
 
 export interface ProprietaireRow {
@@ -33,6 +36,9 @@ export interface ProprietaireRow {
   nombre_quittances?: number | null;
   lead_statut?: string | null;
   device_type?: string | null;
+  campaign_j2_sent_at?: string | null;
+  campaign_j5_sent_at?: string | null;
+  campaign_j8_sent_at?: string | null;
 }
 
 export interface AnalyzeLeadsResult {
@@ -180,6 +186,9 @@ export function analyzeLeads(proprietaires: ProprietaireRow[]): AnalyzeLeadsResu
       segment,
       days_since_signup: daysSince,
       device_type: p.device_type ?? null,
+      campaign_j2_sent_at: p.campaign_j2_sent_at ?? null,
+      campaign_j5_sent_at: p.campaign_j5_sent_at ?? null,
+      campaign_j8_sent_at: p.campaign_j8_sent_at ?? null,
     };
 
     if (segment === 'invalid') {

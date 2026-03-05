@@ -337,3 +337,21 @@ ORDER BY p.date_inscription DESC;
 ```
 
 Après déploiement de la migration et de la fonction **`send-welcome-email`** (mise à jour pour renseigner `welcome_email_sent_at`), les nouveaux comptes essai gratuit auront cette trace, et la jointure ci-dessus te donnera welcome email + origine pour chaque lead.
+
+---
+
+## 9. Admin Analytics : visu campagnes et déclenchement
+
+La page **`/admin/analytics`** (protégée par mot de passe admin) affiche :
+
+- Les stats et segments (hot, warm, cold, inactive).
+- Une section **Campagnes email (Free Leads)** avec une carte par étape :
+  - **J+2** — Premier email (« Votre Espace Bailleur est prêt ») : nombre en attente / déjà envoyés, bouton **Envoyer la campagne J+2**.
+  - **J+5** et **J+8** — Contenu à venir, boutons désactivés.
+
+Pour **déclencher l’envoi J+2** depuis l’admin : cliquer sur « Envoyer la campagne J+2 », saisir le mot de passe admin dans le modal, valider. L’envoi est limité à **100 e-mails par clic** (limite Resend) ; relancer après rafraîchissement pour envoyer les suivants.
+
+**Prérequis :**
+
+- Déployer la fonction Edge **`admin-trigger-campaign`**.
+- Dans Supabase (Edge Functions → Secrets), définir **`ADMIN_ANALYTICS_PASSWORD`** (même mot de passe que pour la connexion à la page Admin Analytics). La fonction vérifie ce mot de passe avant d’appeler `send-bulk-mailing` avec le secret **`MAILING_LIST_SECRET`** (jamais exposé au front).

@@ -37,6 +37,12 @@ const AdminAnalytics: React.FC = () => {
   const [error, setError] = useState<string>('');
   const [result, setResult] = useState<AnalyzeLeadsResult | null>(null);
   const [segmentFilter, setSegmentFilter] = useState<string>('all');
+  const [showTriggerModal, setShowTriggerModal] = useState(false);
+  const [triggerCampaign, setTriggerCampaign] = useState<'j2' | 'j5' | 'j8' | null>(null);
+  const [triggerPassword, setTriggerPassword] = useState('');
+  const [triggerLoading, setTriggerLoading] = useState(false);
+  const [triggerError, setTriggerError] = useState<string>('');
+  const [triggerResult, setTriggerResult] = useState<{ sent?: number; message?: string } | null>(null);
 
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +63,7 @@ const AdminAnalytics: React.FC = () => {
     try {
       const { data, error: err } = await supabase
         .from('proprietaires')
-        .select('id, email, nom, prenom, created_at, nombre_quittances, device_type')
+        .select('id, email, nom, prenom, created_at, nombre_quittances, device_type, campaign_j2_sent_at, campaign_j5_sent_at, campaign_j8_sent_at')
         .order('created_at', { ascending: false });
 
       if (err) {
@@ -89,6 +95,52 @@ const AdminAnalytics: React.FC = () => {
   const handleExportHot = () => {
     if (!result) return;
     exportSegmentToCSV(result.segments.hot, 'hot');
+  };
+
+  const freeLeadsWithQuittances = result
+    ? result.validLeads.filter((l) => l.nombre_quittances >= 1)
+    : [];
+  const pendingJ2 = freeLeadsWithQuittances.filter((l) => !l.campaign_j2_sent_at).length;
+  const sentJ2 = freeLeadsWithQuittances.filter((l) => !!l.campaign_j2_sent_at).length;
+  const pendingJ5 = freeLeadsWithQuittances.filter((l) => !l.campaign_j5_sent_at).length;
+  const sentJ5 = freeLeadsWithQuittances.filter((l) => !!l.campaign_j5_sent_at).length;
+  const pendingJ8 = freeLeadsWithQuittances.filter((l) => !l.campaign_j8_sent_at).length;
+  const sentJ8 = freeLeadsWithQuittances.filter((l) => !!l.campaign_j8_sent_at).length;
+
+  const openTriggerModal = (campaign: 'j2' | 'j5' | 'j8') => {
+    setTriggerCampaign(campaign);
+    setTriggerPassword('');
+    setTriggerError('');
+    setTriggerResult(null);
+    setShowTriggerModal(true);
+  };
+
+  const handleTriggerCampaign = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!triggerCampaign) return;
+    setTriggerLoading(true);
+    setTriggerError('');
+    setTriggerResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-trigger-campaign', {
+        body: { adminPassword: triggerPassword, campaign: triggerCampaign },
+      });
+      if (error) {
+        setTriggerError(error.message || 'Erreur inconnue');
+        return;
+      }
+      if (data?.error) {
+        setTriggerError(data.error);
+        return;
+      }
+      setTriggerResult({ sent: data?.sent, message: data?.message });
+      setTriggerPassword('');
+      fetchAndAnalyze();
+    } catch (err) {
+      setTriggerError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setTriggerLoading(false);
+    }
   };
 
   const filteredTableLeads = (): LeadSegment[] => {
@@ -319,6 +371,64 @@ const AdminAnalytics: React.FC = () => {
               </p>
             </div>
 
+            {/* Campagnes email */}
+            <div className="bg-white rounded-xl shadow-sm border border-[#e5e7eb] overflow-hidden">
+              <div className="p-4 border-b border-[#e5e7eb]">
+                <h2 className="text-lg font-semibold text-[#111827]">Campagnes email (Free Leads)</h2>
+                <p className="text-sm text-[#6b7280] mt-1">
+                  Premier email = J+2. Déclenchez l&apos;envoi depuis ici (limite 100/envoi, relancer pour la suite).
+                </p>
+              </div>
+              <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="border border-[#e5e7eb] rounded-lg p-4 bg-orange-50/50">
+                  <p className="font-semibold text-[#111827]">J+2 — Premier email</p>
+                  <p className="text-sm text-[#6b7280] mt-1">« Votre Espace Bailleur est prêt »</p>
+                  <p className="text-sm mt-2">
+                    <span className="text-green-700 font-medium">{pendingJ2} en attente</span>
+                    {sentJ2 > 0 && <span className="text-[#6b7280]"> · {sentJ2} déjà envoyé(s)</span>}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => openTriggerModal('j2')}
+                    disabled={pendingJ2 === 0}
+                    className="mt-3 w-full py-2 rounded-lg bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Envoyer la campagne J+2
+                  </button>
+                </div>
+                <div className="border border-[#e5e7eb] rounded-lg p-4 bg-amber-50/50">
+                  <p className="font-semibold text-[#111827]">J+5</p>
+                  <p className="text-sm text-[#6b7280] mt-1">Contenu à venir</p>
+                  <p className="text-sm mt-2">
+                    <span className="text-[#6b7280]">{pendingJ5} en attente</span>
+                    {sentJ5 > 0 && <span> · {sentJ5} envoyé(s)</span>}
+                  </p>
+                  <button
+                    type="button"
+                    disabled
+                    className="mt-3 w-full py-2 rounded-lg bg-gray-300 text-gray-500 text-sm font-medium cursor-not-allowed"
+                  >
+                    Bientôt disponible
+                  </button>
+                </div>
+                <div className="border border-[#e5e7eb] rounded-lg p-4 bg-sky-50/50">
+                  <p className="font-semibold text-[#111827]">J+8</p>
+                  <p className="text-sm text-[#6b7280] mt-1">Contenu à venir</p>
+                  <p className="text-sm mt-2">
+                    <span className="text-[#6b7280]">{pendingJ8} en attente</span>
+                    {sentJ8 > 0 && <span> · {sentJ8} envoyé(s)</span>}
+                  </p>
+                  <button
+                    type="button"
+                    disabled
+                    className="mt-3 w-full py-2 rounded-lg bg-gray-300 text-gray-500 text-sm font-medium cursor-not-allowed"
+                  >
+                    Bientôt disponible
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {/* Actions Rapides */}
             <div className="flex flex-wrap gap-3">
               <button
@@ -384,6 +494,62 @@ const AdminAnalytics: React.FC = () => {
                 pour tout voir.
               </p>
             </div>
+
+            {/* Modal déclenchement campagne */}
+            {showTriggerModal && triggerCampaign && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true">
+                <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6">
+                  <h3 className="text-lg font-semibold text-[#111827]">
+                    Envoyer la campagne J+{triggerCampaign === 'j2' ? '2' : triggerCampaign === 'j5' ? '5' : '8'}
+                  </h3>
+                  <p className="text-sm text-[#6b7280] mt-1">
+                    Confirmez avec votre mot de passe admin pour lancer l&apos;envoi (max 100 e-mails par clic).
+                  </p>
+                  <form onSubmit={handleTriggerCampaign} className="mt-4 space-y-4">
+                    <div>
+                      <label htmlFor="trigger-password" className="block text-sm font-medium text-[#374151] mb-1">
+                        Mot de passe admin
+                      </label>
+                      <input
+                        id="trigger-password"
+                        type="password"
+                        value={triggerPassword}
+                        onChange={(e) => setTriggerPassword(e.target.value)}
+                        className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-[#111827]"
+                        placeholder="Mot de passe"
+                        autoComplete="current-password"
+                        required
+                      />
+                    </div>
+                    {triggerError && (
+                      <p className="text-sm text-red-600">{triggerError}</p>
+                    )}
+                    {triggerResult && (
+                      <p className="text-sm text-green-700">
+                        {triggerResult.sent != null && `${triggerResult.sent} e-mail(s) envoyé(s). `}
+                        {triggerResult.message}
+                      </p>
+                    )}
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        type="button"
+                        onClick={() => { setShowTriggerModal(false); setTriggerCampaign(null); setTriggerResult(null); }}
+                        className="px-4 py-2 rounded-lg border border-[#e5e7eb] text-[#374151] hover:bg-[#f9fafb]"
+                      >
+                        Annuler
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={triggerLoading}
+                        className="px-4 py-2 rounded-lg bg-orange-500 text-white font-medium hover:bg-orange-600 disabled:opacity-60"
+                      >
+                        {triggerLoading ? 'Envoi en cours…' : 'Envoyer'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </>
         ) : null}
       </div>
