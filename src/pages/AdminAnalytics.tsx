@@ -19,11 +19,37 @@ const SEGMENT_LABELS: Record<string, string> = {
 const TABLE_LIMIT = 50;
 const PRIX_MENSUEL = 9.9;
 
+const ADMIN_ANALYTICS_STORAGE_KEY = 'admin_analytics_auth';
+const ADMIN_LOGIN = 'yem';
+const ADMIN_PASSWORD = 'Lucie2007!';
+
+function getStoredAuth(): boolean {
+  if (typeof sessionStorage === 'undefined') return false;
+  return sessionStorage.getItem(ADMIN_ANALYTICS_STORAGE_KEY) === '1';
+}
+
 const AdminAnalytics: React.FC = () => {
+  const [authenticated, setAuthenticated] = useState<boolean>(getStoredAuth);
+  const [loginValue, setLoginValue] = useState('');
+  const [passwordValue, setPasswordValue] = useState('');
+  const [loginError, setLoginError] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [result, setResult] = useState<AnalyzeLeadsResult | null>(null);
   const [segmentFilter, setSegmentFilter] = useState<string>('all');
+
+  const handleAdminLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError('');
+    const login = (loginValue || '').trim();
+    const password = passwordValue || '';
+    if (login === ADMIN_LOGIN && password === ADMIN_PASSWORD) {
+      sessionStorage.setItem(ADMIN_ANALYTICS_STORAGE_KEY, '1');
+      setAuthenticated(true);
+    } else {
+      setLoginError('Identifiants incorrects.');
+    }
+  };
 
   const fetchAndAnalyze = useCallback(async () => {
     setLoading(true);
@@ -52,8 +78,8 @@ const AdminAnalytics: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    fetchAndAnalyze();
-  }, [fetchAndAnalyze]);
+    if (authenticated) fetchAndAnalyze();
+  }, [authenticated, fetchAndAnalyze]);
 
   const handleExportAllValid = () => {
     if (!result) return;
@@ -97,6 +123,56 @@ const AdminAnalytics: React.FC = () => {
       result.segments.cold.length * 0.15) *
       PRIX_MENSUEL;
 
+  if (!authenticated) {
+    return (
+      <div className="min-h-screen bg-[#f3f4f6] flex flex-col items-center justify-center px-4 py-8">
+        <div className="w-full max-w-sm bg-white rounded-xl shadow-md border border-[#e5e7eb] p-6">
+          <h1 className="text-xl font-semibold text-[#111827] mb-1">Admin Analytics</h1>
+          <p className="text-sm text-[#6b7280] mb-4">Connexion réservée à l&apos;administrateur.</p>
+          <form onSubmit={handleAdminLogin} className="space-y-4">
+            <div>
+              <label htmlFor="admin-login" className="block text-sm font-medium text-[#374151] mb-1">
+                Identifiant
+              </label>
+              <input
+                id="admin-login"
+                type="text"
+                value={loginValue}
+                onChange={(e) => setLoginValue(e.target.value)}
+                className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-[#111827] focus:ring-2 focus:ring-[#2563eb] focus:border-[#2563eb]"
+                placeholder="Identifiant"
+                autoComplete="username"
+              />
+            </div>
+            <div>
+              <label htmlFor="admin-password" className="block text-sm font-medium text-[#374151] mb-1">
+                Mot de passe
+              </label>
+              <input
+                id="admin-password"
+                type="password"
+                value={passwordValue}
+                onChange={(e) => setPasswordValue(e.target.value)}
+                className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-[#111827] focus:ring-2 focus:ring-[#2563eb] focus:border-[#2563eb]"
+                placeholder="Mot de passe"
+                autoComplete="current-password"
+              />
+            </div>
+            {loginError && (
+              <p className="text-sm text-red-600">{loginError}</p>
+            )}
+            <button
+              type="submit"
+              className="w-full py-2 rounded-lg bg-[#2563eb] text-white font-medium hover:bg-[#1d4ed8] transition-colors"
+            >
+              Se connecter
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f3f4f6] flex flex-col items-center px-4 py-8 md:py-10">
       <div className="w-full max-w-6xl space-y-8">
@@ -108,13 +184,25 @@ const AdminAnalytics: React.FC = () => {
             </h1>
             <p className="text-sm text-[#6b7280] mt-1">Analyse en temps réel</p>
           </div>
-          <button
-            onClick={fetchAndAnalyze}
-            disabled={loading}
-            className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium bg-[#2563eb] text-white hover:bg-[#1d4ed8] disabled:opacity-60 transition-colors"
-          >
-            Rafraîchir
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={fetchAndAnalyze}
+              disabled={loading}
+              className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium bg-[#2563eb] text-white hover:bg-[#1d4ed8] disabled:opacity-60 transition-colors"
+            >
+              Rafraîchir
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                sessionStorage.removeItem(ADMIN_ANALYTICS_STORAGE_KEY);
+                setAuthenticated(false);
+              }}
+              className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium bg-[#6b7280] text-white hover:bg-[#4b5563] transition-colors"
+            >
+              Se déconnecter
+            </button>
+          </div>
         </div>
 
         {error && (
