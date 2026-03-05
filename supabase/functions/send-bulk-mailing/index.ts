@@ -41,6 +41,8 @@ interface BulkPayload {
   bodyHtml: string;
   ctaText?: string;
   ctaUrl?: string;
+  /** Signature personnalisée (HTML), insérée après le CTA. */
+  closingHtml?: string;
   /** Nombre max d'e-mails à envoyer dans cette exécution (défaut 100). */
   limit?: number;
   /** Décalage dans la liste (pour envoi sur plusieurs jours). */
@@ -239,6 +241,7 @@ Deno.serve(async (req: Request) => {
       bodyHtml: bodyPersonalized,
       ctaText: payload.ctaText,
       ctaUrl: ctaUrlPersonalized || undefined,
+      closingHtml: payload.closingHtml,
       unsubscribeUrl,
     });
 
