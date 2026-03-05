@@ -14,11 +14,13 @@ const EMAILS_TEST = new Set([
   "2speek@gmail.com",
 ]);
 const DOMAINE_TEST = "@maildrop.cc";
+const PREFIX_TEST = "2speek";
 
 function isEmailValidePourMailing(email: string): boolean {
   if (!email || typeof email !== "string") return false;
   const e = email.trim().toLowerCase();
   if (e.endsWith(DOMAINE_TEST)) return false;
+  if (e.startsWith(PREFIX_TEST)) return false;
   if (EMAILS_TEST.has(e)) return false;
   return e.includes("@") && e.includes(".");
 }
@@ -45,7 +47,7 @@ interface BulkPayload {
   offset?: number;
   /** Délai en ms entre chaque envoi (défaut 800). */
   delayMs?: number;
-  /** Segment: all | leads (défaut all). */
+  /** Segment: all | leads | leads_j2 | leads_j2_catchup | leads_j5 | leads_j8 (défaut all). */
   segment?: string;
   /** Envoi test : envoie uniquement à ces adresses (pas de liste BDD). Max 5. */
   testEmails?: string[];
@@ -113,7 +115,7 @@ Deno.serve(async (req: Request) => {
           .filter((e) => e && e.includes("@"))
       : null;
 
-  let list: { email: string; prenom?: string }[];
+  let list: { id?: number; email: string; prenom?: string }[];
   let runOffset = 0;
 
   if (testEmails && testEmails.length > 0) {
@@ -134,16 +136,58 @@ Deno.serve(async (req: Request) => {
 
     const supabase = createClient(supabaseUrl, serviceKey);
 
+    const today = new Date();
+    const todayUtc = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+
+    let daysOffset: number | null = null;
+    let isCatchupJ2 = false;
+    let campaignField: "campaign_j2_sent_at" | "campaign_j5_sent_at" | "campaign_j8_sent_at" | null = null;
+    if (segment === "leads_j2") {
+      daysOffset = 2;
+      campaignField = "campaign_j2_sent_at";
+    } else if (segment === "leads_j2_catchup") {
+      // Envoi exceptionnel : tous les leads gratuits créés AVANT J-2 et qui n'ont jamais reçu J+2
+      daysOffset = 2;
+      campaignField = "campaign_j2_sent_at";
+      isCatchupJ2 = true;
+    } else if (segment === "leads_j5") {
+      daysOffset = 5;
+      campaignField = "campaign_j5_sent_at";
+    } else if (segment === "leads_j8") {
+      daysOffset = 8;
+      campaignField = "campaign_j8_sent_at";
+    }
+
     let query = supabase
       .from("proprietaires")
-      .select("id, email, nom, prenom")
+      .select("id, email, nom, prenom, created_at, lead_statut, campaign_j2_sent_at, campaign_j5_sent_at, campaign_j8_sent_at")
       .not("email", "is", null)
       .not("email", "ilike", "%" + DOMAINE_TEST + "%")
       .or("mailing_desabonne.is.null,mailing_desabonne.eq.false")
       .order("created_at", { ascending: true });
 
-    if (segment === "leads") {
+    if (segment === "leads" || segment.startsWith("leads_")) {
       query = query.eq("lead_statut", "free_quittance_pdf");
+    }
+
+    if (daysOffset !== null && campaignField) {
+      const targetStart = new Date(todayUtc);
+      targetStart.setUTCDate(targetStart.getUTCDate() - daysOffset);
+      const targetEnd = new Date(targetStart);
+      targetEnd.setUTCDate(targetEnd.getUTCDate() + 1);
+
+      if (isCatchupJ2 && segment === "leads_j2_catchup") {
+        // Cas rattrapage : tous les leads gratuits créés AVANT J-2 et qui n'ont pas encore reçu J+2
+        query = query
+          .lt("created_at", targetStart.toISOString())
+          .is(campaignField, null);
+      } else {
+        // Cas normal J+N du jour
+        query = query
+          .gte("created_at", targetStart.toISOString())
+          .lt("created_at", targetEnd.toISOString())
+          .is(campaignField, null);
+      }
     }
 
     const { data: rows, error: fetchError } = await query.range(runOffset, runOffset + limit - 1);
@@ -165,13 +209,15 @@ Deno.serve(async (req: Request) => {
         const e = (r.email || "").trim().toLowerCase();
         return isEmailValidePourMailing(r.email || "") && !desabonnesSet.has(e);
       })
-      .map((r: { email: string; prenom?: string; nom?: string }) => ({
+      .map((r: { id?: number; email: string; prenom?: string; nom?: string }) => ({
+        id: r.id,
         email: r.email,
         prenom: (r.prenom || "").trim() || "Propriétaire",
       }));
   }
 
   let sent = 0;
+  const sentIds: number[] = [];
   const failed: { email: string; error: string }[] = [];
 
   for (let i = 0; i < list.length; i++) {
@@ -216,6 +262,9 @@ Deno.serve(async (req: Request) => {
         failed.push({ email: r.email, error: `${res.status}: ${errText.slice(0, 200)}` });
       } else {
         sent++;
+        if (!testEmails && typeof r.id === "number") {
+          sentIds.push(r.id);
+        }
       }
     } catch (err) {
       failed.push({ email: r.email, error: err instanceof Error ? err.message : String(err) });
@@ -223,6 +272,29 @@ Deno.serve(async (req: Request) => {
 
     if (i < list.length - 1) {
       await sleep(delayMs);
+    }
+  }
+
+  // Marquer les destinataires comme "mail J+N envoyé" si on est dans un segment J+N
+  if (!testEmails && sentIds.length > 0) {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (supabaseUrl && serviceKey) {
+      const supabase = createClient(supabaseUrl, serviceKey);
+      const segment = payload.segment || "all";
+      let field: string | null = null;
+      if (segment === "leads_j2") field = "campaign_j2_sent_at";
+      if (segment === "leads_j5") field = "campaign_j5_sent_at";
+      if (segment === "leads_j8") field = "campaign_j8_sent_at";
+
+      if (field) {
+        const updatePayload: Record<string, string> = {};
+        updatePayload[field] = new Date().toISOString();
+        await supabase
+          .from("proprietaires")
+          .update(updatePayload)
+          .in("id", sentIds);
+      }
     }
   }
 
