@@ -44,6 +44,17 @@ const AdminAnalytics: React.FC = () => {
   const [triggerError, setTriggerError] = useState<string>('');
   const [triggerResult, setTriggerResult] = useState<{ sent?: number; message?: string } | null>(null);
 
+  const [editCampaign, setEditCampaign] = useState<'j2' | 'j5' | 'j8' | null>(null);
+  const [editForm, setEditForm] = useState({ subject: '', bodyHtml: '', ctaText: '', ctaUrl: '', closingHtml: '' });
+  const [editPassword, setEditPassword] = useState('');
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState<string>('');
+  const [editSuccess, setEditSuccess] = useState<string>('');
+  const [testEmail, setTestEmail] = useState('');
+  const [testSendLoading, setTestSendLoading] = useState(false);
+  const [testSendResult, setTestSendResult] = useState<string>('');
+  const [showEditModal, setShowEditModal] = useState(false);
+
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
@@ -113,6 +124,136 @@ const AdminAnalytics: React.FC = () => {
     setTriggerError('');
     setTriggerResult(null);
     setShowTriggerModal(true);
+  };
+
+  const openEditModal = (campaign: 'j2' | 'j5' | 'j8') => {
+    setEditCampaign(campaign);
+    setEditForm({ subject: '', bodyHtml: '', ctaText: '', ctaUrl: '', closingHtml: '' });
+    setEditPassword('');
+    setEditError('');
+    setEditSuccess('');
+    setTestEmail('');
+    setTestSendResult('');
+    setShowEditModal(true);
+  };
+
+  const loadCampaignContent = async () => {
+    if (!editCampaign) return;
+    if (!editPassword.trim()) {
+      setEditError('Saisissez votre mot de passe admin pour charger le contenu.');
+      return;
+    }
+    setEditLoading(true);
+    setEditError('');
+    try {
+      const { data, error } = await supabase.functions.invoke('get-campaign-content', {
+        body: { adminPassword: editPassword.trim() },
+      });
+      if (error) {
+        setEditError(error.message || 'Erreur chargement');
+        return;
+      }
+      if (data?.error) {
+        setEditError(data.error);
+        return;
+      }
+      const key = editCampaign as 'j2' | 'j5' | 'j8';
+      const c = data?.[key];
+      if (c) {
+        setEditForm({
+          subject: c.subject ?? '',
+          bodyHtml: c.bodyHtml ?? '',
+          ctaText: c.ctaText ?? '',
+          ctaUrl: c.ctaUrl ?? '',
+          closingHtml: c.closingHtml ?? '',
+        });
+      }
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleSaveCampaign = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editCampaign || !editPassword.trim()) {
+      setEditError('Mot de passe admin requis pour enregistrer.');
+      return;
+    }
+    setEditLoading(true);
+    setEditError('');
+    setEditSuccess('');
+    try {
+      const { data, error } = await supabase.functions.invoke('update-campaign-content', {
+        body: {
+          adminPassword: editPassword.trim(),
+          campaign: editCampaign,
+          subject: editForm.subject,
+          bodyHtml: editForm.bodyHtml,
+          ctaText: editForm.ctaText,
+          ctaUrl: editForm.ctaUrl,
+          closingHtml: editForm.closingHtml,
+        },
+      });
+      if (error) {
+        setEditError(error.message || 'Erreur');
+        return;
+      }
+      if (data?.error) {
+        setEditError(data.error);
+        return;
+      }
+      setEditSuccess('Contenu enregistré.');
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleSendTest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editPassword.trim()) {
+      setEditError('Mot de passe admin requis.');
+      return;
+    }
+    const email = testEmail.trim();
+    if (!email || !email.includes('@')) {
+      setTestSendResult('Indiquez une adresse e-mail valide.');
+      return;
+    }
+    setTestSendLoading(true);
+    setEditError('');
+    setTestSendResult('');
+    try {
+      const { data, error } = await supabase.functions.invoke('send-campaign-test', {
+        body: {
+          adminPassword: editPassword.trim(),
+          testEmail: email,
+          payload: {
+            subject: editForm.subject,
+            bodyHtml: editForm.bodyHtml,
+            ctaText: editForm.ctaText,
+            ctaUrl: editForm.ctaUrl,
+            closingHtml: editForm.closingHtml,
+          },
+        },
+      });
+      if (error) {
+        setTestSendResult(error.message || 'Erreur');
+        return;
+      }
+      if (data?.error) {
+        setTestSendResult(data.error);
+        return;
+      }
+      setTestSendResult(data?.message ?? 'E-mail de test envoyé.');
+    } catch (err) {
+      setTestSendResult(err instanceof Error ? err.message : String(err));
+    } finally {
+      setTestSendLoading(false);
+    }
   };
 
   const handleTriggerCampaign = async (e: React.FormEvent) => {
@@ -387,44 +528,71 @@ const AdminAnalytics: React.FC = () => {
                     <span className="text-green-700 font-medium">{pendingJ2} en attente</span>
                     {sentJ2 > 0 && <span className="text-[#6b7280]"> · {sentJ2} déjà envoyé(s)</span>}
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => openTriggerModal('j2')}
-                    disabled={pendingJ2 === 0}
-                    className="mt-3 w-full py-2 rounded-lg bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    Envoyer la campagne J+2
-                  </button>
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openEditModal('j2')}
+                      className="flex-1 py-2 rounded-lg border border-[#e5e7eb] bg-white text-[#374151] text-sm font-medium hover:bg-[#f9fafb] transition-colors"
+                    >
+                      Éditer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openTriggerModal('j2')}
+                      disabled={pendingJ2 === 0}
+                      className="flex-1 py-2 rounded-lg bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Envoyer J+2
+                    </button>
+                  </div>
                 </div>
                 <div className="border border-[#e5e7eb] rounded-lg p-4 bg-amber-50/50">
                   <p className="font-semibold text-[#111827]">J+5</p>
-                  <p className="text-sm text-[#6b7280] mt-1">Contenu à venir</p>
+                  <p className="text-sm text-[#6b7280] mt-1">Contenu à personnaliser</p>
                   <p className="text-sm mt-2">
                     <span className="text-[#6b7280]">{pendingJ5} en attente</span>
                     {sentJ5 > 0 && <span> · {sentJ5} envoyé(s)</span>}
                   </p>
-                  <button
-                    type="button"
-                    disabled
-                    className="mt-3 w-full py-2 rounded-lg bg-gray-300 text-gray-500 text-sm font-medium cursor-not-allowed"
-                  >
-                    Bientôt disponible
-                  </button>
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openEditModal('j5')}
+                      className="flex-1 py-2 rounded-lg border border-[#e5e7eb] bg-white text-[#374151] text-sm font-medium hover:bg-[#f9fafb] transition-colors"
+                    >
+                      Éditer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openTriggerModal('j5')}
+                      className="flex-1 py-2 rounded-lg bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 transition-colors"
+                    >
+                      Envoyer J+5
+                    </button>
+                  </div>
                 </div>
                 <div className="border border-[#e5e7eb] rounded-lg p-4 bg-sky-50/50">
                   <p className="font-semibold text-[#111827]">J+8</p>
-                  <p className="text-sm text-[#6b7280] mt-1">Contenu à venir</p>
+                  <p className="text-sm text-[#6b7280] mt-1">Contenu à personnaliser</p>
                   <p className="text-sm mt-2">
                     <span className="text-[#6b7280]">{pendingJ8} en attente</span>
                     {sentJ8 > 0 && <span> · {sentJ8} envoyé(s)</span>}
                   </p>
-                  <button
-                    type="button"
-                    disabled
-                    className="mt-3 w-full py-2 rounded-lg bg-gray-300 text-gray-500 text-sm font-medium cursor-not-allowed"
-                  >
-                    Bientôt disponible
-                  </button>
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openEditModal('j8')}
+                      className="flex-1 py-2 rounded-lg border border-[#e5e7eb] bg-white text-[#374151] text-sm font-medium hover:bg-[#f9fafb] transition-colors"
+                    >
+                      Éditer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openTriggerModal('j8')}
+                      className="flex-1 py-2 rounded-lg bg-sky-500 text-white text-sm font-medium hover:bg-sky-600 transition-colors"
+                    >
+                      Envoyer J+8
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -494,6 +662,141 @@ const AdminAnalytics: React.FC = () => {
                 pour tout voir.
               </p>
             </div>
+
+            {/* Modal édition campagne */}
+            {showEditModal && editCampaign && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto" role="dialog" aria-modal="true">
+                <div className="bg-white rounded-xl shadow-lg max-w-2xl w-full my-8 max-h-[90vh] overflow-y-auto">
+                  <div className="p-6">
+                    <h3 className="text-lg font-semibold text-[#111827]">
+                      Éditer campagne J+{editCampaign === 'j2' ? '2' : editCampaign === 'j5' ? '5' : '8'}
+                    </h3>
+                    <p className="text-sm text-[#6b7280] mt-1">
+                      Saisissez votre mot de passe admin pour charger, enregistrer ou envoyer un test.
+                    </p>
+                    <div className="mt-4 flex gap-2">
+                      <input
+                        type="password"
+                        value={editPassword}
+                        onChange={(e) => setEditPassword(e.target.value)}
+                        className="flex-1 rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm"
+                        placeholder="Mot de passe admin"
+                        autoComplete="current-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={loadCampaignContent}
+                        disabled={editLoading}
+                        className="px-4 py-2 rounded-lg bg-[#e5e7eb] text-[#374151] text-sm font-medium hover:bg-[#d1d5db] disabled:opacity-60"
+                      >
+                        {editLoading ? 'Chargement…' : 'Charger le contenu'}
+                      </button>
+                    </div>
+                    <form onSubmit={handleSaveCampaign} className="mt-6 space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-[#374151] mb-1">Sujet</label>
+                        <input
+                          type="text"
+                          value={editForm.subject}
+                          onChange={(e) => setEditForm((f) => ({ ...f, subject: e.target.value }))}
+                          className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm"
+                          placeholder="Sujet de l'e-mail"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-[#374151] mb-1">Corps (HTML)</label>
+                        <textarea
+                          value={editForm.bodyHtml}
+                          onChange={(e) => setEditForm((f) => ({ ...f, bodyHtml: e.target.value }))}
+                          className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm font-mono min-h-[120px]"
+                          placeholder="<p>Bonjour {{ prenom }},</p>..."
+                          rows={6}
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-[#374151] mb-1">Texte du bouton CTA</label>
+                          <input
+                            type="text"
+                            value={editForm.ctaText}
+                            onChange={(e) => setEditForm((f) => ({ ...f, ctaText: e.target.value }))}
+                            className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm"
+                            placeholder="Découvrir mon espace"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-[#374151] mb-1">URL du bouton</label>
+                          <input
+                            type="text"
+                            value={editForm.ctaUrl}
+                            onChange={(e) => setEditForm((f) => ({ ...f, ctaUrl: e.target.value }))}
+                            className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm"
+                            placeholder="https://... ({{ email }} pour l'email)"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-[#374151] mb-1">Signature / fin (HTML)</label>
+                        <textarea
+                          value={editForm.closingHtml}
+                          onChange={(e) => setEditForm((f) => ({ ...f, closingHtml: e.target.value }))}
+                          className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm font-mono min-h-[80px]"
+                          placeholder="<table>... signature ...</table>"
+                          rows={3}
+                        />
+                      </div>
+                      {editError && <p className="text-sm text-red-600">{editError}</p>}
+                      {editSuccess && <p className="text-sm text-green-700">{editSuccess}</p>}
+                      <div className="flex gap-2 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => { setShowEditModal(false); setEditCampaign(null); }}
+                          className="px-4 py-2 rounded-lg border border-[#e5e7eb] text-[#374151] hover:bg-[#f9fafb]"
+                        >
+                          Annuler
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={editLoading}
+                          className="px-4 py-2 rounded-lg bg-[#2563eb] text-white font-medium hover:bg-[#1d4ed8] disabled:opacity-60"
+                        >
+                          {editLoading ? 'Enregistrement…' : 'Enregistrer'}
+                        </button>
+                      </div>
+                    </form>
+                    <div className="mt-6 pt-4 border-t border-[#e5e7eb]">
+                      <p className="text-sm font-medium text-[#374151] mb-2">Envoyer un e-mail de test</p>
+                      <p className="text-xs text-[#6b7280] mb-2">
+                        Utilise le contenu actuel du formulaire (pas besoin d&apos;enregistrer avant).
+                      </p>
+                      <form onSubmit={handleSendTest} className="flex flex-wrap items-end gap-2">
+                        <div className="flex-1 min-w-[200px]">
+                          <input
+                            type="email"
+                            value={testEmail}
+                            onChange={(e) => setTestEmail(e.target.value)}
+                            className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm"
+                            placeholder="adresse@exemple.fr"
+                          />
+                        </div>
+                        <button
+                          type="submit"
+                          disabled={testSendLoading}
+                          className="px-4 py-2 rounded-lg bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 disabled:opacity-60"
+                        >
+                          {testSendLoading ? 'Envoi…' : 'Envoyer le test'}
+                        </button>
+                      </form>
+                      {testSendResult && (
+                        <p className={`mt-2 text-sm ${testSendResult.startsWith('E-mail') ? 'text-green-700' : 'text-red-600'}`}>
+                          {testSendResult}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Modal déclenchement campagne */}
             {showTriggerModal && triggerCampaign && (

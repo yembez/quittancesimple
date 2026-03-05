@@ -7,17 +7,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, Apikey",
 };
 
-const SEGMENT_BY_CAMPAIGN: Record<string, string> = {
-  j2: "free_leads",
-  j5: "leads_j5",
-  j8: "leads_j8",
-};
-
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
   }
-
   if (req.method !== "POST") {
     return new Response(
       JSON.stringify({ error: "Méthode non autorisée" }),
@@ -26,18 +19,25 @@ Deno.serve(async (req: Request) => {
   }
 
   const adminPassword = Deno.env.get("ADMIN_ANALYTICS_PASSWORD");
-  const mailingSecret = Deno.env.get("MAILING_LIST_SECRET");
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-  if (!adminPassword || !mailingSecret || !supabaseUrl || !serviceKey) {
+  if (!adminPassword || !supabaseUrl || !serviceKey) {
     return new Response(
       JSON.stringify({ error: "Configuration serveur manquante" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
-  let body: { adminPassword?: string; campaign?: string };
+  let body: {
+    adminPassword?: string;
+    campaign?: string;
+    subject?: string;
+    bodyHtml?: string;
+    ctaText?: string;
+    ctaUrl?: string;
+    closingHtml?: string;
+  };
   try {
     body = await req.json();
   } catch {
@@ -47,8 +47,7 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  const providedPassword = body.adminPassword ?? "";
-  if (providedPassword !== adminPassword) {
+  if ((body.adminPassword ?? "") !== adminPassword) {
     return new Response(
       JSON.stringify({ error: "Non autorisé" }),
       { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -58,56 +57,34 @@ Deno.serve(async (req: Request) => {
   const campaign = (body.campaign ?? "").toLowerCase();
   if (campaign !== "j2" && campaign !== "j5" && campaign !== "j8") {
     return new Response(
-      JSON.stringify({ error: "Campagne invalide. Utilisez j2, j5 ou j8." }),
+      JSON.stringify({ error: "Campagne invalide (j2, j5 ou j8)" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
   const supabase = createClient(supabaseUrl, serviceKey);
-  const { data: row, error } = await supabase
-    .from("campaign_templates")
-    .select("subject, body_html, cta_text, cta_url, closing_html")
-    .eq("campaign_key", campaign)
-    .single();
+  const { error } = await supabase.from("campaign_templates").upsert(
+    {
+      campaign_key: campaign,
+      subject: body.subject ?? "",
+      body_html: body.bodyHtml ?? "",
+      cta_text: body.ctaText ?? "",
+      cta_url: body.ctaUrl ?? "",
+      closing_html: body.closingHtml ?? "",
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "campaign_key" }
+  );
 
-  if (error || !row) {
+  if (error) {
     return new Response(
-      JSON.stringify({ error: "Contenu campagne introuvable en base." }),
-      { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
-  const segment = SEGMENT_BY_CAMPAIGN[campaign] ?? "free_leads";
-  const payload = {
-    segment,
-    subject: row.subject ?? "",
-    bodyHtml: row.body_html ?? "",
-    ctaText: row.cta_text ?? "",
-    ctaUrl: row.cta_url ?? "",
-    closingHtml: row.closing_html ?? "",
-    limit: 100,
-  };
-
-  const url = `${supabaseUrl}/functions/v1/send-bulk-mailing`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Mailing-List-Secret": mailingSecret,
-    },
-    body: JSON.stringify(payload),
-  });
-
-  const text = await res.text();
-  let json: unknown;
-  try {
-    json = JSON.parse(text);
-  } catch {
-    json = { raw: text };
-  }
-
-  return new Response(JSON.stringify(json), {
-    status: res.status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+  return new Response(
+    JSON.stringify({ success: true, campaign }),
+    { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
 });
