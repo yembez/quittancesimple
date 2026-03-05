@@ -11,6 +11,7 @@ interface LeadRow {
 
 const AdminLeads: React.FC = () => {
   const [leads, setLeads] = useState<LeadRow[]>([]);
+  const [totalCount, setTotalCount] = useState<number>(0); // tous les leads free_quittance_pdf (ex. 291)
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
 
@@ -29,8 +30,11 @@ const AdminLeads: React.FC = () => {
         return;
       }
 
+      const raw = data || [];
+      setTotalCount(raw.length);
+
       const filtered =
-        (data || [])
+        raw
           .filter((r: any) => {
             const e = (r.email || '').trim().toLowerCase();
             // même filtrage que les campagnes : pas de maildrop, pas de 2speek
@@ -70,7 +74,7 @@ const AdminLeads: React.FC = () => {
               Leads quittance gratuite
             </h1>
             <p className="text-sm text-[#6b7280] mt-1">
-              Liste en temps réel des propriétaires ayant généré au moins une quittance gratuite (segment &quot;free_quittance_pdf&quot;).
+              Total : <strong>{totalCount}</strong> leads (free_quittance_pdf). Dont <strong>{leads.length}</strong> adresses valides pour la campagne (hors @maildrop.cc et 2speek).
             </p>
           </div>
           <button
@@ -116,7 +120,7 @@ const AdminLeads: React.FC = () => {
               </tbody>
             </table>
             <p className="mt-3 text-xs text-[#9ca3af]">
-              Total : {leads.length} leads (exclut @maildrop.cc, e-mails de test et adresses commençant par &quot;2speek&quot;).
+              Tableau : {leads.length} adresses valides pour envoi (exclut @maildrop.cc et adresses commençant par &quot;2speek&quot;). Les {totalCount - leads.length} autres sont des tests ou domaines exclus.
             </p>
           </div>
         )}

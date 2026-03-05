@@ -15,11 +15,13 @@ const EMAILS_TEST = new Set([
 ]);
 
 const DOMAINE_TEST = "@maildrop.cc";
+const PREFIX_TEST = "2speek";
 
 function isEmailValidePourMailing(email: string): boolean {
   if (!email || typeof email !== "string") return false;
   const e = email.trim().toLowerCase();
   if (e.endsWith(DOMAINE_TEST)) return false;
+  if (e.startsWith(PREFIX_TEST)) return false;
   if (EMAILS_TEST.has(e)) return false;
   return e.includes("@") && e.includes(".");
 }
