@@ -54,6 +54,8 @@ const AdminAnalytics: React.FC = () => {
   const [testSendLoading, setTestSendLoading] = useState(false);
   const [testSendResult, setTestSendResult] = useState<string>('');
   const [showEditModal, setShowEditModal] = useState(false);
+  const [editViewBody, setEditViewBody] = useState<'source' | 'preview'>('preview');
+  const [editViewSignature, setEditViewSignature] = useState<'source' | 'preview'>('preview');
 
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,8 +136,15 @@ const AdminAnalytics: React.FC = () => {
     setEditSuccess('');
     setTestEmail('');
     setTestSendResult('');
+    setEditViewBody('preview');
+    setEditViewSignature('preview');
     setShowEditModal(true);
   };
+
+  const previewBodyHtml = (editForm.bodyHtml || '')
+    .replace(/\{\{\s*prenom\s*\}\}/gi, 'Prénom')
+    .replace(/\[\s*Prénom\s*\]/gi, 'Prénom');
+  const previewClosingHtml = editForm.closingHtml || '';
 
   const loadCampaignContent = async () => {
     if (!editCampaign) return;
@@ -704,14 +713,40 @@ const AdminAnalytics: React.FC = () => {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-[#374151] mb-1">Corps (HTML)</label>
-                        <textarea
-                          value={editForm.bodyHtml}
-                          onChange={(e) => setEditForm((f) => ({ ...f, bodyHtml: e.target.value }))}
-                          className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm font-mono min-h-[120px]"
-                          placeholder="<p>Bonjour {{ prenom }},</p>..."
-                          rows={6}
-                        />
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-sm font-medium text-[#374151]">Corps de l&apos;e-mail</label>
+                          <div className="flex rounded-lg border border-[#e5e7eb] overflow-hidden">
+                            <button
+                              type="button"
+                              onClick={() => setEditViewBody('preview')}
+                              className={`px-3 py-1.5 text-xs font-medium ${editViewBody === 'preview' ? 'bg-[#2563eb] text-white' : 'bg-white text-[#6b7280] hover:bg-[#f9fafb]'}`}
+                            >
+                              Aperçu
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditViewBody('source')}
+                              className={`px-3 py-1.5 text-xs font-medium ${editViewBody === 'source' ? 'bg-[#2563eb] text-white' : 'bg-white text-[#6b7280] hover:bg-[#f9fafb]'}`}
+                            >
+                              Code HTML
+                            </button>
+                          </div>
+                        </div>
+                        {editViewBody === 'preview' ? (
+                          <div
+                            className="w-full rounded-lg border border-[#e5e7eb] bg-[#f9fafb] p-4 min-h-[140px] text-[#111827] text-sm leading-relaxed max-w-none"
+                            style={{ wordBreak: 'break-word' }}
+                            dangerouslySetInnerHTML={{ __html: previewBodyHtml }}
+                          />
+                        ) : (
+                          <textarea
+                            value={editForm.bodyHtml}
+                            onChange={(e) => setEditForm((f) => ({ ...f, bodyHtml: e.target.value }))}
+                            className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm font-mono min-h-[120px]"
+                            placeholder="<p>Bonjour {{ prenom }},</p>..."
+                            rows={6}
+                          />
+                        )}
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
@@ -736,14 +771,40 @@ const AdminAnalytics: React.FC = () => {
                         </div>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-[#374151] mb-1">Signature / fin (HTML)</label>
-                        <textarea
-                          value={editForm.closingHtml}
-                          onChange={(e) => setEditForm((f) => ({ ...f, closingHtml: e.target.value }))}
-                          className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm font-mono min-h-[80px]"
-                          placeholder="<table>... signature ...</table>"
-                          rows={3}
-                        />
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-sm font-medium text-[#374151]">Signature / fin</label>
+                          <div className="flex rounded-lg border border-[#e5e7eb] overflow-hidden">
+                            <button
+                              type="button"
+                              onClick={() => setEditViewSignature('preview')}
+                              className={`px-3 py-1.5 text-xs font-medium ${editViewSignature === 'preview' ? 'bg-[#2563eb] text-white' : 'bg-white text-[#6b7280] hover:bg-[#f9fafb]'}`}
+                            >
+                              Aperçu
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditViewSignature('source')}
+                              className={`px-3 py-1.5 text-xs font-medium ${editViewSignature === 'source' ? 'bg-[#2563eb] text-white' : 'bg-white text-[#6b7280] hover:bg-[#f9fafb]'}`}
+                            >
+                              Code HTML
+                            </button>
+                          </div>
+                        </div>
+                        {editViewSignature === 'preview' ? (
+                          <div
+                            className="w-full rounded-lg border border-[#e5e7eb] bg-[#f9fafb] p-4 min-h-[80px] text-[#111827] text-sm leading-relaxed max-w-none"
+                            style={{ wordBreak: 'break-word' }}
+                            dangerouslySetInnerHTML={{ __html: previewClosingHtml }}
+                          />
+                        ) : (
+                          <textarea
+                            value={editForm.closingHtml}
+                            onChange={(e) => setEditForm((f) => ({ ...f, closingHtml: e.target.value }))}
+                            className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm font-mono min-h-[80px]"
+                            placeholder="<table>... signature ...</table>"
+                            rows={3}
+                          />
+                        )}
                       </div>
                       {editError && <p className="text-sm text-red-600">{editError}</p>}
                       {editSuccess && <p className="text-sm text-green-700">{editSuccess}</p>}

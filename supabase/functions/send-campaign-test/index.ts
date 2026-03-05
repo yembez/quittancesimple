@@ -5,7 +5,7 @@ import { buildEmailHtml } from "../_shared/email-template.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, Apikey",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey, apikey",
 };
 
 const SITE_URL = "https://www.quittancesimple.fr";
