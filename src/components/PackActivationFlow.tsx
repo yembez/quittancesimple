@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { motion } from 'framer-motion';
 import { X, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -293,21 +292,15 @@ const PackActivationFlow: React.FC<PackActivationFlowProps> = ({
   const modalContent = (
     <div className="fixed inset-0 z-[9999] overflow-y-auto">
       <div className="flex items-start sm:items-center justify-center min-h-full px-3 pt-3 pb-3 sm:p-0 sm:pb-20">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 transition-opacity bg-black/40 backdrop-blur-sm"
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm"
           onClick={onClose}
         />
 
         <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative z-10 w-full bg-white rounded-2xl sm:rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-md sm:w-full max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-4rem)] flex flex-col"
+        <div
+          className="relative z-10 w-full bg-white rounded-2xl sm:rounded-3xl text-left overflow-hidden shadow-2xl sm:my-8 sm:max-w-md sm:w-full max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-4rem)] flex flex-col"
         >
           <div className="flex-1 overflow-y-auto p-5 sm:p-8 min-h-0">
             {/* Header */}
@@ -332,13 +325,9 @@ const PackActivationFlow: React.FC<PackActivationFlowProps> = ({
            
 
             {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl"
-              >
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl">
                 <p className="text-sm text-red-800">{error}</p>
-              </motion.div>
+              </div>
             )}
 
             <form id="pack-activation-form" onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
@@ -438,7 +427,7 @@ const PackActivationFlow: React.FC<PackActivationFlowProps> = ({
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   );
