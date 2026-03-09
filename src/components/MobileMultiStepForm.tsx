@@ -165,6 +165,7 @@ const MobileMultiStepForm: React.FC<MobileMultiStepFormProps> = ({
                 <input
                   type="text"
                   name="baillorName"
+                  autoComplete="off"
                   value={formData.baillorName}
                   onChange={handleInputChange}
                   onBlur={handleBlur}
@@ -181,6 +182,7 @@ const MobileMultiStepForm: React.FC<MobileMultiStepFormProps> = ({
                 <input
                   type="text"
                   name="baillorAddress"
+                  autoComplete="off"
                   value={formData.baillorAddress}
                   onChange={handleInputChange}
                   onBlur={handleBlur}
@@ -197,6 +199,7 @@ const MobileMultiStepForm: React.FC<MobileMultiStepFormProps> = ({
                 <input
                   type="email"
                   name="baillorEmail"
+                  autoComplete="off"
                   value={formData.baillorEmail}
                   onChange={handleInputChange}
                   onBlur={handleBlur}
@@ -224,6 +227,7 @@ const MobileMultiStepForm: React.FC<MobileMultiStepFormProps> = ({
                 <input
                   type="text"
                   name="locataireName"
+                  autoComplete="off"
                   value={formData.locataireName}
                   onChange={handleInputChange}
                   className="w-full px-3 py-3 rounded-xl border border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20 transition-all text-sm"
@@ -239,6 +243,7 @@ const MobileMultiStepForm: React.FC<MobileMultiStepFormProps> = ({
                 <input
                   type="text"
                   name="logementAddress"
+                  autoComplete="off"
                   value={formData.logementAddress}
                   onChange={handleInputChange}
                   className="w-full px-3 py-3 rounded-xl border border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20 transition-all text-sm"
@@ -278,6 +283,7 @@ const MobileMultiStepForm: React.FC<MobileMultiStepFormProps> = ({
                   <input
                     type="text"
                     name="locataireDomicileAddress"
+                    autoComplete="off"
                     value={formData.locataireDomicileAddress}
                     onChange={handleInputChange}
                     className="w-full px-3 py-3 rounded-xl border border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20 transition-all text-sm"
@@ -305,6 +311,7 @@ const MobileMultiStepForm: React.FC<MobileMultiStepFormProps> = ({
                   <input
                     type="number"
                     name="loyer"
+                    autoComplete="off"
                     value={formData.loyer}
                     onChange={handleInputChange}
                     className="w-full px-3 py-3 rounded-xl border border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20 transition-all text-sm"
@@ -321,6 +328,7 @@ const MobileMultiStepForm: React.FC<MobileMultiStepFormProps> = ({
                   <input
                     type="number"
                     name="charges"
+                    autoComplete="off"
                     value={formData.charges}
                     onChange={handleInputChange}
                     className="w-full px-3 py-3 rounded-xl border border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20 transition-all text-sm"
@@ -339,6 +347,7 @@ const MobileMultiStepForm: React.FC<MobileMultiStepFormProps> = ({
                   </label>
                   <select
                     name="periode"
+                    autoComplete="off"
                     value={formData.periode}
                     onChange={handleInputChange}
                     className="w-full px-3 py-3 rounded-xl border border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20 transition-all appearance-none bg-white text-sm"
@@ -388,6 +397,7 @@ const MobileMultiStepForm: React.FC<MobileMultiStepFormProps> = ({
                       <input
                         type="date"
                         name="dateDebut"
+                        autoComplete="off"
                         value={formData.dateDebut}
                         onChange={handleInputChange}
                         className="w-full px-3 py-3 rounded-xl border border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20 transition-all text-sm"
@@ -400,6 +410,7 @@ const MobileMultiStepForm: React.FC<MobileMultiStepFormProps> = ({
                       <input
                         type="date"
                         name="dateFin"
+                        autoComplete="off"
                         value={formData.dateFin}
                         onChange={handleInputChange}
                         min={formData.dateDebut || undefined}

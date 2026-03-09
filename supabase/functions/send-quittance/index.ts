@@ -639,8 +639,8 @@ Deno.serve(async (req) => {
         <p>C’est fait, mais le mois prochain il faudra recommencer… :(</p>
         <p>Ça vous dirait de pouvoir utiliser l'envoi automatique gratuitement ?</p>
         <p><strong>Bonne nouvelle :</strong> Votre Espace Bailleur est déjà prêt. On a pré-rempli vos informations et celles de votre locataire pour vous faire gagner du temps.</p>
-        <p>Vous n'avez qu'à programmer une date pour tester l'envoi automatique pour le mois prochain. C'est hyper simple.</p>
-        <p style="margin-top: 16px;">Et testez gratuitement tous nos autres outils.</p>
+        <p>C'est trés simple, il suffit de programmer une date pour tester l'envoi automatique pour le mois prochain.</p>
+        <p style="margin-top: 16px;">Et bonus : vous pourrez tester gratuitement tous nos autres outils.</p>
         <p style="margin-top: 8px;">Fini la paperasse, place à la sérénité.</p>
       `,
       ctaText: "Activer l'envoi automatique gratuit",

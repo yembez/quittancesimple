@@ -162,36 +162,32 @@ const Generator = () => {
     };
   }, []);
 
-  // Récupérer les données du prorata si on vient de cette page
+  // Au retour du prorata (même session) : restaurer uniquement loyer/charges/période/dates, puis supprimer les données.
+  // On ne pré-remplit jamais pour une visite suivante (pas de sauvegarde persistante du formulaire gratuit).
   React.useEffect(() => {
     if (searchParams.get('from') === 'prorata') {
       const prorataData = localStorage.getItem('prorataData');
       if (prorataData) {
         const data = JSON.parse(prorataData);
-        
-        // Mise à jour directe de chaque champ
-        setFormData(prev => {
-          const newFormData = {
-            ...prev,
-            loyer: data.loyer,
-            charges: data.charges,
-            periode: data.periode,
-            isProrata: data.isProrata || false,
-            dateDebut: data.dateDebut || '',
-            dateFin: data.dateFin || '',
-            typeCalcul: data.typeCalcul || ''
-          };
-          return newFormData;
-        });
-        
+        setFormData(prev => ({
+          ...prev,
+          loyer: data.loyer,
+          charges: data.charges,
+          periode: data.periode,
+          isProrata: data.isProrata || false,
+          dateDebut: data.dateDebut || '',
+          dateFin: data.dateFin || '',
+          typeCalcul: data.typeCalcul || ''
+        }));
         setShowPreview(true);
-        // Nettoyer le localStorage
         localStorage.removeItem('prorataData');
-        // Scroll vers le générateur
-        setTimeout(() => {
-          document.getElementById('generator')?.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
       }
+      setTimeout(() => {
+        document.getElementById('generator')?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    } else {
+      // Visite sans ?from=prorata : supprimer toute donnée prorata résiduelle pour ne jamais pré-remplir au retour mois suivant
+      localStorage.removeItem('prorataData');
     }
   }, [searchParams]);
 
@@ -477,7 +473,7 @@ const Generator = () => {
               />
             ) : (
               <div className="bg-white rounded-2xl border border-[#e8e7ef] p-6 shadow-[0_2px_12px_rgba(15,23,42,0.06)]">
-              <form className="space-y-6">
+              <form className="space-y-6" autoComplete="off">
                 {/* Messages d'erreur */}
                 {validationErrors.length > 0 && (
                   <div id="validation-errors" className="bg-red-50 border border-red-200 rounded-xl p-5">
@@ -517,6 +513,7 @@ const Generator = () => {
                       <input
                         type="text"
                         name="baillorName"
+                        autoComplete="off"
                         value={formData.baillorName}
                         onChange={handleInputChange}
                         onBlur={handleBlur}
@@ -534,6 +531,7 @@ const Generator = () => {
                       <input
                         type="text"
                         name="baillorAddress"
+                        autoComplete="off"
                         value={formData.baillorAddress}
                         onChange={handleInputChange}
                         onBlur={handleBlur}
@@ -551,6 +549,7 @@ const Generator = () => {
                       <input
                         type="email"
                         name="baillorEmail"
+                        autoComplete="off"
                         value={formData.baillorEmail}
                         onChange={handleInputChange}
                         onBlur={handleBlur}
@@ -581,6 +580,7 @@ const Generator = () => {
                       <input
                         type="text"
                         name="locataireName"
+                        autoComplete="off"
                         value={formData.locataireName}
                         onChange={handleInputChange}
                         className={`w-full px-3 py-2 rounded-xl border transition-all duration-200 text-sm ${
@@ -597,6 +597,7 @@ const Generator = () => {
                       <input
                         type="text"
                         name="logementAddress"
+                        autoComplete="off"
                         value={formData.logementAddress}
                         onChange={handleInputChange}
                         className={`w-full px-3 py-2 rounded-xl border transition-all duration-200 text-sm ${
@@ -634,6 +635,7 @@ const Generator = () => {
                         <input
                           type="text"
                           name="locataireDomicileAddress"
+                          autoComplete="off"
                           value={formData.locataireDomicileAddress}
                           onChange={handleInputChange}
                           className="w-full px-3 py-2 rounded-xl border border-[#e3e4f0] focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/20 transition-all duration-200 text-sm"
@@ -659,6 +661,7 @@ const Generator = () => {
                       <input
                         type="number"
                         name="loyer"
+                        autoComplete="off"
                         value={formData.loyer}
                         onChange={handleInputChange}
                         className={`w-full px-3 py-2 rounded-xl border transition-all duration-200 text-sm ${
@@ -677,6 +680,7 @@ const Generator = () => {
                       <input
                         type="number"
                         name="charges"
+                        autoComplete="off"
                         value={formData.charges}
                         onChange={handleInputChange}
                         className={`w-full px-3 py-2 rounded-xl border transition-all duration-200 text-sm ${
@@ -705,6 +709,7 @@ const Generator = () => {
                         <Calendar className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#8b90a3]" />
                         <select
                           name="periode"
+                          autoComplete="off"
                           value={formData.periode}
                           onChange={handleInputChange}
                           className="w-full pl-10 pr-3 py-2 rounded-xl border border-[#e3e4f0] focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/20 transition-all duration-200 appearance-none bg-white text-sm"
@@ -759,6 +764,7 @@ const Generator = () => {
                       <input
                         type="date"
                         name="dateDebut"
+                        autoComplete="off"
                         value={formData.dateDebut}
                         onChange={handleInputChange}
                         className={`w-full px-3 py-2 rounded-xl border transition-all duration-200 text-sm ${
@@ -773,6 +779,7 @@ const Generator = () => {
                       <input
                         type="date"
                         name="dateFin"
+                        autoComplete="off"
                         value={formData.dateFin}
                         onChange={handleInputChange}
                         min={formData.dateDebut || undefined}

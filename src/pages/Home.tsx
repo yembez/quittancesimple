@@ -100,38 +100,34 @@ const Home = () => {
     };
   }, []);
 
+  // Au retour du calculateur prorata gratuit : reporter les montants dans le générateur (fonctionnalité gratuite conservée).
+  // En visite sans ?from=prorata : supprimer toute donnée prorata résiduelle pour ne pas pré-remplir au retour mois suivant.
   React.useEffect(() => {
     if (searchParams.get('from') === 'prorata') {
       const prorataData = localStorage.getItem('prorataData');
       if (prorataData) {
         const data = JSON.parse(prorataData);
-
-        setFormData(prev => {
-          const newFormData = {
-            ...prev,
-            loyer: data.loyer,
-            charges: data.charges,
-            periode: data.periode,
-            isProrata: data.isProrata || false,
-            dateDebut: data.dateDebut || '',
-            dateFin: data.dateFin || '',
-            typeCalcul: data.typeCalcul || ''
-          };
-          return newFormData;
-        });
-
-        setProrataAmounts({
-          loyer: data.prorataLoyer || 0,
-          charges: data.prorataCharges || 0,
-          total: data.prorataTotal || 0
-        });
-
+        setFormData(prev => ({
+          ...prev,
+          loyer: data.loyer,
+          charges: data.charges,
+          periode: data.periode,
+          isProrata: data.isProrata || false,
+          dateDebut: data.dateDebut || '',
+          dateFin: data.dateFin || '',
+          typeCalcul: data.typeCalcul || ''
+        }));
+        const l = parseFloat(data.loyer) || 0;
+        const c = parseFloat(data.charges) || 0;
+        setProrataAmounts({ loyer: l, charges: c, total: l + c });
         setShowPreview(true);
         localStorage.removeItem('prorataData');
         setTimeout(() => {
           document.getElementById('generator')?.scrollIntoView({ behavior: 'smooth' });
         }, 100);
       }
+    } else {
+      localStorage.removeItem('prorataData');
     }
   }, [searchParams]);
 
@@ -773,7 +769,7 @@ const Home = () => {
 
           <div className="grid lg:grid-cols-2 gap-6 items-start">
             <div className="bg-white rounded-3xl border border-slate-200 p-5 shadow-[0_18px_45px_rgba(15,23,42,0.12)]">
-              <form className="space-y-5">
+              <form className="space-y-5" autoComplete="off">
                 <div className="space-y-3 bg-slate-50 rounded-2xl p-4 border border-slate-200">
                   <div className="flex items-center space-x-2 pb-2 border-b border-slate-200">
                     <div className="w-8 h-8 bg-[#1e3a5f] rounded-xl flex items-center justify-center">
@@ -788,6 +784,7 @@ const Home = () => {
                       <input
                         type="text"
                         name="baillorName"
+                        autoComplete="off"
                         value={formData.baillorName}
                         onChange={handleInputChange}
                         onBlur={handleBlur}
@@ -801,6 +798,7 @@ const Home = () => {
                       <input
                         type="text"
                         name="baillorAddress"
+                        autoComplete="off"
                         value={formData.baillorAddress}
                         onChange={handleInputChange}
                         onBlur={handleBlur}
@@ -814,6 +812,7 @@ const Home = () => {
                       <input
                         type="email"
                         name="baillorEmail"
+                        autoComplete="off"
                         value={formData.baillorEmail}
                         onChange={handleInputChange}
                         onBlur={handleBlur}
@@ -839,6 +838,7 @@ const Home = () => {
                       <input
                         type="text"
                         name="locataireName"
+                        autoComplete="off"
                         value={formData.locataireName}
                         onChange={handleInputChange}
                         className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all duration-200 text-xs"
@@ -851,6 +851,7 @@ const Home = () => {
                       <input
                         type="text"
                         name="logementAddress"
+                        autoComplete="off"
                         value={formData.logementAddress}
                         onChange={handleInputChange}
                         className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all duration-200 text-xs"
@@ -884,6 +885,7 @@ const Home = () => {
                         <input
                           type="text"
                           name="locataireDomicileAddress"
+                          autoComplete="off"
                           value={formData.locataireDomicileAddress}
                           onChange={handleInputChange}
                           className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all duration-200 text-xs"
@@ -908,6 +910,7 @@ const Home = () => {
                       <input
                         type="number"
                         name="loyer"
+                        autoComplete="off"
                         value={formData.loyer}
                         onChange={handleInputChange}
                         className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all duration-200 text-xs"
@@ -922,6 +925,7 @@ const Home = () => {
                       <input
                         type="number"
                         name="charges"
+                        autoComplete="off"
                         value={formData.charges}
                         onChange={handleInputChange}
                         className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all duration-200 text-xs"
@@ -940,6 +944,7 @@ const Home = () => {
                         <Calendar className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                         <select
                           name="periode"
+                          autoComplete="off"
                           value={formData.periode}
                           onChange={handleInputChange}
                           className="w-full pl-9 pr-2.5 py-1.5 rounded-xl border border-slate-300 focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all duration-200 appearance-none bg-white text-xs"
@@ -988,6 +993,7 @@ const Home = () => {
                       <input
                         type="date"
                         name="dateDebut"
+                        autoComplete="off"
                         value={formData.dateDebut}
                         onChange={handleInputChange}
                         className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all duration-200 text-xs"
@@ -998,6 +1004,7 @@ const Home = () => {
                       <input
                         type="date"
                         name="dateFin"
+                        autoComplete="off"
                         value={formData.dateFin}
                         onChange={handleInputChange}
                         min={formData.dateDebut || undefined}
