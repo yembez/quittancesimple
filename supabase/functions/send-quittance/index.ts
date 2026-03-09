@@ -635,31 +635,24 @@ Deno.serve(async (req) => {
       title: 'Quittance Simple',
       bodyHtml: `
         <p>${greeting}</p>
-        <p>Votre quittance de loyer pour la période ${data.periode} est en pièce jointe.</p>
+        <p>Votre quittance de loyer pour ${data.periode} est disponible en pièce jointe.</p>
         <p>C’est fait, mais le mois prochain il faudra recommencer… :(</p>
         <p>Ça vous dirait de pouvoir utiliser l'envoi automatique gratuitement ?</p>
-        <p>Bonne nouvelle ! Vous pouvez profiter sereinement et <strong>gratuitement</strong> du Pack Automatique et de votre Espace Bailleur. On vous ouvre l’accès, et le bonus : vos infos et celles du locataire sont déjà pré-configurées&nbsp;!</p>
-        <p>En quelques secondes vous programmez votre envoi automatique de quittances.</p>
-        <p>C'est aussi l'occasion idéale pour tester tranquillement :</p>
-        <ul style="padding-left: 20px; margin-top: 8px; margin-bottom: 8px;">
-          <li>L'envoi automatisé de vos quittances chaque mois.</li>
-          <li>La génération d'annonces assistée par IA.</li>
-          <li>Le calcul et les rappels de révisions de loyer et charges.</li>
-          <li>Et plein d'autres choses…</li>
-        </ul>
-        <p style="margin-top: 16px;"><strong>Une question ? Une suggestion ?</strong> Écrivez-nous à <a href="mailto:contact@quittancesimple.fr">contact@quittancesimple.fr</a>.</p>
-        <p style="margin-top: 12px;">On a voulu faire simple, vraiment simple, parce qu'on est bailleurs nous aussi. Prenez le temps de découvrir l'outil à votre rythme.</p>
+        <p><strong>Bonne nouvelle :</strong> Votre Espace Bailleur est déjà prêt. On a pré-rempli vos informations et celles de votre locataire pour vous faire gagner du temps.</p>
+        <p>Vous n'avez qu'à programmer une date pour tester l'envoi automatique pour le mois prochain. C'est hyper simple.</p>
+        <p style="margin-top: 16px;">Et testez gratuitement tous nos autres outils.</p>
+        <p style="margin-top: 8px;">Fini la paperasse, place à la sérénité.</p>
       `,
-      ctaText: 'Accès gratuit à mon Espace Bailleur',
+      ctaText: "Activer l'envoi automatique gratuit",
       ctaUrl: ctaUrlPack,
-      closingHtml: "À très vite,<br><strong>Vincent de Quittance Simple</strong>",
+      closingHtml: '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top: 4px;"><tr><td style="padding-right: 12px; vertical-align: middle;"><img src="https://www.quittancesimple.fr/images/vincent-photo.png" alt="Vincent, Quittance Simple" style="width: 76px; height: 76px; border-radius: 999px; display: block; object-fit: cover; object-position: 50% 28%;"></td><td style="font-size: 14px; line-height: 1.5; color: #111827; vertical-align: middle;">À bientôt,<br><strong>Vincent</strong><br><span style="color:#4b5563;">Co-fondateur de Quittance Simple</span><br><span style="color:#4b5563;">Bailleur comme vous</span></td></tr></table>',
       unsubscribeUrl: emailForCta ? `${SITE_URL}/unsubscribe?email=${encodeURIComponent(emailForCta)}` : undefined,
     });
 
     const emailData = {
       from: 'Quittance Simple <noreply@quittancesimple.fr>',
       to: [recipientEmail],
-      subject: isToTenant ? `Quittance de loyer – ${data.periode}` : `Votre quittance de loyer - ${data.periode}`,
+      subject: isToTenant ? `Quittance de loyer – ${data.periode}` : "Votre quittance est prête (et une surprise à l'intérieur)",
       html: isToTenant ? htmlEmailTenant : htmlEmail,
       attachments: [{
         filename: `quittance-${data.periode.replace(/\s+/g, '-')}.pdf`,
