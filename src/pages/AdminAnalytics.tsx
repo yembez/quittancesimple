@@ -23,6 +23,32 @@ const ADMIN_ANALYTICS_STORAGE_KEY = 'admin_analytics_auth';
 const ADMIN_LOGIN = 'yem';
 const ADMIN_PASSWORD = 'Lucie2007!';
 
+function htmlToPlainText(html: string): string {
+  if (!html) return '';
+  let text = html;
+  text = text.replace(/<br\s*\/?>/gi, '\n');
+  text = text.replace(/<\/p>\s*<p>/gi, '\n\n');
+  text = text.replace(/<\/p>/gi, '\n\n');
+  text = text.replace(/<li>/gi, '- ');
+  text = text.replace(/<\/li>/gi, '\n');
+  text = text.replace(/&nbsp;/gi, ' ');
+  text = text.replace(/<[^>]+>/g, '');
+  return text.trim();
+}
+
+function plainTextToHtml(text: string): string {
+  if (!text) return '';
+  const normalized = text.replace(/\r\n/g, '\n');
+  const paragraphs = normalized.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  if (paragraphs.length === 0) return '';
+  return paragraphs
+    .map((p) => {
+      const withLineBreaks = p.replace(/\n/g, '<br>');
+      return `<p style="margin: 0 0 1.15em 0; line-height: 1.75;">${withLineBreaks}</p>`;
+    })
+    .join('');
+}
+
 function getStoredAuth(): boolean {
   if (typeof sessionStorage === 'undefined') return false;
   return sessionStorage.getItem(ADMIN_ANALYTICS_STORAGE_KEY) === '1';
@@ -56,6 +82,7 @@ const AdminAnalytics: React.FC = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editViewBody, setEditViewBody] = useState<'source' | 'preview'>('preview');
   const [editViewSignature, setEditViewSignature] = useState<'source' | 'preview'>('preview');
+  const [editBodyText, setEditBodyText] = useState('');
   const [ctaClicks, setCtaClicks] = useState<{ j2: number; j5: number; j8: number; total: number } | null>(null);
 
   type TrialEmailLog = {
@@ -280,12 +307,10 @@ const AdminAnalytics: React.FC = () => {
     setTestSendResult('');
     setEditViewBody('preview');
     setEditViewSignature('preview');
+    setEditBodyText('');
     setShowEditModal(true);
   };
 
-  const previewBodyHtml = (editForm.bodyHtml || '')
-    .replace(/\{\{\s*prenom\s*\}\}/gi, 'Prénom')
-    .replace(/\[\s*Prénom\s*\]/gi, 'Prénom');
   const previewClosingHtml = editForm.closingHtml || '';
 
   const loadCampaignContent = async () => {
@@ -318,6 +343,7 @@ const AdminAnalytics: React.FC = () => {
           ctaUrl: c.ctaUrl ?? '',
           closingHtml: c.closingHtml ?? '',
         });
+        setEditBodyText(htmlToPlainText(c.bodyHtml ?? ''));
       }
     } catch (err) {
       setEditError(err instanceof Error ? err.message : String(err));
@@ -1261,7 +1287,7 @@ const AdminAnalytics: React.FC = () => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-[#374151] mb-1">Corps de l&apos;e-mail</label>
-                        <p className="text-xs text-[#6b7280] mb-2">Choisir l&apos;affichage :</p>
+                        <p className="text-xs text-[#6b7280] mb-2">Choisir l&apos;affichage et le mode d&apos;édition :</p>
                         <div className="flex gap-2 mb-2">
                           <button
                             type="button"
@@ -1279,10 +1305,19 @@ const AdminAnalytics: React.FC = () => {
                           </button>
                         </div>
                         {editViewBody === 'preview' ? (
-                          <div
-                            className="w-full rounded-lg border border-[#e5e7eb] bg-[#f9fafb] p-4 min-h-[140px] text-[#111827] text-sm leading-relaxed max-w-none"
-                            style={{ wordBreak: 'break-word' }}
-                            dangerouslySetInnerHTML={{ __html: previewBodyHtml }}
+                          <textarea
+                            value={editBodyText}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setEditBodyText(value);
+                              setEditForm((f) => ({
+                                ...f,
+                                bodyHtml: plainTextToHtml(value),
+                              }));
+                            }}
+                            className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm min-h-[140px]"
+                            placeholder={'Bonjour {{ prenom }},\n\nTexte de votre campagne...\n\nParagraphe suivant.'}
+                            rows={8}
                           />
                         ) : (
                           <textarea

@@ -21,28 +21,26 @@ const VINCENT_SIGNATURE_IMAGE_URL = `${SITE_URL}/images/vincent-signature.png`;
 
 function buildWelcomeBodyHtml(): string {
   return `
-    <h2 style="margin: 0 0 0.95em 0; font-size: 1.45em; font-weight: 750; color: #111111; line-height: 1.25;">Bienvenue dans votre Espace Bailleur.</h2>
+    <p style="margin: 0 0 1.15em 0; line-height: 1.75;">Bonjour [Prénom],</p>
 
-    <p style="margin: 0 0 1.15em 0; line-height: 1.75;">C'est un plaisir de vous compter parmi nous.</p>
+    <p style="margin: 0 0 1.15em 0; line-height: 1.75;">Bienvenue dans votre QS – Espace Bailleur.</p>
 
-    <p style="margin: 0 0 1.15em 0; line-height: 1.75;">En créant votre Espace Bailleur, vous faites désormais partie des bailleurs privés qui ont décidé de structurer leur gestion, simplement sans y passer leurs soirées. En 2026, la gestion locative ne devrait plus être une corvée, et vous avez maintenant tous les outils pour l’automatiser simplement.</p>
+    <p style="margin: 0 0 1.15em 0; line-height: 1.75;">En créant votre compte, vous faites désormais partie des bailleurs privés qui agissent pour gérer leurs locations plus simplement et surtout éviter les pertes de temps inutiles.</p>
 
-    <p style="margin: 0 0 1.15em 0; line-height: 1.75;"><strong>Votre Pack Automatique est activé.</strong></p>
-
-    <p style="margin: 0 0 0.9em 0; line-height: 1.75;">Voici ce que vous avez entre les mains gratuitement pendant 30 jours :</p>
+    <p style="margin: 0 0 0.9em 0; line-height: 1.75;">Voici ce que vous pouvez déjà faire :</p>
 
     <ul style="margin: 0.2em 0 1.25em 1.2em; padding-left: 1em; line-height: 1.75;">
-      <li style="margin-bottom: 0.7em;"><strong>L'esprit libre</strong> : Vos quittances et rappels s'envoient tout seuls. Un clic pour valider, et c'est fini.</li>
-      <li style="margin-bottom: 0.7em;"><strong>L'aide au remplissage et la sécurité juridique</strong> : Remplissez et signez vos baux (vides ou meublés) directement en ligne avec votre locataire et vos garants.</li>
-      <li style="margin-bottom: 0.7em;"><strong>L'intelligence à votre service</strong> : Un générateur d'annonces par IA et le calcul automatique des révisions IRL (norme INSEE). Rappel de révisions de charges.</li>
-      <li style="margin-bottom: 0.1em;"><strong>Tout sous contrôle</strong> : Votre bilan annuel est prêt pour votre déclaration fiscale en quelques clics. Un espace de stockage sécurisé pour stocker et retrouver tous vos documents.</li>
+      <li style="margin-bottom: 0.7em;"><strong>Automatiser vos quittances</strong> — un clic de validation et elles s'envoient toutes seules</li>
+      <li style="margin-bottom: 0.7em;"><strong>Créer et signer vos baux en ligne</strong> (vide ou meublé) avec votre locataire</li>
+      <li style="margin-bottom: 0.7em;"><strong>Générer vos annonces et calculer vos révisions IRL</strong> automatiquement</li>
+      <li style="margin-bottom: 0.1em;"><strong>Garder tout sous contrôle</strong> — bilan annuel et stockage sécurisé de vos documents</li>
     </ul>
 
-    <p style="margin: 0 0 1.15em 0; line-height: 1.75;">Prenez le temps de faire le tour du propriétaire. Vous verrez, l'interface est pensée pour être intuitive.</p>
+    <p style="margin: 0 0 1.15em 0; line-height: 1.75;">Prenez quelques minutes pour découvrir l'outil.</p>
 
-    <p style="margin: 0 0 1.15em 0; line-height: 1.75;">Nous sommes aussi bailleurs et on voulait du simple et de l’efficace, c’est pour cela qu’on a créé Quittance Simple et le Pack Automatique.</p>
+    <p style="margin: 0 0 1.15em 0; line-height: 1.75;">Nous sommes bailleurs nous aussi, et nous avons simplement voulu créer un outil clair, pratique et efficace pour nous faciliter la vie.</p>
 
-    <p style="margin: 0; line-height: 1.75;">Et on est ravis de vous aider à simplifier votre quotidien !</p>
+    <p style="margin: 0; line-height: 1.75;">Bonne découverte,</p>
   `;
 }
 
@@ -81,7 +79,14 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const bodyHtml = buildWelcomeBodyHtml();
+    let bodyHtml = buildWelcomeBodyHtml();
+    const prenomValue = (prenom ?? "").trim() || "";
+    bodyHtml = bodyHtml
+      .replace(/\{\{\s*prenom\s*\}\}/gi, prenomValue)
+      .replace(/\[\s*Prénom\s*\]/gi, prenomValue);
+    if (!prenomValue) {
+      bodyHtml = bodyHtml.replace(/\bBonjour\s+,/gi, "Bonjour,");
+    }
     // Pré-remplissage de l'e-mail dans la modale de connexion si l'utilisateur n'est pas connecté
     // On utilise le hash pour éviter de mettre l'email en query string (moins exposé côté logs).
     // Lien vers l'accueil avec hash pour ouvrir le modal de connexion (évite de passer par /dashboard sans session)

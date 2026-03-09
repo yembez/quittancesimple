@@ -148,7 +148,7 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  const subject = (row.subject ?? "").trim();
+  const subjectTemplate = (row.subject ?? "").trim();
   const bodyHtml = (row.body_html ?? "").trim();
   const ctaText = row.cta_text ?? "";
   const ctaUrlRaw = row.cta_url ?? "";
@@ -165,7 +165,15 @@ Deno.serve(async (req: Request) => {
     let bodyPersonalized = bodyHtml
       .replace(/\{\{\s*prenom\s*\}\}/gi, prenom)
       .replace(/\[\s*Prénom\s*\]/gi, prenom);
-    if (!prenom) bodyPersonalized = bodyPersonalized.replace(/\bBonjour\s+,/gi, "Bonjour,");
+    if (!prenom) {
+      bodyPersonalized = bodyPersonalized.replace(/\bBonjour\s+,/gi, "Bonjour,");
+    }
+    let subjectPersonalized = subjectTemplate
+      .replace(/\{\{\s*prenom\s*\}\}/gi, prenom)
+      .replace(/\[\s*Prénom\s*\]/gi, prenom);
+    if (!prenom) {
+      subjectPersonalized = subjectPersonalized.replace(/^,\s*/, "").replace(/\s{2,}/g, " ").trim();
+    }
     const ctaUrlPersonalized = ctaUrlRaw.replace(/\{\{\s*email\s*\}\}/gi, encodeURIComponent(r.email.trim()));
     const ctaUrlForEmail = ctaUrlPersonalized
       ? `${supabaseUrl}/functions/v1/track-cta-click?campaign=${campaign}&to=${encodeURIComponent(ctaUrlPersonalized)}`
@@ -192,7 +200,7 @@ Deno.serve(async (req: Request) => {
           from: "Vincent – Quittance Simple <contact@quittancesimple.fr>",
           reply_to: "Vincent – Quittance Simple <contact@quittancesimple.fr>",
           to: [r.email.trim()],
-          subject,
+      subject: subjectPersonalized || subjectTemplate,
           html,
         }),
       });

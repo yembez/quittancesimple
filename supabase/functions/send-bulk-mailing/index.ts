@@ -265,7 +265,16 @@ Deno.serve(async (req: Request) => {
     let bodyPersonalized = bodyHtml
       .replace(/\{\{\s*prenom\s*\}\}/gi, prenom)
       .replace(/\[\s*Prénom\s*\]/gi, prenom);
-    if (!prenom) bodyPersonalized = bodyPersonalized.replace(/\bBonjour\s+,/gi, "Bonjour,");
+    if (!prenom) {
+      bodyPersonalized = bodyPersonalized.replace(/\bBonjour\s+,/gi, "Bonjour,");
+    }
+
+    let subjectPersonalized = subject
+      .replace(/\{\{\s*prenom\s*\}\}/gi, prenom)
+      .replace(/\[\s*Prénom\s*\]/gi, prenom);
+    if (!prenom) {
+      subjectPersonalized = subjectPersonalized.replace(/^,\s*/, "").replace(/\s{2,}/g, " ").trim();
+    }
 
     const ctaUrlRaw = payload.ctaUrl || "";
     const ctaUrlPersonalized = ctaUrlRaw
@@ -309,7 +318,7 @@ Deno.serve(async (req: Request) => {
           from: "Vincent – Quittance Simple <contact@quittancesimple.fr>",
           reply_to: "Vincent – Quittance Simple <contact@quittancesimple.fr>",
           to: [r.email.trim()],
-          subject,
+          subject: subjectPersonalized || subject,
           html,
         }),
       });

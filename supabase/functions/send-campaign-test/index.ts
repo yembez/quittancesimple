@@ -113,6 +113,9 @@ Deno.serve(async (req: Request) => {
   const bodyPersonalized = bodyHtml
     .replace(/\{\{\s*prenom\s*\}\}/gi, prenom)
     .replace(/\[\s*Prénom\s*\]/gi, prenom);
+  const subjectPersonalized = (subject || "")
+    .replace(/\{\{\s*prenom\s*\}\}/gi, prenom)
+    .replace(/\[\s*Prénom\s*\]/gi, prenom);
   const ctaUrlPersonalized = (ctaUrl || "").replace(/\{\{\s*email\s*\}\}/gi, encodeURIComponent(testEmail));
   const unsubscribeUrl = `${SITE_URL}/unsubscribe?email=${encodeURIComponent(testEmail)}`;
 
@@ -135,7 +138,7 @@ Deno.serve(async (req: Request) => {
       from: "Vincent – Quittance Simple <contact@quittancesimple.fr>",
       reply_to: "Vincent – Quittance Simple <contact@quittancesimple.fr>",
       to: [testEmail],
-      subject: subject || "Test campagne",
+      subject: subjectPersonalized || subject || "Test campagne",
       html,
     }),
   });
