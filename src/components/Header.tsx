@@ -58,27 +58,6 @@ const Header = () => {
     }
   }, [location.state, location.pathname, navigate]);
 
-  // CTA mail campagne / quittance gratuite : ouvrir le modal orange "Espace Bailleur + Pack Automatique" (pas le LoginModal)
-  useEffect(() => {
-    if (location.pathname !== '/') return;
-    const hash = typeof window !== 'undefined' ? window.location.hash : '';
-    if (!hash || !hash.toLowerCase().includes('loginemail=')) return;
-    try {
-      const params = new URLSearchParams(hash.slice(1));
-      const raw = (params.get('loginEmail') || '').trim();
-      const isPlaceholder = /^\s*\{\{\s*email\s*\}\}\s*$/i.test(raw) || raw.includes('{{') || raw.includes('}}');
-      const email = isPlaceholder ? '' : raw;
-      const openSignup = params.get('mode') === 'signup' || !!email;
-      if (email || openSignup) {
-        setPackActivationPrefillEmail(email || '');
-        setIsPackActivationFlowOpen(true);
-        window.history.replaceState(null, '', window.location.pathname + window.location.search);
-      }
-    } catch (_) {
-      // ignore
-    }
-  }, [location.pathname]);
-
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
