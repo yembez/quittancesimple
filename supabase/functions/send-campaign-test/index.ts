@@ -132,7 +132,8 @@ Deno.serve(async (req: Request) => {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "Quittance Simple <noreply@quittancesimple.fr>",
+      from: "Vincent – Quittance Simple <contact@quittancesimple.fr>",
+      reply_to: "Vincent – Quittance Simple <contact@quittancesimple.fr>",
       to: [testEmail],
       subject: subject || "Test campagne",
       html,

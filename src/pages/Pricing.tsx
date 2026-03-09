@@ -197,9 +197,9 @@ const Pricing = () => {
               viewport={{ once: true }}
               className="order-1 lg:order-2 bg-white rounded-2xl border border-[#d2d2d7] shadow-[0_2px_10px_rgba(0,0,0,0.04)] p-5 sm:p-6 relative lg:ring-1 lg:ring-[#1d1d1f] lg:ring-offset-0 overflow-visible"
             >
-              {/* Badge 30 jours gratuits à cheval sur la bordure */}
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10 inline-flex items-center gap-1.5 rounded-full bg-[#E65F3F] text-white px-3 py-1.5 text-xs font-medium shadow-sm border-2 border-white">
-                <Sparkles className="w-3.5 h-3.5" />
+              {/* Badge 30 jours gratuits : discret sur mobile pour ne pas masquer le titre */}
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10 inline-flex items-center gap-1 rounded-full bg-[#E65F3F] text-white border-2 border-white px-2 py-1 text-[10px] font-medium md:gap-1.5 md:px-3 md:py-1.5 md:text-xs md:shadow-sm">
+                <Sparkles className="w-3 h-3 md:w-3.5 md:h-3.5" />
                 30 jours gratuits · Sans CB
               </div>
 
@@ -277,27 +277,39 @@ const Pricing = () => {
               <ul className="space-y-2 mb-4">
                 <li className="flex items-start gap-2.5">
                   <Check className="w-3.5 h-3.5 text-[#34c759] mt-0.5 flex-shrink-0" />
-                  <span className="text-xs text-[#1d1d1f] leading-snug"><strong className="font-medium">Envoi automatique des quittances ou rappels</strong> — Générées et envoyées chaque mois. Vous validez en un clic.</span>
+                  <span className="text-xs text-[#1d1d1f] leading-snug"><strong className="font-medium">Quittances et rappels auto</strong> — Envoyés chaque mois, validation et rappel retard en 1 clic.</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Check className="w-3.5 h-3.5 text-[#34c759] mt-0.5 flex-shrink-0" />
-                  <span className="text-xs text-[#1d1d1f] leading-snug"><strong className="font-medium">Historique toujours disponible</strong> — Plus jamais à chercher un PDF.</span>
+                  <span className="text-xs text-[#1d1d1f] leading-snug"><strong className="font-medium">Annonces immobilières par IA</strong> — Rédigez vos annonces plus vite.</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Check className="w-3.5 h-3.5 text-[#34c759] mt-0.5 flex-shrink-0" />
-                  <span className="text-xs text-[#1d1d1f] leading-snug"><strong className="font-medium">Espace stockage privé</strong> — Déposez tous vos documents au même endroit.</span>
+                  <span className="text-xs text-[#1d1d1f] leading-snug"><strong className="font-medium">Signature électronique de bail</strong> — Vide ou meublé, signé en ligne (locataire + garant).</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Check className="w-3.5 h-3.5 text-[#34c759] mt-0.5 flex-shrink-0" />
-                  <span className="text-xs text-[#1d1d1f] leading-snug"><strong className="font-medium">Révisions IRL automatiques</strong> — Calcul conforme INSEE, rappel à la bonne date, lettre prête à envoyer.</span>
+                  <span className="text-xs text-[#1d1d1f] leading-snug"><strong className="font-medium">Bail Facile</strong> — Modèle à remplir en ligne ou à télécharger vierge.</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Check className="w-3.5 h-3.5 text-[#34c759] mt-0.5 flex-shrink-0" />
-                  <span className="text-xs text-[#1d1d1f] leading-snug"><strong className="font-medium">Bail Facile</strong> — Modèle de bail à remplir ou à télécharger vierge avec aide au remplissage.</span>
+                  <span className="text-xs text-[#1d1d1f] leading-snug"><strong className="font-medium">Révisions IRL et charges</strong> — Calcul INSEE, rappel.</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Check className="w-3.5 h-3.5 text-[#34c759] mt-0.5 flex-shrink-0" />
-                  <span className="text-xs text-[#1d1d1f] leading-snug"><strong className="font-medium">Bilan annuel simplifié / report fiscal</strong> — Déclaration prête en quelques clics.</span>
+                  <span className="text-xs text-[#1d1d1f] leading-snug"><strong className="font-medium">Courrier révision IRL auto</strong> — Lettre générée automatiquement prête à envoyer.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-3.5 h-3.5 text-[#34c759] mt-0.5 flex-shrink-0" />
+                  <span className="text-xs text-[#1d1d1f] leading-snug"><strong className="font-medium">Espace stockage privé</strong> — Tous vos documents au même endroit.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-3.5 h-3.5 text-[#34c759] mt-0.5 flex-shrink-0" />
+                  <span className="text-xs text-[#1d1d1f] leading-snug"><strong className="font-medium">Bilan annuel / report fiscal</strong> — Déclaration prête en quelques clics.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-3.5 h-3.5 text-[#34c759] mt-0.5 flex-shrink-0" />
+                  <span className="text-xs text-[#1d1d1f] leading-snug"><strong className="font-medium">Historique illimité</strong> — Tous vos PDF à portée de main.</span>
                 </li>
               </ul>
 
@@ -308,7 +320,7 @@ const Pricing = () => {
                 }}
                 className="w-full py-2.5 rounded-xl bg-[#E65F3F] hover:bg-[#d95530] text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
               >
-                Activer le Pack Automatique
+                Essayer gratuitement
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </motion.div>
@@ -337,15 +349,6 @@ const Pricing = () => {
         </div>
       </section>
 
-      {/* Note tarifs */}
-      <section className="py-10 sm:py-12 bg-[#fafafa]">
-        <div className="max-w-[980px] mx-auto px-5 sm:px-6 text-center">
-          <p className="text-sm text-[#6e6e73]">
-            Les tarifs pourront évoluer pour les nouveaux abonnés. Vous conservez le vôtre tant que votre abonnement reste actif.
-          </p>
-        </div>
-      </section>
-
       {/* Sticky Mobile CTA */}
       {(isMobile || isMobileDevice) && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-[#e8e7ef] p-4 shadow-2xl z-40 md:hidden">
@@ -356,7 +359,7 @@ const Pricing = () => {
             }}
             className="w-full py-4 rounded-xl bg-[#E65F3F] hover:bg-[#d95530] text-white font-bold text-base transition-colors shadow-lg flex items-center justify-center gap-2"
           >
-            Activer le Pack Automatique
+            Essayer gratuitement
             <ArrowRight className="w-5 h-5" />
           </button>
         </div>

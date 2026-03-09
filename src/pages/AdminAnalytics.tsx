@@ -58,6 +58,37 @@ const AdminAnalytics: React.FC = () => {
   const [editViewSignature, setEditViewSignature] = useState<'source' | 'preview'>('preview');
   const [ctaClicks, setCtaClicks] = useState<{ j2: number; j5: number; j8: number; total: number } | null>(null);
 
+  type TrialEmailLog = {
+    reminder_type: string;
+    sent_at: string | null;
+  };
+
+  type TrialLeadReportRow = {
+    id: string;
+    email: string;
+    nom: string | null;
+    prenom: string | null;
+    date_inscription: string | null;
+    date_fin_essai: string | null;
+    days_remaining: number | null;
+    nombre_quittances: number;
+    lead_statut: string | null;
+    password_set: boolean;
+    welcome_email_sent_at: string | null;
+    campaign_j2_sent_at: string | null;
+    campaign_j5_sent_at: string | null;
+    campaign_j8_sent_at: string | null;
+    origine: 'quittance_gratuite' | 'vierge';
+    trial_emails: TrialEmailLog[];
+  };
+
+  const [trialLeads, setTrialLeads] = useState<TrialLeadReportRow[] | null>(null);
+  const [trialLoading, setTrialLoading] = useState(false);
+  const [trialError, setTrialError] = useState('');
+  const [trialStats, setTrialStats] = useState<{ count: number; active: number; expired: number } | null>(null);
+  const [freeAccountLeads, setFreeAccountLeads] = useState<TrialLeadReportRow[] | null>(null);
+  const [freeStats, setFreeStats] = useState<{ count: number; active: number; expired: number } | null>(null);
+
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
@@ -122,12 +153,75 @@ const AdminAnalytics: React.FC = () => {
     }
   }, []);
 
+  const fetchTrialLeads = useCallback(async () => {
+    setTrialLoading(true);
+    setTrialError('');
+    try {
+      const { data, error } = await supabase.functions.invoke('get-trial-leads-report', {
+        body: { adminPassword: ADMIN_PASSWORD },
+      });
+      if (error) {
+        setTrialError(error.message || 'Erreur chargement leads essai');
+        setTrialLeads(null);
+        setTrialStats(null);
+        return;
+      }
+      if (!data || (data as any).error) {
+        setTrialError((data as any)?.error || 'Erreur chargement leads essai');
+        setTrialLeads(null);
+        setTrialStats(null);
+        return;
+      }
+      const payload = data as {
+        trialLeads?: TrialLeadReportRow[];
+        trialStats?: { count?: number; active?: number; expired?: number };
+        freeLeads?: TrialLeadReportRow[];
+        freeStats?: { count?: number; active?: number; expired?: number };
+      } | null;
+      const trialRows = payload?.trialLeads ?? [];
+      const trialS = payload?.trialStats;
+      const freeRows = payload?.freeLeads ?? [];
+      const freeS = payload?.freeStats;
+
+      setTrialLeads(trialRows);
+      if (trialS && typeof trialS.count === 'number') {
+        setTrialStats({
+          count: trialS.count ?? trialRows.length,
+          active: trialS.active ?? 0,
+          expired: trialS.expired ?? 0,
+        });
+      } else {
+        setTrialStats(null);
+      }
+
+      setFreeAccountLeads(freeRows);
+      if (freeS && typeof freeS.count === 'number') {
+        setFreeStats({
+          count: freeS.count ?? freeRows.length,
+          active: freeS.active ?? 0,
+          expired: freeS.expired ?? 0,
+        });
+      } else {
+        setFreeStats(null);
+      }
+    } catch (e) {
+      setTrialError(e instanceof Error ? e.message : String(e));
+      setTrialLeads(null);
+      setTrialStats(null);
+      setFreeAccountLeads(null);
+      setFreeStats(null);
+    } finally {
+      setTrialLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (authenticated) {
       fetchAndAnalyze();
       fetchCtaStats();
+      fetchTrialLeads();
     }
-  }, [authenticated, fetchAndAnalyze, fetchCtaStats]);
+  }, [authenticated, fetchAndAnalyze, fetchCtaStats, fetchTrialLeads]);
 
   const handleExportAllValid = () => {
     if (!result) return;
@@ -804,6 +898,258 @@ const AdminAnalytics: React.FC = () => {
                     )}
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Leads Essai Pack Automatique */}
+            <div className="bg-white rounded-xl shadow-sm border border-[#e5e7eb] overflow-hidden">
+              <div className="p-4 border-b border-[#e5e7eb] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                  <h2 className="text-lg font-semibold text-[#111827]">Leads essai Pack Automatique</h2>
+                  <p className="text-sm text-[#6b7280] mt-1">
+                    Leads avec <code className="bg-gray-100 px-1 rounded text-xs">lead_statut = 'QA_1st_interested'</code> (espace créé + essai activé).
+                  </p>
+                  {trialStats && (
+                    <p className="text-xs text-[#4b5563] mt-1">
+                      Total : <strong>{trialStats.count}</strong> · Essai en cours : <strong>{trialStats.active}</strong> · Essai expiré : <strong>{trialStats.expired}</strong>
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={fetchTrialLeads}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#2563eb] text-white hover:bg-[#1d4ed8] transition-colors self-start sm:self-auto"
+                >
+                  Rafraîchir
+                </button>
+              </div>
+              <div className="p-4">
+                {trialError && (
+                  <p className="text-sm text-red-600 mb-3">Erreur chargement leads essai : {trialError}</p>
+                )}
+                {trialLoading && !trialLeads && (
+                  <p className="text-sm text-[#6b7280]">Chargement des leads en essai…</p>
+                )}
+                {trialLeads && trialLeads.length === 0 && !trialLoading && !trialError && (
+                  <p className="text-sm text-[#6b7280]">
+                    Aucun lead en essai (QA_1st_interested) pour le moment.
+                  </p>
+                )}
+                {trialLeads && trialLeads.length > 0 && (
+                  <div className="space-y-3">
+                    <p className="text-xs text-[#6b7280]">
+                      {trialLeads.length} lead(s) en essai actif ou récent. Colonnes clés :
+                      <span className="ml-1 font-medium text-[#374151]">
+                        jours restants, welcome, campagnes J+2/J+5/J+8, relances d&apos;essai, origine, quittances.
+                      </span>
+                    </p>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full text-xs border-t border-b border-[#e5e7eb]">
+                        <thead className="bg-[#f9fafb]">
+                          <tr>
+                            <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Email</th>
+                            <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Nom</th>
+                            <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Créé le</th>
+                            <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Jours restants</th>
+                            <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Origine</th>
+                            <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Quittances</th>
+                            <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Welcome</th>
+                            <th className="px-2 py-1 text-left font-medium text-[#6b7280]">J+2 / J+5 / J+8</th>
+                            <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Relances essai</th>
+                            <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Mot de passe défini</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {trialLeads.slice(0, 80).map((lead) => {
+                            const days =
+                              lead.days_remaining === null
+                                ? '—'
+                                : lead.days_remaining >= 0
+                                ? `${lead.days_remaining}j`
+                                : `${lead.days_remaining}j (expiré)`;
+                            const origineLabel =
+                              lead.origine === 'quittance_gratuite' ? 'Quittance gratuite' : 'Vierge';
+                            const formatDateTime = (d: string | null) =>
+                              d ? new Date(d).toLocaleString('fr-FR') : '—';
+                            const trialEmailsLabel =
+                              lead.trial_emails && lead.trial_emails.length > 0
+                                ? lead.trial_emails
+                                    .map((t) => {
+                                      const label = t.reminder_type.replace('day_', 'J+');
+                                      return `${label} (${t.sent_at ? new Date(t.sent_at).toLocaleDateString('fr-FR') : '?'})`;
+                                    })
+                                    .join(', ')
+                                : '—';
+                            return (
+                              <tr key={lead.id} className="border-t border-[#f3f4f6]">
+                                <td className="px-2 py-1 text-[#111827] truncate max-w-[180px]" title={lead.email}>
+                                  {lead.email}
+                                </td>
+                                <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
+                                  {lead.prenom || lead.nom
+                                    ? `${lead.prenom ? `${lead.prenom} ` : ''}${lead.nom || ''}`.trim()
+                                    : '—'}
+                                </td>
+                                <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
+                                  {lead.date_inscription
+                                    ? new Date(lead.date_inscription).toLocaleDateString('fr-FR')
+                                    : '—'}
+                                </td>
+                                <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">{days}</td>
+                                <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">{origineLabel}</td>
+                                <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
+                                  {lead.nombre_quittances > 0 ? `${lead.nombre_quittances} quittance(s)` : 'Aucune'}
+                                </td>
+                                <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
+                                  {formatDateTime(lead.welcome_email_sent_at)}
+                                </td>
+                                <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
+                                  J+2&nbsp;: {formatDateTime(lead.campaign_j2_sent_at)}
+                                  <br />
+                                  J+5&nbsp;: {formatDateTime(lead.campaign_j5_sent_at)}
+                                  <br />
+                                  J+8&nbsp;: {formatDateTime(lead.campaign_j8_sent_at)}
+                                </td>
+                                <td className="px-2 py-1 text-[#4b5563]">{trialEmailsLabel}</td>
+                                <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
+                                  {lead.password_set ? 'Oui' : 'Non / inconnu'}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    {trialLeads.length > 80 && (
+                      <p className="text-xs text-[#6b7280]">
+                        … et {trialLeads.length - 80} autre(s) lead(s). Pour une analyse plus poussée,
+                        utilise une requête SQL dédiée.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Leads compte gratuit (free_account) */}
+            <div className="bg-white rounded-xl shadow-sm border border-[#e5e7eb] overflow-hidden">
+              <div className="p-4 border-b border-[#e5e7eb] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                  <h2 className="text-lg font-semibold text-[#111827]">Leads compte gratuit (Free Account)</h2>
+                  <p className="text-sm text-[#6b7280] mt-1">
+                    Leads avec <code className="bg-gray-100 px-1 rounded text-xs">lead_statut = 'free_account'</code> (compte gratuit créé sans essai Pack Automatique).
+                  </p>
+                  {freeStats && (
+                    <p className="text-xs text-[#4b5563] mt-1">
+                      Total : <strong>{freeStats.count}</strong> · Avec date d&apos;essai (active ou expirée) :{' '}
+                      <strong>{(freeAccountLeads || []).filter((l) => l.date_fin_essai !== null).length}</strong>
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={fetchTrialLeads}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#2563eb] text-white hover:bg-[#1d4ed8] transition-colors self-start sm:self-auto"
+                >
+                  Rafraîchir
+                </button>
+              </div>
+              <div className="p-4">
+                {freeAccountLeads && freeAccountLeads.length === 0 && !trialLoading && !trialError && (
+                  <p className="text-sm text-[#6b7280]">
+                    Aucun lead « compte gratuit » (free_account) pour le moment (hors adresses de test exclues).
+                  </p>
+                )}
+                {freeAccountLeads && freeAccountLeads.length > 0 && (
+                  <div className="space-y-3">
+                    <p className="text-xs text-[#6b7280]">
+                      {freeAccountLeads.length} lead(s) free_account. Colonnes identiques aux leads d&apos;essai pour comparer les comportements.
+                    </p>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full text-xs border-t border-b border-[#e5e7eb]">
+                        <thead className="bg-[#f9fafb]">
+                          <tr>
+                            <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Email</th>
+                            <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Nom</th>
+                            <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Créé le</th>
+                            <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Jours restants</th>
+                            <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Origine</th>
+                            <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Quittances</th>
+                            <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Welcome</th>
+                            <th className="px-2 py-1 text-left font-medium text-[#6b7280]">J+2 / J+5 / J+8</th>
+                            <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Relances essai</th>
+                            <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Mot de passe défini</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {freeAccountLeads.slice(0, 80).map((lead) => {
+                            const days =
+                              lead.days_remaining === null
+                                ? '—'
+                                : lead.days_remaining >= 0
+                                ? `${lead.days_remaining}j`
+                                : `${lead.days_remaining}j (expiré)`;
+                            const origineLabel =
+                              lead.origine === 'quittance_gratuite' ? 'Quittance gratuite' : 'Vierge';
+                            const formatDateTime = (d: string | null) =>
+                              d ? new Date(d).toLocaleString('fr-FR') : '—';
+                            const trialEmailsLabel =
+                              lead.trial_emails && lead.trial_emails.length > 0
+                                ? lead.trial_emails
+                                    .map((t) => {
+                                      const label = t.reminder_type.replace('day_', 'J+');
+                                      return `${label} (${t.sent_at ? new Date(t.sent_at).toLocaleDateString('fr-FR') : '?'})`;
+                                    })
+                                    .join(', ')
+                                : '—';
+                            return (
+                              <tr key={lead.id} className="border-t border-[#f3f4f6]">
+                                <td className="px-2 py-1 text-[#111827] truncate max-w-[180px]" title={lead.email}>
+                                  {lead.email}
+                                </td>
+                                <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
+                                  {lead.prenom || lead.nom
+                                    ? `${lead.prenom ? `${lead.prenom} ` : ''}${lead.nom || ''}`.trim()
+                                    : '—'}
+                                </td>
+                                <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
+                                  {lead.date_inscription
+                                    ? new Date(lead.date_inscription).toLocaleDateString('fr-FR')
+                                    : '—'}
+                                </td>
+                                <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">{days}</td>
+                                <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">{origineLabel}</td>
+                                <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
+                                  {lead.nombre_quittances > 0 ? `${lead.nombre_quittances} quittance(s)` : 'Aucune'}
+                                </td>
+                                <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
+                                  {formatDateTime(lead.welcome_email_sent_at)}
+                                </td>
+                                <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
+                                  J+2&nbsp;: {formatDateTime(lead.campaign_j2_sent_at)}
+                                  <br />
+                                  J+5&nbsp;: {formatDateTime(lead.campaign_j5_sent_at)}
+                                  <br />
+                                  J+8&nbsp;: {formatDateTime(lead.campaign_j8_sent_at)}
+                                </td>
+                                <td className="px-2 py-1 text-[#4b5563]">{trialEmailsLabel}</td>
+                                <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
+                                  {lead.password_set ? 'Oui' : 'Non / inconnu'}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    {freeAccountLeads.length > 80 && (
+                      <p className="text-xs text-[#6b7280]">
+                        … et {freeAccountLeads.length - 80} autre(s) lead(s). Pour une analyse plus poussée,
+                        utilise une requête SQL dédiée.
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 

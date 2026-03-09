@@ -652,7 +652,7 @@ Deno.serve(async (req) => {
       `,
       ctaText: 'Accès gratuit à mon Espace Bailleur',
       ctaUrl: ctaUrlPack,
-      closingHtml: "À très vite,<br><strong>Guilhem de Quittance Simple</strong>",
+      closingHtml: "À très vite,<br><strong>Vincent de Quittance Simple</strong>",
       unsubscribeUrl: emailForCta ? `${SITE_URL}/unsubscribe?email=${encodeURIComponent(emailForCta)}` : undefined,
     });
 

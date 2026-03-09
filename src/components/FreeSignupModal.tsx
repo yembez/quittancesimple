@@ -164,6 +164,16 @@ const FreeSignupModal: React.FC<FreeSignupModalProps> = ({ isOpen, onClose, pref
 
       console.log('✅ Propriétaire créé/mis à jour:', propData);
 
+      // Marquer le mot de passe comme défini pour ce propriétaire
+      try {
+        await supabase
+          .from('proprietaires')
+          .update({ password_set: true })
+          .eq('email', formData.email);
+      } catch (e) {
+        console.warn('⚠️ Impossible de mettre à jour password_set pour', formData.email, e);
+      }
+
       if (prefillData?.locataireName && prefillData?.locataireAddress && prefillData?.loyer) {
         const { error: locataireError } = await supabase
           .from('locataires')

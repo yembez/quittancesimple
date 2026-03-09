@@ -104,8 +104,12 @@ Deno.serve(async (req: Request) => {
     .or("mailing_desabonne.is.null,mailing_desabonne.eq.false")
     .order("created_at", { ascending: true });
 
+  // J+2 : mêmes critères que J+5/J+8 (uniquement leads "quittance gratuite" non inscrits)
   if (segment === "free_leads") {
-    query = query.gte("nombre_quittances", 1).is("campaign_j2_sent_at", null);
+    query = query
+      .eq("lead_statut", "free_quittance_pdf")
+      .gte("nombre_quittances", 1)
+      .is("campaign_j2_sent_at", null);
   } else if (segment === "leads_j5") {
     query = query.eq("lead_statut", "free_quittance_pdf").is("campaign_j5_sent_at", null);
   } else if (segment === "leads_j8") {
@@ -185,7 +189,8 @@ Deno.serve(async (req: Request) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: "Quittance Simple <noreply@quittancesimple.fr>",
+          from: "Vincent – Quittance Simple <contact@quittancesimple.fr>",
+          reply_to: "Vincent – Quittance Simple <contact@quittancesimple.fr>",
           to: [r.email.trim()],
           subject,
           html,

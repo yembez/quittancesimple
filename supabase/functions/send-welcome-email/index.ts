@@ -17,7 +17,7 @@ interface WelcomeEmailRequest {
 const SITE_URL = "https://www.quittancesimple.fr";
 const DASHBOARD_URL = `${SITE_URL}/dashboard`;
 /** Photo de signature servie par le site (affichage fiable dans tous les clients mail) */
-const GUILHEM_SIGNATURE_IMAGE_URL = `${SITE_URL}/images/guilhem-signature.png`;
+const VINCENT_SIGNATURE_IMAGE_URL = `${SITE_URL}/images/vincent-signature.png`;
 
 function buildWelcomeBodyHtml(): string {
   return `
@@ -98,15 +98,15 @@ Deno.serve(async (req: Request) => {
           <tr>
             <td style="padding: 0; padding-right: 10px; vertical-align: middle;">
               <img
-                src="${GUILHEM_SIGNATURE_IMAGE_URL}"
+                src="${VINCENT_SIGNATURE_IMAGE_URL}"
                 width="40"
                 height="40"
-                alt="Guilhem"
+                alt="Vincent"
                 style="display: block; width: 40px; height: 40px; border-radius: 9999px; object-fit: cover; object-position: center top;"
               />
             </td>
             <td style="padding: 0; vertical-align: middle;">
-              À très vite dans votre Espace Bailleur,<br><strong>Guilhem de Quittance Simple</strong>
+              À très vite dans votre Espace Bailleur,<br><strong>Vincent de Quittance Simple</strong>
             </td>
           </tr>
         </table>
@@ -120,7 +120,8 @@ Deno.serve(async (req: Request) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "QS - Espace Bailleur <noreply@quittancesimple.fr>",
+        from: "Vincent – Quittance Simple <contact@quittancesimple.fr>",
+        reply_to: "Vincent – Quittance Simple <contact@quittancesimple.fr>",
         to: [email.trim()],
         subject: "Bienvenue sur votre Espace Bailleur — Quittance Simple",
         html,
@@ -143,10 +144,20 @@ Deno.serve(async (req: Request) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (supabaseUrl && serviceKey) {
       const supabase = createClient(supabaseUrl, serviceKey);
-      await supabase
+      const emailTrim = email.trim();
+      // Mise à jour par id après recherche insensible à la casse (évite 0 rows si casse différente)
+      const { data: row } = await supabase
         .from("proprietaires")
-        .update({ welcome_email_sent_at: new Date().toISOString() })
-        .eq("email", email.trim());
+        .select("id")
+        .ilike("email", emailTrim)
+        .limit(1)
+        .maybeSingle();
+      if (row?.id) {
+        await supabase
+          .from("proprietaires")
+          .update({ welcome_email_sent_at: new Date().toISOString() })
+          .eq("id", row.id);
+      }
     }
 
     return new Response(

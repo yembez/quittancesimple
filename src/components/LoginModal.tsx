@@ -174,6 +174,16 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, mode = 'login'
           console.warn('Envoi email de bienvenue (non bloquant):', e);
         }
 
+        // Marquer le mot de passe comme défini pour ce propriétaire
+        try {
+          await supabase
+            .from('proprietaires')
+            .update({ password_set: true })
+            .eq('email', formData.email);
+        } catch (e) {
+          console.warn('⚠️ Impossible de mettre à jour password_set pour', formData.email, e);
+        }
+
         localStorage.setItem('proprietaireEmail', formData.email);
         localStorage.setItem('selectedPlan', selectedPlan);
         localStorage.setItem('billingCycle', billingCycle);

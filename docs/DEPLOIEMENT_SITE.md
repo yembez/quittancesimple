@@ -55,7 +55,7 @@ Le projet est configuré pour **Vercel** et **Netlify**. Utilise la plateforme s
 
 ## 2. Supabase (base de données + Edge Functions)
 
-Les changements récents (templates e-mail, signature « Guilhem », lien Nous contacter en `mailto:`) sont dans des **Edge Functions**. Il faut les redéployer pour que la prod utilise le nouveau code.
+Les changements récents (templates e-mail, signature « Vincent », lien Nous contacter en `mailto:`) sont dans des **Edge Functions**. Il faut les redéployer pour que la prod utilise le nouveau code.
 
 ### 2.1 Lier le projet Supabase
 
@@ -89,7 +89,7 @@ Ce script fait aussi le déploiement des fonctions de **signature**. Il ne dépl
 Pour que les nouveaux e-mails (quittance gratuite, rappels essai, etc.) soient pris en compte, déploie les fonctions concernées :
 
 ```bash
-# Fonctions e-mail modifiées (template unifié, signature Guilhem, mailto contact)
+# Fonctions e-mail modifiées (template unifié, signature Vincent, mailto contact)
 npx supabase functions deploy send-quittance
 npx supabase functions deploy send-trial-reminder-email
 ```
@@ -129,7 +129,7 @@ Dans **Supabase Dashboard → Project → Edge Functions → Secrets**, vérifie
 
 4. **Contrôle**  
    - Ouvrir l’URL de prod du site et vérifier que l’app charge (même Supabase / même env).  
-   - Déclencher un envoi de quittance gratuite et vérifier que l’e-mail reçu a le bon contenu (signature « Guilhem de Quittance Simple », lien « Nous contacter » en mailto, bleu vif, etc.).
+   - Déclencher un envoi de quittance gratuite et vérifier que l’e-mail reçu a le bon contenu (signature « Vincent de Quittance Simple », lien « Nous contacter » en mailto, bleu vif, etc.).
 
 ---
 

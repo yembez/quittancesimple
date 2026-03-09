@@ -160,7 +160,8 @@ function App() {
     !isBailSignatureDashboardPage &&
     !location.pathname.startsWith('/c/') &&
     !isSignPage &&
-    !(isMobile && formPages.includes(location.pathname));
+    !(isMobile && formPages.includes(location.pathname)) &&
+    !(isMobile && location.pathname === '/pricing');
 
   const showUserSpaceHeader = isUserSpacePage;
   const showMainHeader = shouldShowLayout && !showUserSpaceHeader;

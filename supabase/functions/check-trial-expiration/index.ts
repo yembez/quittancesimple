@@ -228,7 +228,8 @@ Deno.serve(async (req: Request) => {
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                from: 'QS - Espace Bailleur <noreply@quittancesimple.fr>',
+                from: 'Vincent – Quittance Simple <contact@quittancesimple.fr>',
+                reply_to: 'Vincent – Quittance Simple <contact@quittancesimple.fr>',
                 to: [proprietaire.email],
                 subject: 'Réactivez votre compte Quittance Simple',
                 html: emailHtml,

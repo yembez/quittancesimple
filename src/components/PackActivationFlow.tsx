@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
-import { X, Mail, Lock, Eye, EyeOff, CheckCircle, ArrowRight } from 'lucide-react';
+import { X, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { validateEmail } from '../utils/validation';
@@ -262,6 +262,16 @@ const PackActivationFlow: React.FC<PackActivationFlowProps> = ({
         });
       } catch (e) {
         console.warn('Envoi email de bienvenue (non bloquant):', e);
+      }
+
+      // Marquer le mot de passe comme défini pour ce propriétaire
+      try {
+        await supabase
+          .from('proprietaires')
+          .update({ password_set: true })
+          .eq('email', formData.email);
+      } catch (e) {
+        console.warn('⚠️ Impossible de mettre à jour password_set pour', formData.email, e);
       }
 
       localStorage.setItem('proprietaireEmail', formData.email);
