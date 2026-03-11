@@ -24,6 +24,15 @@ function getMonthName(month: number): string {
   return months[month];
 }
 
+function generateToken(length = 32): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, {
@@ -52,29 +61,131 @@ Deno.serve(async (req: Request) => {
 
     console.log(`⏰ Paris time: Day ${parisDay}, ${parisHour}:${parisMinute}`);
 
-    const { data: locataires, error: locatairesError } = await supabase
-      .from('locataires')
+    // ----- J+5 : envoi automatique des quittances systématiques échues -----
+    const nowIso = now.toISOString();
+    const { data: rowsToSendAuto, error: errJ5 } = await supabase
+      .from('quittances_systematic')
       .select(`
         id,
-        nom,
-        prenom,
-        loyer_mensuel,
-        charges_mensuelles,
-        date_rappel,
-        heure_rappel,
-        minute_rappel,
+        locataire_id,
         proprietaire_id,
+        periode,
+        locataires (
+          id,
+          nom,
+          prenom,
+          email,
+          adresse_logement,
+          loyer_mensuel,
+          charges_mensuelles
+        ),
         proprietaires (
           id,
           nom,
           prenom,
-          telephone,
-          email
+          email,
+          adresse,
+          telephone
         )
       `)
+      .lte('date_envoi_auto', nowIso)
+      .eq('status', 'pending_owner_action');
+
+    if (!errJ5 && rowsToSendAuto && rowsToSendAuto.length > 0) {
+      console.log(`📤 J+5: ${rowsToSendAuto.length} quittance(s) à envoyer automatiquement`);
+      for (const row of rowsToSendAuto) {
+        const loc = row.locataires as Record<string, unknown> | null;
+        const prop = row.proprietaires as Record<string, unknown> | null;
+        if (!loc || !prop) {
+          console.error(`❌ J+5: missing locataire or proprietaire for row ${row.id}`);
+          continue;
+        }
+        const locataireName = [loc.prenom, loc.nom].filter(Boolean).join(' ').trim() || String(loc.nom || '');
+        const proprietaireName = [prop.prenom, prop.nom].filter(Boolean).join(' ').trim() || String(prop.nom || '');
+        const payload = {
+          action: 'auto_send',
+          locataireId: row.locataire_id,
+          locataireEmail: loc.email ?? '',
+          locataireName: locataireName || String(loc.nom),
+          logementAddress: loc.adresse_logement ?? '',
+          baillorEmail: prop.email,
+          baillorName: proprietaireName,
+          baillorAddress: prop.adresse ?? '',
+          nomProprietaire: prop.nom ?? '',
+          prenomProprietaire: prop.prenom ?? '',
+          periode: row.periode,
+          loyer: String(Number(loc.loyer_mensuel) || 0),
+          charges: String(Number(loc.charges_mensuelles) || 0),
+        };
+        try {
+          const sendRes = await fetch(`${supabaseUrl}/functions/v1/send-quittance`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabaseServiceKey}`,
+            },
+            body: JSON.stringify(payload),
+          });
+          const sendResult = await sendRes.json();
+          if (sendRes.ok && sendResult.success) {
+            await supabase.from('quittances_systematic').update({ status: 'sent_auto' }).eq('id', row.id);
+            console.log(`✅ J+5: quittance envoyée pour locataire ${row.locataire_id} – ${row.periode}`);
+          } else {
+            console.error(`❌ J+5: send-quittance failed for row ${row.id}:`, sendResult.error);
+          }
+        } catch (e) {
+          console.error(`❌ J+5: error calling send-quittance for row ${row.id}:`, e);
+        }
+      }
+    }
+
+    const baseSelect = `
+      id,
+      nom,
+      prenom,
+      loyer_mensuel,
+      charges_mensuelles,
+      date_rappel,
+      heure_rappel,
+      minute_rappel,
+      proprietaire_id,
+      proprietaires (
+        id,
+        nom,
+        prenom,
+        telephone,
+        email
+      )
+    `;
+    let locataires: Array<Record<string, unknown>> | null = null;
+    let locatairesError: { message?: string; code?: string } | null = null;
+
+    const { data: dataWithMode, error: errWithMode } = await supabase
+      .from('locataires')
+      .select(`${baseSelect}, mode_envoi_quittance`)
       .eq('date_rappel', parisDay)
       .eq('heure_rappel', parisHour)
       .eq('minute_rappel', parisMinute);
+
+    if (errWithMode) {
+      const err = errWithMode as { message?: string; code?: string; details?: string };
+      const msg = String(err.message || err.details || '');
+      const columnMissing = /mode_envoi_quittance|column.*does not exist/i.test(msg) || err.code === 'PGRST204' || err.code === '42703';
+      if (columnMissing) {
+        const { data: dataWithoutMode, error: errWithoutMode } = await supabase
+          .from('locataires')
+          .select(baseSelect)
+          .eq('date_rappel', parisDay)
+          .eq('heure_rappel', parisHour)
+          .eq('minute_rappel', parisMinute);
+        locataires = dataWithoutMode ?? null;
+        locatairesError = errWithoutMode;
+      } else {
+        locatairesError = errWithMode;
+      }
+    } else {
+      locataires = dataWithMode;
+    }
 
     if (locatairesError) {
       console.error('Error fetching locataires:', locatairesError);
@@ -102,128 +213,227 @@ Deno.serve(async (req: Request) => {
       try {
         console.log(`✅ Processing ${locataire.prenom} ${locataire.nom}`);
 
-        const proprietaire = locataire.proprietaires;
-
-        if (!proprietaire || !proprietaire.telephone) {
-          console.error(`❌ No proprietaire or telephone for locataire ${locataire.id}`);
-          results.push({
-            locataire_id: locataire.id,
-            success: false,
-            error: 'No proprietaire or telephone'
-          });
-          continue;
-        }
+        const rawProprietaire = locataire.proprietaires;
+        const proprietaire = Array.isArray(rawProprietaire) ? rawProprietaire[0] : rawProprietaire;
 
         const month = parisTime.getMonth();
         const year = parisTime.getFullYear();
         const monthName = getMonthName(month);
-        const shortCode = generateShortCode(6);
-
-        const { error: shortLinkError } = await supabase
-          .from('short_links')
-          .insert({
-            id: shortCode,
-            proprietaire_id: locataire.proprietaire_id,
-            locataire_id: locataire.id,
-            mois: monthName,
-            annee: year,
-            action: 'send',
-            source: 'sms',
-            expires_at: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString()
-          });
-
-        if (shortLinkError) {
-          console.error('Error creating short link:', shortLinkError);
-          results.push({
-            locataire_id: locataire.id,
-            success: false,
-            error: 'Failed to create short link'
-          });
-          continue;
-        }
-
-        console.log(`🔗 Short link created: ${shortCode}`);
-
         const montantTotal = (locataire.loyer_mensuel || 0) + (locataire.charges_mensuelles || 0);
 
-        const smsResponse = await fetch(
-          `${supabaseUrl}/functions/v1/send-owner-reminder-sms-v2`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${supabaseServiceKey}`,
-            },
-            body: JSON.stringify({
-              telephone: proprietaire.telephone,
-              proprietaireName: `${proprietaire.prenom} ${proprietaire.nom}`,
-              locataireName: `${locataire.prenom} ${locataire.nom}`,
+        const modeEnvoi = locataire.mode_envoi_quittance;
+        const useSystematicPreavis = modeEnvoi === 'systematic_preavis_5j';
+
+        // Mode envoi systématique avec préavis 5j uniquement si explicitement choisi ; sinon rappel classique (SMS + email)
+        if (useSystematicPreavis) {
+          console.log(`📋 Branch systematic_preavis_5j for locataire ${locataire.id} (${locataire.prenom} ${locataire.nom}) – préavis J, envoi auto J+5, pas de SMS`);
+          const periode = `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} ${year}`;
+          const dateEnvoiAuto = new Date(parisTime.getTime() + 5 * 24 * 60 * 60 * 1000);
+          const tokenSendManual = generateToken(32);
+          const tokenExpiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+          const { data: systematicRow, error: systematicError } = await supabase
+            .from('quittances_systematic')
+            .upsert(
+              {
+                locataire_id: locataire.id,
+                proprietaire_id: locataire.proprietaire_id,
+                periode,
+                date_preavis: parisTime.toISOString(),
+                date_envoi_auto: dateEnvoiAuto.toISOString(),
+                status: 'pending_owner_action',
+                action_token_send_manual: tokenSendManual,
+                action_token_expires_at: tokenExpiresAt,
+              },
+              { onConflict: 'locataire_id,periode' }
+            )
+            .select('id')
+            .single();
+
+          if (systematicError) {
+            console.error('❌ Error creating quittances_systematic row:', systematicError);
+            results.push({
+              locataire_id: locataire.id,
+              success: false,
+              error: 'Failed to create quittances_systematic row'
+            });
+          } else {
+            console.log(`📝 Created/updated quittances_systematic for locataire ${locataire.id} – période ${periode}`);
+            let preavisSent = false;
+            if (!systematicRow?.id) {
+              console.error('⚠️ No systematicRow.id, skipping preavis email');
+            } else if (!proprietaire?.email || !String(proprietaire.email).trim()) {
+              console.error('⚠️ Propriétaire email manquant – préavis non envoyé. proprietaire_id:', locataire.proprietaire_id);
+            } else {
+              try {
+                const preavisRes = await fetch(`${supabaseUrl}/functions/v1/send-systematic-preavis`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${supabaseServiceKey}`,
+                  },
+                  body: JSON.stringify({ scheduledId: systematicRow.id }),
+                });
+                const preavisResult = await preavisRes.json().catch(() => ({}));
+                preavisSent = preavisRes.ok && preavisResult.success;
+                if (preavisSent) {
+                  console.log(`📧 Préavis envoyé au propriétaire pour ${locataire.prenom} ${locataire.nom} – ${periode}`);
+                } else {
+                  console.error('⚠️ send-systematic-preavis failed. status:', preavisRes.status, 'body:', preavisResult.error || preavisResult);
+                }
+              } catch (e) {
+                console.error('⚠️ send-systematic-preavis error:', e);
+              }
+            }
+            results.push({
+              locataire_id: locataire.id,
+              success: true,
+              mode: 'systematic_preavis_5j',
+              preavis_sent: preavisSent
+            });
+          }
+        } else {
+          // Mode rappel classique : SMS + short link + email de rappel (comportement inchangé)
+          console.log(`📱 Classic SMS flow for locataire ${locataire.id} (mode_envoi_quittance=${modeEnvoi ?? 'null/undefined'})`);
+          const propForCheck = proprietaire as Record<string, unknown> | null;
+          const hasTelephone = propForCheck && String(propForCheck.telephone ?? propForCheck.phone ?? '').trim();
+          if (!proprietaire || !hasTelephone) {
+            console.error(`❌ No proprietaire or telephone for locataire ${locataire.id}`);
+            results.push({
+              locataire_id: locataire.id,
+              success: false,
+              error: 'No proprietaire or telephone'
+            });
+            continue;
+          }
+
+          const prop = proprietaire as Record<string, unknown>;
+          const shortCode = generateShortCode(6);
+
+          const { error: shortLinkError } = await supabase
+            .from('short_links')
+            .insert({
+              id: shortCode,
+              proprietaire_id: locataire.proprietaire_id,
+              locataire_id: locataire.id,
+              mois: monthName,
+              annee: year,
+              action: 'send',
+              source: 'sms',
+              expires_at: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString()
+            });
+
+          if (shortLinkError) {
+            console.error('Error creating short link:', shortLinkError);
+            results.push({
+              locataire_id: locataire.id,
+              success: false,
+              error: 'Failed to create short link'
+            });
+            continue;
+          }
+
+          console.log(`🔗 Short link created: ${shortCode}`);
+
+          const telephoneStr = String(prop?.telephone ?? prop?.phone ?? '').trim();
+          let smsResult: Record<string, unknown> = { success: false };
+          if (telephoneStr) {
+            const smsPayload = {
+              telephone: telephoneStr,
+              proprietaireName: `${prop?.prenom ?? ''} ${prop?.nom ?? ''}`.trim(),
+              locataireName: `${locataire.prenom ?? ''} ${locataire.nom ?? ''}`.trim(),
               shortCode: shortCode,
               montantTotal: montantTotal
-            }),
-          }
-        );
-
-        const smsResult = await smsResponse.json();
-
-        let emailResult = { success: false, error: 'No email configured' };
-        if (proprietaire.email) {
-          try {
-            const emailPayload = {
-              proprietaireId: proprietaire.id,
-              proprietaireEmail: proprietaire.email,
-              proprietaireName: `${proprietaire.prenom || ''} ${proprietaire.nom || ''}`.trim(),
-              locataireName: `${locataire.prenom || ''} ${locataire.nom || ''}`.trim(),
-              locataireId: locataire.id,
-              mois: `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} ${year}`,
-              annee: year,
-              montantTotal: montantTotal
             };
-
-            console.log(`📧 Sending email to ${proprietaire.email} with payload:`, emailPayload);
-
-            const emailResponse = await fetch(
-              `${supabaseUrl}/functions/v1/send-owner-reminder`,
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${supabaseServiceKey}`,
-                },
-                body: JSON.stringify(emailPayload),
+            console.log(`📤 Calling send-owner-reminder-sms-v2 with telephone=***${telephoneStr.slice(-4)} (len=${telephoneStr.length})`);
+            try {
+              const smsResponse = await fetch(
+                `${supabaseUrl}/functions/v1/send-owner-reminder-sms-v2`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${supabaseServiceKey}`,
+                  },
+                  body: JSON.stringify(smsPayload),
+                }
+              );
+              smsResult = await smsResponse.json().catch(() => ({}));
+              if (smsResponse.ok && (smsResult as { success?: boolean }).success) {
+                console.log(`📱 SMS envoyé au propriétaire pour ${locataire.prenom} ${locataire.nom}`);
+              } else {
+                const errBody = smsResult as { error?: string; provider?: string };
+                console.error(`⚠️ send-owner-reminder-sms-v2 failed: status=${smsResponse.status} error=${errBody?.error ?? 'unknown'} provider=${errBody?.provider ?? '-'} full=`, JSON.stringify(smsResult));
               }
-            );
-            emailResult = await emailResponse.json();
-            if (emailResult.success) {
-              console.log(`✅ Email sent successfully to ${proprietaire.email}`);
-            } else {
-              console.error(`⚠️ Email failed:`, emailResult.error);
+            } catch (smsFetchError) {
+              const errMsg = (smsFetchError as Error).message;
+              console.error(`⚠️ send-owner-reminder-sms-v2 fetch error (network/timeout):`, errMsg);
+              smsResult = { success: false, error: errMsg };
             }
-          } catch (emailError) {
-            console.error(`⚠️ Email error:`, emailError);
-            emailResult = { success: false, error: emailError.message };
+          } else {
+            console.error(`❌ Telephone manquant pour propriétaire (locataire ${locataire.id}) – SMS non envoyé. Proprietaire keys: ${Object.keys(prop || {}).join(', ')}`);
           }
-        } else {
-          console.log(`⚠️ No email configured for proprietaire ${proprietaire.id}`);
-        }
 
-        if (smsResult.success) {
-          console.log(`✅ SMS sent successfully to ${proprietaire.telephone}`);
-          results.push({
-            locataire_id: locataire.id,
-            success: true,
-            shortCode: shortCode,
-            sms_provider: smsResult.data?.provider,
-            email_sent: emailResult.success
-          });
-        } else {
-          console.error(`❌ Failed to send SMS:`, smsResult.error);
-          results.push({
-            locataire_id: locataire.id,
-            success: false,
-            error: smsResult.error,
-            email_sent: emailResult.success
-          });
+          let emailResult = { success: false, error: 'No email configured' };
+          if (prop?.email) {
+            try {
+              const emailPayload = {
+                proprietaireId: prop.id,
+                proprietaireEmail: prop.email,
+                proprietaireName: `${prop.prenom || ''} ${prop.nom || ''}`.trim(),
+                locataireName: `${locataire.prenom || ''} ${locataire.nom || ''}`.trim(),
+                locataireId: locataire.id,
+                mois: `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} ${year}`,
+                annee: year,
+                montantTotal: montantTotal,
+                shortCode: shortCode
+              };
+
+              console.log(`📧 Sending email to ${prop.email} with payload:`, emailPayload);
+
+              const emailResponse = await fetch(
+                `${supabaseUrl}/functions/v1/send-owner-reminder`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${supabaseServiceKey}`,
+                  },
+                  body: JSON.stringify(emailPayload),
+                }
+              );
+              emailResult = await emailResponse.json();
+              if (emailResult.success) {
+                console.log(`✅ Email sent successfully to ${prop.email}`);
+              } else {
+                console.error(`⚠️ Email failed:`, emailResult.error);
+              }
+            } catch (emailError) {
+              console.error(`⚠️ Email error:`, emailError);
+              emailResult = { success: false, error: (emailError as Error).message };
+            }
+          } else {
+            console.log(`⚠️ No email configured for proprietaire ${prop?.id}`);
+          }
+
+          if ((smsResult as { success?: boolean }).success) {
+            console.log(`✅ SMS sent successfully to ${telephoneStr ? '***' + telephoneStr.slice(-4) : 'n/a'}`);
+            results.push({
+              locataire_id: locataire.id,
+              success: true,
+              shortCode: shortCode,
+              sms_provider: smsResult.data?.provider,
+              email_sent: emailResult.success
+            });
+          } else {
+            console.error(`❌ Failed to send SMS:`, (smsResult as { error?: string }).error);
+            results.push({
+              locataire_id: locataire.id,
+              success: false,
+              error: (smsResult as { error?: string }).error,
+              email_sent: emailResult.success
+            });
+          }
         }
 
       } catch (error) {

@@ -73,6 +73,8 @@ const Generator = () => {
   const [successMessage, setSuccessMessage] = React.useState<string[]>([]);
   const [errorMessage, setErrorMessage] = React.useState<string[]>([]);
   const [isMobile, setIsMobile] = React.useState(window.innerWidth < 768);
+  // Lecture seule au chargement pour bloquer l'autocomplétion navigateur ; déverrouillé au premier focus
+  const [formUnlocked, setFormUnlocked] = React.useState(false);
 
   // Email capture hook
   const { handleEmailChange: captureEmail, markComplete } = useEmailCapture({
@@ -180,6 +182,7 @@ const Generator = () => {
           typeCalcul: data.typeCalcul || ''
         }));
         setShowPreview(true);
+        setFormUnlocked(true);
         localStorage.removeItem('prorataData');
       }
       setTimeout(() => {
@@ -470,9 +473,11 @@ const Generator = () => {
                 handleSubmit={handleDownload}
                 isLoading={isLoading}
                 validationErrors={validationErrors}
+                formUnlocked={formUnlocked}
+                onFormFocus={() => setFormUnlocked(true)}
               />
             ) : (
-              <div className="bg-white rounded-2xl border border-[#e8e7ef] p-6 shadow-[0_2px_12px_rgba(15,23,42,0.06)]">
+              <div className="bg-white rounded-2xl border border-[#e8e7ef] p-6 shadow-[0_2px_12px_rgba(15,23,42,0.06)]" onFocus={() => setFormUnlocked(true)}>
               <form className="space-y-6" autoComplete="off">
                 {/* Messages d'erreur */}
                 {validationErrors.length > 0 && (
@@ -514,6 +519,7 @@ const Generator = () => {
                         type="text"
                         name="baillorName"
                         autoComplete="off"
+                        readOnly={!formUnlocked}
                         value={formData.baillorName}
                         onChange={handleInputChange}
                         onBlur={handleBlur}
@@ -532,6 +538,7 @@ const Generator = () => {
                         type="text"
                         name="baillorAddress"
                         autoComplete="off"
+                        readOnly={!formUnlocked}
                         value={formData.baillorAddress}
                         onChange={handleInputChange}
                         onBlur={handleBlur}
@@ -550,6 +557,7 @@ const Generator = () => {
                         type="email"
                         name="baillorEmail"
                         autoComplete="off"
+                        readOnly={!formUnlocked}
                         value={formData.baillorEmail}
                         onChange={handleInputChange}
                         onBlur={handleBlur}
@@ -581,6 +589,7 @@ const Generator = () => {
                         type="text"
                         name="locataireName"
                         autoComplete="off"
+                        readOnly={!formUnlocked}
                         value={formData.locataireName}
                         onChange={handleInputChange}
                         className={`w-full px-3 py-2 rounded-xl border transition-all duration-200 text-sm ${
@@ -598,6 +607,7 @@ const Generator = () => {
                         type="text"
                         name="logementAddress"
                         autoComplete="off"
+                        readOnly={!formUnlocked}
                         value={formData.logementAddress}
                         onChange={handleInputChange}
                         className={`w-full px-3 py-2 rounded-xl border transition-all duration-200 text-sm ${
@@ -636,6 +646,7 @@ const Generator = () => {
                           type="text"
                           name="locataireDomicileAddress"
                           autoComplete="off"
+                          readOnly={!formUnlocked}
                           value={formData.locataireDomicileAddress}
                           onChange={handleInputChange}
                           className="w-full px-3 py-2 rounded-xl border border-[#e3e4f0] focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/20 transition-all duration-200 text-sm"
@@ -662,6 +673,7 @@ const Generator = () => {
                         type="number"
                         name="loyer"
                         autoComplete="off"
+                        readOnly={!formUnlocked}
                         value={formData.loyer}
                         onChange={handleInputChange}
                         className={`w-full px-3 py-2 rounded-xl border transition-all duration-200 text-sm ${
@@ -681,6 +693,7 @@ const Generator = () => {
                         type="number"
                         name="charges"
                         autoComplete="off"
+                        readOnly={!formUnlocked}
                         value={formData.charges}
                         onChange={handleInputChange}
                         className={`w-full px-3 py-2 rounded-xl border transition-all duration-200 text-sm ${
@@ -765,6 +778,7 @@ const Generator = () => {
                         type="date"
                         name="dateDebut"
                         autoComplete="off"
+                        readOnly={!formUnlocked}
                         value={formData.dateDebut}
                         onChange={handleInputChange}
                         className={`w-full px-3 py-2 rounded-xl border transition-all duration-200 text-sm ${
@@ -780,6 +794,7 @@ const Generator = () => {
                         type="date"
                         name="dateFin"
                         autoComplete="off"
+                        readOnly={!formUnlocked}
                         value={formData.dateFin}
                         onChange={handleInputChange}
                         min={formData.dateDebut || undefined}

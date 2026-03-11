@@ -71,6 +71,7 @@ const Home = () => {
   const [showErrorModal, setShowErrorModal] = React.useState(false);
   const [showSuccessModal, setShowSuccessModal] = React.useState(false);
   const [successMessage, setSuccessMessage] = React.useState<string[]>([]);
+  const [formUnlocked, setFormUnlocked] = React.useState(false);
 
   // Email capture hook
   const { handleEmailChange: captureEmail, markComplete } = useEmailCapture({
@@ -121,6 +122,7 @@ const Home = () => {
         const c = parseFloat(data.charges) || 0;
         setProrataAmounts({ loyer: l, charges: c, total: l + c });
         setShowPreview(true);
+        setFormUnlocked(true);
         localStorage.removeItem('prorataData');
         setTimeout(() => {
           document.getElementById('generator')?.scrollIntoView({ behavior: 'smooth' });
@@ -684,7 +686,7 @@ const Home = () => {
                   onClick={() => trackCtaClick('tester_pack_automatique_section', 'home', '/automation')}
                   className="inline-flex items-center justify-center rounded-xl px-6 py-3 bg-[#E65F3F] hover:bg-[#d95530] text-white text-sm font-semibold transition-colors shadow-[0_2px_6px_rgba(15,23,42,0.1)]"
                 >
-                  Tester le Pack Automatique
+                  Tester gratuitement le Pack Automatique
                   <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
                 </Link>
                 <span className="text-[11px] sm:text-xs text-[#8b90a3]">
@@ -768,7 +770,7 @@ const Home = () => {
           </motion.div>
 
           <div className="grid lg:grid-cols-2 gap-6 items-start">
-            <div className="bg-white rounded-3xl border border-slate-200 p-5 shadow-[0_18px_45px_rgba(15,23,42,0.12)]">
+            <div className="bg-white rounded-3xl border border-slate-200 p-5 shadow-[0_18px_45px_rgba(15,23,42,0.12)]" onFocus={() => setFormUnlocked(true)}>
               <form className="space-y-5" autoComplete="off">
                 <div className="space-y-3 bg-slate-50 rounded-2xl p-4 border border-slate-200">
                   <div className="flex items-center space-x-2 pb-2 border-b border-slate-200">
@@ -785,6 +787,7 @@ const Home = () => {
                         type="text"
                         name="baillorName"
                         autoComplete="off"
+                        readOnly={!formUnlocked}
                         value={formData.baillorName}
                         onChange={handleInputChange}
                         onBlur={handleBlur}
@@ -799,6 +802,7 @@ const Home = () => {
                         type="text"
                         name="baillorAddress"
                         autoComplete="off"
+                        readOnly={!formUnlocked}
                         value={formData.baillorAddress}
                         onChange={handleInputChange}
                         onBlur={handleBlur}
@@ -813,6 +817,7 @@ const Home = () => {
                         type="email"
                         name="baillorEmail"
                         autoComplete="off"
+                        readOnly={!formUnlocked}
                         value={formData.baillorEmail}
                         onChange={handleInputChange}
                         onBlur={handleBlur}
@@ -839,6 +844,7 @@ const Home = () => {
                         type="text"
                         name="locataireName"
                         autoComplete="off"
+                        readOnly={!formUnlocked}
                         value={formData.locataireName}
                         onChange={handleInputChange}
                         className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all duration-200 text-xs"
@@ -852,6 +858,7 @@ const Home = () => {
                         type="text"
                         name="logementAddress"
                         autoComplete="off"
+                        readOnly={!formUnlocked}
                         value={formData.logementAddress}
                         onChange={handleInputChange}
                         className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all duration-200 text-xs"
@@ -886,6 +893,7 @@ const Home = () => {
                           type="text"
                           name="locataireDomicileAddress"
                           autoComplete="off"
+                          readOnly={!formUnlocked}
                           value={formData.locataireDomicileAddress}
                           onChange={handleInputChange}
                           className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all duration-200 text-xs"
@@ -911,6 +919,7 @@ const Home = () => {
                         type="number"
                         name="loyer"
                         autoComplete="off"
+                        readOnly={!formUnlocked}
                         value={formData.loyer}
                         onChange={handleInputChange}
                         className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all duration-200 text-xs"
@@ -926,6 +935,7 @@ const Home = () => {
                         type="number"
                         name="charges"
                         autoComplete="off"
+                        readOnly={!formUnlocked}
                         value={formData.charges}
                         onChange={handleInputChange}
                         className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all duration-200 text-xs"
@@ -994,6 +1004,7 @@ const Home = () => {
                         type="date"
                         name="dateDebut"
                         autoComplete="off"
+                        readOnly={!formUnlocked}
                         value={formData.dateDebut}
                         onChange={handleInputChange}
                         className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all duration-200 text-xs"
@@ -1005,6 +1016,7 @@ const Home = () => {
                         type="date"
                         name="dateFin"
                         autoComplete="off"
+                        readOnly={!formUnlocked}
                         value={formData.dateFin}
                         onChange={handleInputChange}
                         min={formData.dateDebut || undefined}

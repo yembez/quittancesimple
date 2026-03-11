@@ -12,7 +12,7 @@ interface ReminderRequest {
   baillorName: string;
   loyer: number;
   charges: number;
-  adresseLogement: string;
+  adresseLogement?: string;
   customMessage?: string;
 }
 
@@ -25,15 +25,18 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    const body = await req.json() as ReminderRequest;
     const {
       locataireEmail,
       locataireName,
       baillorName,
       loyer,
       charges,
-      adresseLogement,
       customMessage
-    }: ReminderRequest = await req.json();
+    } = body;
+    const adresseLogement = (body.adresseLogement != null && String(body.adresseLogement).trim() !== '')
+      ? String(body.adresseLogement).trim()
+      : 'le logement concerné';
 
     const total = loyer + charges;
 

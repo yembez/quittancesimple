@@ -7,6 +7,17 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+/** Normalise un numéro français vers E.164 pour les APIs SMS (ex: 06 12 34 56 78 → +33612345678). */
+function normalizePhoneForSms(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length === 9 && digits.startsWith("6")) return `+33${digits}`;
+  if (digits.length === 10 && digits.startsWith("0")) return `+33${digits.slice(1)}`;
+  if (digits.length === 11 && digits.startsWith("33")) return `+${digits}`;
+  if (raw.startsWith("+")) return raw;
+  if (digits.length >= 10) return `+${digits}`;
+  return raw;
+}
+
 async function getSecret(name: string): Promise<string | null> {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -32,10 +43,10 @@ async function getSecret(name: string): Promise<string | null> {
 }
 
 async function sendViaSMSTo(telephone: string, message: string) {
-  const apiKey = await getSecret('smsto_api_key');
+  const apiKey = (await getSecret('SMSTO_API_KEY')) ?? (await getSecret('smsto_api_key'));
 
   if (!apiKey) {
-    return { success: false, error: 'SMS.to API key not configured', provider: 'smsto' };
+    return { success: false, error: 'SMS.to API key not configured (Vault: SMSTO_API_KEY or smsto_api_key)', provider: 'smsto' };
   }
 
   try {
@@ -59,7 +70,9 @@ async function sendViaSMSTo(telephone: string, message: string) {
       return { success: false, error: `SMS.to error: ${JSON.stringify(data)}`, provider: 'smsto' };
     }
 
-    return { success: true, messageId: data.message_id || data.data?.message_id, provider: 'smsto' };
+    const messageId = data.message_id || data.data?.message_id;
+    console.log('SMS.to API success:', { messageId, to: telephone, response: data });
+    return { success: true, messageId, provider: 'smsto' };
   } catch (error) {
     console.error('SMS.to error:', error);
     return { success: false, error: error.message, provider: 'smsto' };
@@ -157,15 +170,22 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const {
-      telephone,
-      proprietaireName,
-      locataireName,
-      shortCode,
-      montantTotal
-    } = await req.json();
+    const body = await req.json();
+    const telephone = body?.telephone != null ? String(body.telephone).trim() : '';
+    const proprietaireName = body?.proprietaireName ?? '';
+    const locataireName = body?.locataireName ?? '';
+    const shortCode = body?.shortCode ?? '';
+    const montantTotal = body?.montantTotal ?? 0;
 
-    console.log('📱 SMS request received:', { telephone, shortCode });
+    if (!telephone) {
+      console.error('📱 SMS request rejected: telephone missing or empty in body. Keys received:', Object.keys(body || {}));
+      return new Response(
+        JSON.stringify({ success: false, error: 'telephone missing or empty' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    const normalizedPhone = normalizePhoneForSms(telephone);
+    console.log('📱 SMS request received:', { telephone: '***' + telephone.slice(-4), normalized: '***' + normalizedPhone.slice(-4), shortCode });
 
     // Toujours utiliser l'URL réelle du site pour le lien (jamais localhost)
     const rawAppUrl = (Deno.env.get('APP_URL') || 'https://quittancesimple.fr').trim().replace(/\/$/, '');
@@ -176,29 +196,35 @@ Deno.serve(async (req: Request) => {
 
     const message = `Loyer ${locataireName} ${montantTotal}EUR recu ?\n${shortLink}`;
 
-    console.log('📤 Sending SMS via SMSMode...');
+    console.log('📤 Sending SMS via SMS.to (primary)...');
     console.log(`📝 Message (${message.length} chars):`, message);
 
-    let result = await sendViaSMSMode(telephone, message);
+    let result = await sendViaSMSTo(normalizedPhone, message);
+    const firstError = !result.success ? { error: result.error, provider: result.provider } : null;
 
     if (!result.success) {
-      console.warn('⚠️ SMSMode failed, trying SMS.to...', result.error);
-      result = await sendViaSMSTo(telephone, message);
+      console.warn('⚠️ SMS.to failed, trying SMSMode...', result.error);
+      result = await sendViaSMSMode(normalizedPhone, message);
 
       if (!result.success) {
-        console.warn('⚠️ SMS.to failed, trying Octopush...', result.error);
-        result = await sendViaOctopush(telephone, message);
+        console.warn('⚠️ SMSMode failed, trying Octopush...', result.error);
+        result = await sendViaOctopush(normalizedPhone, message);
       }
     }
 
     if (!result.success) {
-      console.error('❌ All SMS providers failed:', result.error);
+      console.error('❌ All SMS providers failed. Last error:', result.error);
+      const body: { success: false; error: string; provider: string; first_error?: string; first_provider?: string } = {
+        success: false,
+        error: result.error,
+        provider: result.provider,
+      };
+      if (firstError) {
+        body.first_error = firstError.error;
+        body.first_provider = firstError.provider;
+      }
       return new Response(
-        JSON.stringify({
-          success: false,
-          error: result.error,
-          provider: result.provider
-        }),
+        JSON.stringify(body),
         {
           status: 500,
           headers: {

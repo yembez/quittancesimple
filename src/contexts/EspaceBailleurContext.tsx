@@ -55,14 +55,26 @@ export function EspaceBailleurProvider({
         } catch (_) {
           // ignore
         }
+        // Si on quitte /dashboard?openRelance=xxx, garder openRelance pour après connexion et préremplir l'email de connexion
         try {
+          if (typeof window !== 'undefined' && window.location.pathname === '/dashboard' && window.location.search) {
+            const params = new URLSearchParams(window.location.search);
+            const openRelance = params.get('openRelance');
+            const loginHint = params.get('loginHint');
+            if (openRelance) {
+              sessionStorage.setItem('openRelanceLocataireId', openRelance);
+            }
+            if (loginHint && !prefilledEmail) {
+              prefilledEmail = loginHint.trim();
+            }
+          }
           if (typeof window !== 'undefined' && window.location.hash) {
             window.history.replaceState(null, '', window.location.pathname + window.location.search);
           }
         } catch (_) {
           // ignore
         }
-        navigate('/', { state: { openLogin: true, prefilledEmail }, replace: true });
+        navigate('/', { state: { openLogin: true, prefilledEmail, returnUrl: '/dashboard' }, replace: true });
         return;
       }
       if (authError) throw authError;

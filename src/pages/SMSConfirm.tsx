@@ -163,6 +163,7 @@ const SMSConfirm = () => {
         return;
       }
 
+      const adresseLogement = [locataire.adresse_logement, locataire.adresse, locataire.detail_adresse].filter(Boolean).join(', ') || '';
       const response = await fetch(`${supabaseUrl}/functions/v1/send-reminder-email`, {
         method: 'POST',
         headers: {
@@ -171,11 +172,12 @@ const SMSConfirm = () => {
         },
         body: JSON.stringify({
           locataireEmail: locataire.email,
-          locataireName: locataire.nom,
+          locataireName: [locataire.prenom, locataire.nom].filter(Boolean).join(' ') || locataire.nom,
           baillorName: proprietaire?.nom || 'Propriétaire',
           periode: mois,
           loyer: locataire.loyer_mensuel || 0,
-          charges: locataire.charges_mensuelles || 0
+          charges: locataire.charges_mensuelles || 0,
+          adresseLogement: adresseLogement || 'ce logement'
         })
       });
 

@@ -485,10 +485,22 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
 
+    // Incrémenter réellement le nombre de quittances gratuites générées
+    let currentQuittancesCount = 0;
+    const existingProprietaire = await supabase
+      .from('proprietaires')
+      .select('nombre_quittances')
+      .eq('email', data.baillorEmail)
+      .maybeSingle();
+
+    if (existingProprietaire.data && typeof existingProprietaire.data.nombre_quittances === 'number') {
+      currentQuittancesCount = existingProprietaire.data.nombre_quittances || 0;
+    }
+
     const proprietaireData: any = {
       email: data.baillorEmail,
       adresse: data.baillorAddress,
-      nombre_quittances: 1,
+      nombre_quittances: currentQuittancesCount + 1,
       source: 'website',
       lead_statut: 'free_quittance_pdf'
     };
@@ -605,10 +617,9 @@ Deno.serve(async (req) => {
     const loyer = parseFloat(data.loyer) || 0;
     const charges = parseFloat(data.charges) || 0;
 
-    // Template email destiné au LOCATAIRE (modèle design unifié — QS Espace Bailleur)
-    const dashboardUrl = 'https://quittancesimple.fr/dashboard';
+    // Template email destiné au LOCATAIRE (quittance uniquement, sans CTA Espace Bailleur)
     const htmlEmailTenant = buildEmailHtml({
-      title: 'QS- Espace Bailleur',
+      title: 'Quittance Simple',
       bodyHtml: `
         <p>Bonjour ${locataireName},</p>
         <p>Veuillez trouver ci-joint votre quittance de loyer pour la période : <strong>${data.periode}</strong>.</p>
@@ -619,14 +630,15 @@ Deno.serve(async (req) => {
         </ul>
         <p>Conservez ce document pendant au moins trois ans (obligation légale).</p>
       `,
-      ctaText: 'Accéder à l\'espace bailleur',
-      ctaUrl: dashboardUrl,
+      ctaText: undefined,
+      ctaUrl: undefined,
       closingHtml: `Cordialement,<br><strong>${fullName || 'Votre bailleur'}</strong>`,
       unsubscribeUrl: `${SITE_URL}/unsubscribe?email=${encodeURIComponent(recipientEmail)}`,
     });
 
     // Template email destiné au PROPRIÉTAIRE (quittance gratuite) — contenu adapté au contexte
     const emailForCta = (data.baillorEmail ?? '').toString().trim();
+    const dashboardUrl = 'https://quittancesimple.fr/dashboard';
     const ctaUrlPack = emailForCta
       ? `${SITE_URL}/#loginEmail=${encodeURIComponent(emailForCta)}&mode=signup`
       : `${SITE_URL}/`;
@@ -639,12 +651,13 @@ Deno.serve(async (req) => {
         <p>C’est fait, mais le mois prochain il faudra recommencer… :(</p>
         <p>Ça vous dirait de pouvoir utiliser l'envoi automatique gratuitement ?</p>
         <p><strong>Bonne nouvelle :</strong> Votre Espace Bailleur est déjà prêt. On a pré-rempli vos informations et celles de votre locataire pour vous faire gagner du temps.</p>
-        <p>C'est trés simple, il suffit de programmer une date pour tester l'envoi automatique pour le mois prochain.</p>
-        <p style="margin-top: 16px;">Et bonus : vous pourrez tester gratuitement tous nos autres outils.</p>
+        <p>C'est très simple, il suffit de programmer une date pour tester l'envoi automatique.</p>
+        <p style="margin-top: 16px; text-align: center;"><a href="${ctaUrlPack}" style="display: inline-block; padding: 14px 28px; background-color: #2563eb; color: #ffffff !important; text-decoration: none; border-radius: 5px; font-weight: bold;">Activer votre Espace gratuit</a></p>
+        <p style="margin-top: 16px;">En bonus : vous pourrez tester gratuitement tous nos autres outils.</p>
         <p style="margin-top: 8px;">Fini la paperasse, place à la sérénité.</p>
       `,
-      ctaText: "Activer l'envoi automatique gratuit",
-      ctaUrl: ctaUrlPack,
+      ctaText: undefined,
+      ctaUrl: undefined,
       closingHtml: '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top: 4px;"><tr><td style="padding-right: 12px; vertical-align: middle;"><img src="https://www.quittancesimple.fr/images/vincent-photo.png" alt="Vincent, Quittance Simple" style="width: 76px; height: 76px; border-radius: 999px; display: block; object-fit: cover; object-position: 50% 28%;"></td><td style="font-size: 14px; line-height: 1.5; color: #111827; vertical-align: middle;">À bientôt,<br><strong>Vincent</strong><br><span style="color:#4b5563;">Co-fondateur de Quittance Simple</span><br><span style="color:#4b5563;">Bailleur comme vous</span></td></tr></table>',
       unsubscribeUrl: emailForCta ? `${SITE_URL}/unsubscribe?email=${encodeURIComponent(emailForCta)}` : undefined,
     });
@@ -652,7 +665,7 @@ Deno.serve(async (req) => {
     const emailData = {
       from: 'Quittance Simple <noreply@quittancesimple.fr>',
       to: [recipientEmail],
-      subject: isToTenant ? `Quittance de loyer – ${data.periode}` : "Votre quittance est prête (et une surprise à l'intérieur)",
+      subject: isToTenant ? `Votre quittance de loyer – ${data.periode}` : "Votre quittance est prête (avec un bonus)",
       html: isToTenant ? htmlEmailTenant : htmlEmail,
       attachments: [{
         filename: `quittance-${data.periode.replace(/\s+/g, '-')}.pdf`,

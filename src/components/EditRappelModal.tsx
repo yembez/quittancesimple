@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { X, Calendar, AlertTriangle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
+type ModeEnvoiQuittance = 'rappel_classique' | 'systematic_preavis_5j';
+
 interface Locataire {
   id: string;
   nom: string;
@@ -10,6 +12,7 @@ interface Locataire {
   date_rappel: number;
   heure_rappel?: number;
   minute_rappel?: number;
+  mode_envoi_quittance?: ModeEnvoiQuittance | null;
 }
 
 interface Props {
@@ -20,6 +23,9 @@ interface Props {
 }
 
 const EditRappelModal = ({ locataire, bailleurTelephone, onClose, onSave }: Props) => {
+  const [modeEnvoi, setModeEnvoi] = useState<ModeEnvoiQuittance>(
+    (locataire.mode_envoi_quittance === 'systematic_preavis_5j' ? 'systematic_preavis_5j' : 'rappel_classique')
+  );
   const [dateRappel, setDateRappel] = useState(locataire.date_rappel?.toString() || '1');
   const [heureRappel, setHeureRappel] = useState(locataire.heure_rappel?.toString() || '9');
   const [minuteRappel, setMinuteRappel] = useState(locataire.minute_rappel?.toString() || '0');
@@ -39,21 +45,42 @@ const EditRappelModal = ({ locataire, bailleurTelephone, onClose, onSave }: Prop
     }
     setSaving(true);
     try {
-      const { error } = await supabase
+      const payloadWithMode = {
+        date_rappel: parseInt(dateRappel),
+        heure_rappel: parseInt(heureRappel),
+        minute_rappel: parseInt(minuteRappel),
+        mode_envoi_quittance: modeEnvoi
+      };
+      const payloadDateOnly = {
+        date_rappel: parseInt(dateRappel),
+        heure_rappel: parseInt(heureRappel),
+        minute_rappel: parseInt(minuteRappel)
+      };
+
+      let { error } = await supabase
         .from('locataires')
-        .update({
-          date_rappel: parseInt(dateRappel),
-          heure_rappel: parseInt(heureRappel),
-          minute_rappel: parseInt(minuteRappel)
-        })
+        .update(payloadWithMode)
         .eq('id', locataire.id);
+
+      if (error) {
+        const msg = String(error.message || '');
+        const columnMissing = /mode_envoi_quittance|column.*does not exist|42703/i.test(msg);
+        if (columnMissing) {
+          const res = await supabase
+            .from('locataires')
+            .update(payloadDateOnly)
+            .eq('id', locataire.id);
+          error = res.error;
+        }
+      }
 
       if (error) throw error;
 
       onSave({
         date_rappel: parseInt(dateRappel),
         heure_rappel: parseInt(heureRappel),
-        minute_rappel: parseInt(minuteRappel)
+        minute_rappel: parseInt(minuteRappel),
+        mode_envoi_quittance: modeEnvoi
       });
       onClose();
     } catch (error) {
@@ -100,6 +127,40 @@ const EditRappelModal = ({ locataire, bailleurTelephone, onClose, onSave }: Prop
               </div>
             </div>
           )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Mode d'envoi des quittances
+            </label>
+            <div className="space-y-3 border border-gray-200 rounded-lg p-4 bg-gray-50">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="modeEnvoi"
+                  value="rappel_classique"
+                  checked={modeEnvoi === 'rappel_classique'}
+                  onChange={() => setModeEnvoi('rappel_classique')}
+                  className="mt-1 text-[#7CAA89] focus:ring-[#7CAA89]"
+                />
+                <div className="text-sm text-gray-800">
+                  <strong>Rappel puis clic</strong> – Vous recevez un rappel (SMS/email) à la date programmée, puis vous envoyez la quittance en un clic depuis l’espace ou le lien.
+                </div>
+              </label>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="modeEnvoi"
+                  value="systematic_preavis_5j"
+                  checked={modeEnvoi === 'systematic_preavis_5j'}
+                  onChange={() => setModeEnvoi('systematic_preavis_5j')}
+                  className="mt-1 text-[#7CAA89] focus:ring-[#7CAA89]"
+                />
+                <div className="text-sm text-gray-800">
+                  <strong>Envoi systématique avec préavis 5 jours</strong> – À la date programmée, vous recevez un email avec 3 choix : annuler, relancer le locataire, ou envoyer la quittance tout de suite. Si vous ne faites rien, la quittance part automatiquement au locataire 5 jours plus tard.
+                </div>
+              </label>
+            </div>
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">

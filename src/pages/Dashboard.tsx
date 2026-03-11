@@ -44,6 +44,7 @@ interface Locataire {
   date_rappel: number;
   heure_rappel?: number;
   minute_rappel?: number;
+  mode_envoi_quittance?: 'rappel_classique' | 'systematic_preavis_5j' | null;
   periodicite: string;
   statut: 'en_attente' | 'paye';
   actif: boolean;
@@ -120,6 +121,34 @@ const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
   const [showPaymentWarning, setShowPaymentWarning] = useState(false);
   const [missingFields, setMissingFields] = useState<string[]>([]);
   const [pendingBillingCycle, setPendingBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
+
+  // Ouvrir le modal de relance si on arrive via le lien préavis (?openRelance=locataire_id)
+  // On garde l'id en sessionStorage pour survivre à un redirect login (retour sans query)
+  const openRelanceIdFromUrl = searchParams.get('openRelance');
+  useEffect(() => {
+    if (openRelanceIdFromUrl) {
+      try {
+        sessionStorage.setItem('openRelanceLocataireId', openRelanceIdFromUrl);
+      } catch (_) {}
+    }
+  }, [openRelanceIdFromUrl]);
+
+  useEffect(() => {
+    const openRelanceId = openRelanceIdFromUrl || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('openRelanceLocataireId') : null);
+    if (!openRelanceId || locataires.length === 0) return;
+    const locataire = locataires.find((l) => l.id === openRelanceId);
+    if (locataire) {
+      try {
+        sessionStorage.removeItem('openRelanceLocataireId');
+      } catch (_) {}
+      setSelectedLocataireForReminder(locataire);
+      setShowReminderPreview(true);
+      setActiveTab('dashboard');
+      if (openRelanceIdFromUrl) {
+        navigate('/dashboard', { replace: true });
+      }
+    }
+  }, [openRelanceIdFromUrl, locataires, navigate]);
 
   // Vérifier si les informations du propriétaire sont complètes
   const isProprietaireInfoComplete = (prop: Proprietaire | null): boolean => {
@@ -565,6 +594,21 @@ setRecentTransactions(txData || []);
         email_content: { customMessage },
         statut: 'envoye'
       });
+
+      // Si quittance systématique en attente pour ce locataire + période courante : marquer reminder_sent et envoyer email confirmation
+      try {
+        const confirmRes = await fetch(`${supabaseUrl}/functions/v1/send-systematic-relance-confirmation`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+          body: JSON.stringify({ locataireId: selectedLocataireForReminder.id }),
+        });
+        const confirmData = await confirmRes.json();
+        if (confirmData.updated) {
+          // Email de confirmation envoyé par la fonction
+        }
+      } catch (_) {
+        // Ne pas bloquer l'UX si la confirmation systématique échoue
+      }
 
       alert('✅ Relance envoyée avec succès !');
       setShowReminderPreview(false);

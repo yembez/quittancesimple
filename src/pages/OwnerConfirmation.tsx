@@ -159,35 +159,38 @@ const OwnerConfirmation = () => {
     setError(null);
 
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
       if (!locataire?.email) {
         setError('Email du locataire manquant');
         setProcessing(false);
         return;
       }
 
-      // Envoyer un email de relance au locataire avec BCC bailleur (mode auto_remind)
-      const response = await fetch(`${supabaseUrl}/functions/v1/send-quittance`, {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      const adresseLogement = [
+        locataire.adresse_logement,
+        locataire.adresse,
+        locataire.detail_adresse,
+      ]
+        .filter(Boolean)
+        .join(', ');
+
+      // Envoyer un email de relance simple (pas la quittance PDF)
+      const response = await fetch(`${supabaseUrl}/functions/v1/send-reminder-email`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${supabaseKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: 'auto_remind',
-          source: searchParams.get('source') || 'modal_sms',
-          nomProprietaire: proprietaire?.nom,
-          prenomProprietaire: proprietaire?.prenom,
-          baillorEmail: proprietaire?.email,
-          baillorAddress: proprietaire?.adresse,
-          locataireName: `${locataire.nom} ${locataire.prenom || ''}`.trim(),
           locataireEmail: locataire.email,
-          logementAddress: locataire.adresse_logement,
-          loyer: locataire.loyer_mensuel?.toString() || '0',
-          charges: locataire.charges_mensuelles?.toString() || '0',
-          periode: mois || new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+          locataireName: `${locataire.prenom || ''} ${locataire.nom}`.trim(),
+          baillorName: proprietaire?.nom || 'Votre bailleur',
+          loyer: locataire.loyer_mensuel || 0,
+          charges: locataire.charges_mensuelles || 0,
+          adresseLogement: adresseLogement || undefined,
+          locataireEmail: locataire.email,
         })
       });
 

@@ -30,6 +30,8 @@ interface MobileMultiStepFormProps {
   handleSubmit: () => void;
   isLoading: boolean;
   validationErrors: string[];
+  formUnlocked?: boolean;
+  onFormFocus?: () => void;
 }
 
 const MobileMultiStepForm: React.FC<MobileMultiStepFormProps> = ({
@@ -42,10 +44,16 @@ const MobileMultiStepForm: React.FC<MobileMultiStepFormProps> = ({
   handleBlur,
   handleSubmit,
   isLoading,
-  validationErrors
+  validationErrors,
+  formUnlocked = true,
+  onFormFocus
 }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 4;
+
+  const handleFieldFocus = () => {
+    if (!formUnlocked && onFormFocus) onFormFocus();
+  };
 
   const nextStep = () => {
     if (currentStep < totalSteps) {
@@ -166,6 +174,8 @@ const MobileMultiStepForm: React.FC<MobileMultiStepFormProps> = ({
                   type="text"
                   name="baillorName"
                   autoComplete="off"
+                  readOnly={!formUnlocked}
+                  onFocus={handleFieldFocus}
                   value={formData.baillorName}
                   onChange={handleInputChange}
                   onBlur={handleBlur}
@@ -183,6 +193,8 @@ const MobileMultiStepForm: React.FC<MobileMultiStepFormProps> = ({
                   type="text"
                   name="baillorAddress"
                   autoComplete="off"
+                  readOnly={!formUnlocked}
+                  onFocus={handleFieldFocus}
                   value={formData.baillorAddress}
                   onChange={handleInputChange}
                   onBlur={handleBlur}
@@ -200,6 +212,8 @@ const MobileMultiStepForm: React.FC<MobileMultiStepFormProps> = ({
                   type="email"
                   name="baillorEmail"
                   autoComplete="off"
+                  readOnly={!formUnlocked}
+                  onFocus={handleFieldFocus}
                   value={formData.baillorEmail}
                   onChange={handleInputChange}
                   onBlur={handleBlur}
@@ -228,6 +242,8 @@ const MobileMultiStepForm: React.FC<MobileMultiStepFormProps> = ({
                   type="text"
                   name="locataireName"
                   autoComplete="off"
+                  readOnly={!formUnlocked}
+                  onFocus={handleFieldFocus}
                   value={formData.locataireName}
                   onChange={handleInputChange}
                   className="w-full px-3 py-3 rounded-xl border border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20 transition-all text-sm"
@@ -244,6 +260,8 @@ const MobileMultiStepForm: React.FC<MobileMultiStepFormProps> = ({
                   type="text"
                   name="logementAddress"
                   autoComplete="off"
+                  readOnly={!formUnlocked}
+                  onFocus={handleFieldFocus}
                   value={formData.logementAddress}
                   onChange={handleInputChange}
                   className="w-full px-3 py-3 rounded-xl border border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20 transition-all text-sm"
@@ -284,6 +302,8 @@ const MobileMultiStepForm: React.FC<MobileMultiStepFormProps> = ({
                     type="text"
                     name="locataireDomicileAddress"
                     autoComplete="off"
+                    readOnly={!formUnlocked}
+                    onFocus={handleFieldFocus}
                     value={formData.locataireDomicileAddress}
                     onChange={handleInputChange}
                     className="w-full px-3 py-3 rounded-xl border border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20 transition-all text-sm"
@@ -312,6 +332,8 @@ const MobileMultiStepForm: React.FC<MobileMultiStepFormProps> = ({
                     type="number"
                     name="loyer"
                     autoComplete="off"
+                    readOnly={!formUnlocked}
+                    onFocus={handleFieldFocus}
                     value={formData.loyer}
                     onChange={handleInputChange}
                     className="w-full px-3 py-3 rounded-xl border border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20 transition-all text-sm"
@@ -329,6 +351,8 @@ const MobileMultiStepForm: React.FC<MobileMultiStepFormProps> = ({
                     type="number"
                     name="charges"
                     autoComplete="off"
+                    readOnly={!formUnlocked}
+                    onFocus={handleFieldFocus}
                     value={formData.charges}
                     onChange={handleInputChange}
                     className="w-full px-3 py-3 rounded-xl border border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20 transition-all text-sm"
@@ -398,6 +422,8 @@ const MobileMultiStepForm: React.FC<MobileMultiStepFormProps> = ({
                         type="date"
                         name="dateDebut"
                         autoComplete="off"
+                        readOnly={!formUnlocked}
+                        onFocus={handleFieldFocus}
                         value={formData.dateDebut}
                         onChange={handleInputChange}
                         className="w-full px-3 py-3 rounded-xl border border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20 transition-all text-sm"
@@ -411,6 +437,8 @@ const MobileMultiStepForm: React.FC<MobileMultiStepFormProps> = ({
                         type="date"
                         name="dateFin"
                         autoComplete="off"
+                        readOnly={!formUnlocked}
+                        onFocus={handleFieldFocus}
                         value={formData.dateFin}
                         onChange={handleInputChange}
                         min={formData.dateDebut || undefined}

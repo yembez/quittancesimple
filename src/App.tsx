@@ -51,6 +51,7 @@ import Admin from './pages/Admin';
 import AdminLeads from './pages/AdminLeads';
 import AdminAnalytics from './pages/AdminAnalytics';
 import QuittanceSuccess from './pages/QuittanceSuccess';
+import SendQuittanceManual from './pages/SendQuittanceManual';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentCancelled from './pages/PaymentCancelled';
 import SetPassword from './pages/SetPassword';
@@ -140,8 +141,8 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const noLayoutPages = ['/billing', '/owner-confirmation', '/quick-confirm', '/quick-payment-confirm', '/sms-confirm', '/confirmation', '/quittance-success', '/payment-success', '/payment-cancelled', '/set-password', '/bail', '/bail-meuble', '/sign'];
-  const noFooterPages = ['/billing', '/owner-confirmation', '/quick-confirm', '/quick-payment-confirm', '/sms-confirm', '/confirmation', '/dashboard', '/overview', '/free-dashboard', '/manage-subscription', '/historique', '/revision-irl', '/quittance-success', '/payment-success', '/payment-cancelled', '/set-password', '/bail', '/bail-meuble', '/documents', '/annonce-generator', '/etat-des-lieux', '/sign', '/dashboard/baux'];
+  const noLayoutPages = ['/billing', '/owner-confirmation', '/quick-confirm', '/quick-payment-confirm', '/sms-confirm', '/confirmation', '/quittance-success', '/payment-success', '/payment-cancelled', '/set-password', '/bail', '/bail-meuble', '/sign', '/send-quittance-manual'];
+  const noFooterPages = ['/billing', '/owner-confirmation', '/quick-confirm', '/quick-payment-confirm', '/sms-confirm', '/confirmation', '/dashboard', '/overview', '/free-dashboard', '/manage-subscription', '/historique', '/revision-irl', '/quittance-success', '/payment-success', '/payment-cancelled', '/set-password', '/bail', '/bail-meuble', '/documents', '/annonce-generator', '/etat-des-lieux', '/sign', '/dashboard/baux', '/send-quittance-manual'];
   const formPages = ['/generator'];
 
   const userSpacePages = ['/dashboard', '/overview', '/free-dashboard', '/manage-subscription', '/historique', '/revision-irl', '/billing', '/documents', '/bail', '/bail-meuble', '/annonce-generator', '/etat-des-lieux', '/dashboard/baux'];
@@ -257,6 +258,7 @@ function App() {
           <Route path="/unsubscribe" element={<Unsubscribe />} />
           <Route path="/sign/:token" element={<SignatureSignPage />} />
           <Route path="/quittance-success" element={<QuittanceSuccess />} />
+          <Route path="/send-quittance-manual" element={<SendQuittanceManual />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/payment-cancelled" element={<PaymentCancelled />} />
           <Route path="/admin" element={<Admin />} />
