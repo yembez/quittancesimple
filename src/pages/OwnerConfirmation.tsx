@@ -190,7 +190,7 @@ const OwnerConfirmation = () => {
           loyer: locataire.loyer_mensuel || 0,
           charges: locataire.charges_mensuelles || 0,
           adresseLogement: adresseLogement || undefined,
-          locataireEmail: locataire.email,
+          proprietaireEmail: proprietaire?.email || undefined,
         })
       });
 

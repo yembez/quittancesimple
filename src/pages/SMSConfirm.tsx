@@ -174,10 +174,10 @@ const SMSConfirm = () => {
           locataireEmail: locataire.email,
           locataireName: [locataire.prenom, locataire.nom].filter(Boolean).join(' ') || locataire.nom,
           baillorName: proprietaire?.nom || 'Propriétaire',
-          periode: mois,
           loyer: locataire.loyer_mensuel || 0,
           charges: locataire.charges_mensuelles || 0,
-          adresseLogement: adresseLogement || 'ce logement'
+          adresseLogement: adresseLogement || 'ce logement',
+          proprietaireEmail: proprietaire?.email || undefined
         })
       });
 

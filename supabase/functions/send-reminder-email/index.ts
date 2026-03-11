@@ -13,6 +13,7 @@ interface ReminderRequest {
   loyer: number;
   charges: number;
   adresseLogement?: string;
+  proprietaireEmail?: string;
   customMessage?: string;
 }
 
@@ -32,6 +33,7 @@ Deno.serve(async (req: Request) => {
       baillorName,
       loyer,
       charges,
+      proprietaireEmail,
       customMessage
     } = body;
     const adresseLogement = (body.adresseLogement != null && String(body.adresseLogement).trim() !== '')
@@ -71,6 +73,12 @@ ${baillorName}`;
       throw new Error('RESEND_API_KEY not configured');
     }
 
+    const toRecipients: string[] = [locataireEmail];
+    const ownerEmail = (proprietaireEmail || "").trim();
+    if (ownerEmail && ownerEmail !== locataireEmail) {
+      toRecipients.push(ownerEmail);
+    }
+
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -79,7 +87,7 @@ ${baillorName}`;
       },
       body: JSON.stringify({
         from: 'Quittance Simple <noreply@quittancesimple.fr>',
-        to: [locataireEmail],
+        to: toRecipients,
         subject: 'Rappel de paiement du loyer',
         text: emailBody,
       }),
