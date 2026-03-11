@@ -186,7 +186,7 @@ const OwnerConfirmation = () => {
         body: JSON.stringify({
           locataireEmail: locataire.email,
           locataireName: `${locataire.prenom || ''} ${locataire.nom}`.trim(),
-          baillorName: proprietaire?.nom || 'Votre bailleur',
+          baillorName: `${proprietaire?.prenom || ''} ${proprietaire?.nom || ''}`.trim() || 'Votre bailleur',
           loyer: locataire.loyer_mensuel || 0,
           charges: locataire.charges_mensuelles || 0,
           adresseLogement: adresseLogement || undefined,

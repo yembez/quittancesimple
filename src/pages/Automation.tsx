@@ -126,7 +126,7 @@ const Automation = () => {
         canonical="https://quittance-simple.fr/automation"
       />
 
-      {/* Hero : titre + visuel ordinateur — fond aligné sur l'image #fbf9fe */}
+      {/* Hero : modèle deux colonnes — titre, choix niveau, CTA, confiance | photo + overlay + texte */}
       <header className="pt-8 sm:pt-10 lg:pt-14 pb-12 sm:pb-16 bg-[#fbf9fe] border-b border-[#e8e7ef]">
         <div className="max-w-[1250px] mx-auto px-4 sm:px-5 lg:px-7 xl:px-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 sm:gap-8 lg:gap-12 items-center">
@@ -137,44 +137,112 @@ const Automation = () => {
               className="order-2 lg:order-1 text-center sm:text-left"
             >
               <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-[#212a3e] leading-tight">
-              Fini les quittances faites à la main passez en pilote automatique
+                Fini les quittances manuelles.
               </h1>
-              <p className="mt-3 sm:mt-2 text-sm sm:text-base md:text-lg text-[#5e6478] leading-relaxed">
-              Vous recevez un SMS (+ email). Vous cliquez. La quittance est générée et envoyée automatiquement à votre locataire. C'est tout&nbsp;! <br /> Temps de génération et envoi de quittance : entre 3 et 5 secondes.
+              <h1 className="mt-1 text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-[#212a3e] leading-tight">
+                Elles partent automatiquement.
+              </h1>
+              <p className="mt-4 text-sm sm:text-base text-[#212a3e]">
+                2 modes d'automatisation au choix :
               </p>
-              <p className="mt-4 sm:mt-4 text-xs sm:text-sm text-[#5e6478] max-w-xl mx-auto sm:mx-0 leading-relaxed">
-              Créée par des bailleurs, pour des bailleurs. Ultra simple, ultra fluide.
-              </p>
-              <div className="mt-6 flex flex-col sm:flex-row items-center gap-3 justify-center sm:justify-start">
+              <ul className="mt-2 space-y-1.5 text-sm sm:text-base text-[#5e6478] leading-relaxed list-none">
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-600 shrink-0" />
+                  <span><strong className="text-[#212a3e]">100% automatique</strong> — elles partent toutes seules</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-600 shrink-0" />
+                  <span><strong className="text-[#212a3e]">Validation en un clic</strong> — vous gardez le contrôle</span>
+                </li>
+              </ul>
+
+              {/* Carte : Choisissez votre niveau d'automatisation */}
+              <div className="mt-6 p-4 sm:p-5 bg-white border border-[#e2e8f0] rounded-xl shadow-sm">
+                <p className="text-sm font-medium text-[#212a3e] mb-3">
+                  Choisissez votre niveau d'automatisation
+                </p>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3 p-3 rounded-lg border border-[#e2e8f0]">
+                    <Check className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-semibold text-[#212a3e]">
+                        100% automatique <span className="text-xs font-normal text-amber-600">(nouveau)</span>
+                      </p>
+                      <p className="text-xs text-[#5e6478] mt-0.5">
+                        Vous recevez un email 5 jours avant l'envoi réel juste pour vous prévenir. <br />Si vous ne faites rien, la quittance partira automatiquement.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-3 rounded-lg border border-[#e2e8f0]">
+                    <Zap className="w-5 h-5 text-[#E65F3F] shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-semibold text-[#212a3e]">Validation en un clic</p>
+                      <p className="text-xs text-[#5e6478] mt-0.5">
+                        Vous recevez un SMS + e-mail. Un clic et la quittance part.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 flex flex-col items-center sm:items-start gap-3">
                 <button
                   onClick={() => {
                     trackCtaClick('passer_pack_automatique_hero', 'automation', 'pack_automatique_modal');
                     openModal('Pack Automatique');
                   }}
-                  className="hidden sm:inline-flex items-center justify-center rounded-xl px-6 py-3 bg-[#E65F3F] hover:bg-[#d95530] text-white text-sm font-semibold transition-colors shadow-[0_2px_6px_rgba(15,23,42,0.1)]"
+                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl px-6 py-3 bg-[#E65F3F] hover:bg-[#d95530] text-white text-sm font-semibold transition-colors shadow-[0_2px_6px_rgba(15,23,42,0.1)]"
                 >
-                  Essayer le pilotage automatique
-                  <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                  Activer les quittances automatiques
                 </button>
-                <span className="text-sm text-[#E65F3F] sm:text-[#5e6478] font-medium">Pack complet<br /> Essai gratuit sans CB</span>
+                <ul className="flex flex-wrap justify-center sm:justify-start gap-x-4 gap-y-1 text-xs text-[#5e6478] list-none">
+                  <li className="flex items-center gap-1.5">
+                    <Check className="w-3.5 h-3.5 text-green-600" />
+                    30 jours d'essai gratuit
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <Check className="w-3.5 h-3.5 text-green-600" />
+                    Sans carte bancaire
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <Check className="w-3.5 h-3.5 text-green-600" />
+                    L'activation en 1 minute
+                  </li>
+                </ul>
               </div>
             </motion.div>
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="order-1 lg:order-2 flex justify-center bg-[#fbf9fe] relative"
+              className="order-1 lg:order-2 flex flex-col justify-center items-center lg:items-start bg-[#fbf9fe] relative"
             >
               {/* Conteneur sans overflow pour que badge et overlay mobile puissent dépasser */}
               <div className="relative w-full max-w-md lg:max-w-lg">
                 {/* Photo avec arrondis (overflow uniquement sur l'image) */}
                 <div className="overflow-hidden rounded-2xl lg:rounded-3xl">
                   <img
-                    src="https://jfpbddtdblqakabyjxkq.supabase.co/storage/v1/object/public/website-images/femme_bulle_2.jpg"
+                    src="/images/femme_shopping.png"
                     alt="Pack Automatique"
                     className="w-full h-auto object-contain"
                   />
                 </div>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                  className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20"
+                >
+                  <div className="bg-white/95 backdrop-blur-sm rounded-xl px-3 py-2.5 shadow-lg border border-[#e2e8f0] max-w-[200px]">
+                    <div className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium text-[#212a3e]">Quittance envoyée automatiquement</p>
+                        <p className="text-xs text-[#5e6478] mt-1">Locataire : Marie Dubois</p>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
                 {/* Badge promotionnel — au-dessus et à l’extérieur de la photo, non rogné */}
                 <motion.div
                   initial={{ opacity: 0, scale: 0, rotate: -10 }}
@@ -194,6 +262,7 @@ const Automation = () => {
                   </div>
                 </motion.div>
               </div>
+             
             </motion.div>
           </div>
           {/* Phrase statistiques centrée en bas du hero */}
@@ -204,7 +273,7 @@ const Automation = () => {
             className="mt-8 sm:mt-10 text-center"
           >
             <p className="text-sm text-[#5e6478] font-medium">
-              Adopté par 250+ propriétaires — 4 000+ quittances générées
+              Adopté par 450+ propriétaires — 4 000+ quittances générées
             </p>
           </motion.div>
           {/* Messages défilants (comme sur la Home version mobile) */}
@@ -336,7 +405,7 @@ const Automation = () => {
                   <span className="text-xs font-semibold text-[#E65F3F] uppercase tracking-wider">Étape 1</span>
                   <h3 className="text-lg sm:text-xl font-bold text-[#212a3e] mt-1.5 mb-2">Ajoutez votre locataire</h3>
                   <p className="text-[#5e6478] text-sm sm:text-base leading-relaxed mb-2">
-                    Pré-rempli si vous avez déjà fait une quittance gratuite, ou en quelques secondes grâce à un formulaire ultra simplifié. ANTI usine à gaz.
+                    Pré-rempli si vous avez déjà fait une quittance gratuite, ou en quelques secondes grâce à un formulaire simplifié. ANTI usine à gaz.
                   </p>
                   <span className="inline-block text-xs font-medium text-[#212a3e] bg-[#E65F3F]/10 px-2.5 py-1 rounded-full">20 secondes à 2 minutes</span>
                 </div>
@@ -369,7 +438,7 @@ const Automation = () => {
                   <span className="text-xs font-semibold text-[#E65F3F] uppercase tracking-wider">Étape 2</span>
                   <h3 className="text-lg sm:text-xl font-bold text-[#212a3e] mt-1.5 mb-2">Choisissez la date de rappel d'échéance</h3>
                   <p className="text-[#5e6478] text-sm sm:text-base leading-relaxed mb-2">
-                    Une seule fois. Vous automatisez sans apprendre un logiciel complexe.
+                  Selon le mode choisi, c'est la date où vous receverez un mail pour vous prevenir de l'envoi 5 jours avant.<br /> ou <br />1 SMS + un email, pour valider en 1 clic.
                   </p>
                   <span className="inline-block text-xs font-medium text-[#212a3e] bg-[#E65F3F]/10 px-2.5 py-1 rounded-full">30 secondes</span>
                 </div>
@@ -377,34 +446,6 @@ const Automation = () => {
             </motion.div>
 
             {/* Étape 3 : Texte à gauche, icône au centre */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-              viewport={{ once: true }}
-              className="relative mb-12 sm:mb-16 pl-12 lg:pl-0"
-            >
-              {/* Point sur la ligne (desktop centre / mobile gauche) */}
-              <div className="hidden lg:block absolute left-1/2 top-1/2 w-4 h-4 bg-[#E65F3F] rounded-full border-3 border-white shadow-md transform -translate-x-1/2 -translate-y-1/2 z-20"></div>
-              <div className="lg:hidden absolute left-[1.125rem] top-10 w-4 h-4 bg-[#E65F3F] rounded-full border-[3px] border-[#f7f5fa] shadow-md transform -translate-x-1/2 -translate-y-1/2 z-20"></div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-center">
-                <div className="order-2 lg:order-1 lg:text-right">
-                  <span className="text-xs font-semibold text-[#E65F3F] uppercase tracking-wider">Étape 3</span>
-                  <h3 className="text-lg sm:text-xl font-bold text-[#212a3e] mt-1.5 mb-2"> Recevez votre rappel SMS + e-mail</h3>
-                  <p className="text-[#5e6478] text-sm sm:text-base leading-relaxed mb-2">
-                    Loyer reçu ou non ? 1 clic la quittance ou le rappel de paiement partent tout seul.
-                  </p>
-                  <span className="inline-block text-xs font-medium text-[#212a3e] bg-[#E65F3F]/10 px-2.5 py-1 rounded-full">5 secondes (1 clic)</span>
-                </div>
-                <div className="order-1 lg:order-2 flex justify-center lg:justify-start relative z-10">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white shadow-[0_4px_12px_rgba(33,42,62,0.12)] ring-4 ring-[#f7f5fa] flex items-center justify-center p-2.5">
-                    <img src="/icons/icon-check-orange-bleu.png" alt="" className="w-full h-full object-contain" aria-hidden />
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Étape 4 : Icône au centre, texte à droite */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -422,14 +463,17 @@ const Automation = () => {
                   </div>
                 </div>
                 <div className="order-2 lg:order-2 lg:text-left">
-                  <span className="text-xs font-semibold text-[#E65F3F] uppercase tracking-wider">Étape 4</span>
-                  <h3 className="text-lg sm:text-xl font-bold text-[#212a3e] mt-1.5 mb-2">Utilisez la boite à outils "simples et intelligents" du bailleur</h3>
+                  <span className="text-xs font-semibold text-[#E65F3F] uppercase tracking-wider">Étape 3</span>
+                  <h3 className="text-lg sm:text-xl font-bold text-[#212a3e] mt-1.5 mb-2">Utilisez tous les outils "simples et intelligents" dans votre espace bailleur</h3>
                   <p className="text-[#5e6478] text-sm sm:text-base leading-relaxed mb-2">
-                    Calcul Révision IRL automatique au bon moment, Coffre fort de tous vos documents, Modèles de bails, Bilan annuel... Et d'autres bonus encore.
+                    Création d'annonces avec IA, Rédaction et siganture de bail en ligne, Calcul Révision IRL automatique au bon moment, Coffre fort de tous vos documents, Modèles de bails, Bilan annuel... Et d'autres bonus encore.
                   </p>
                 </div>
               </div>
             </motion.div>
+
+            {/* Étape 4 : Icône au centre, texte à droite */}
+           
           </div>
         </div>
       </section>
@@ -926,7 +970,7 @@ const Automation = () => {
               viewport={{ once: true }}
               className="text-xl sm:text-2xl lg:text-3xl font-bold text-white text-center mb-2"
             >
-              Déjà adopté par plus de 250 propriétaires
+              Déjà adopté par plus de 450 propriétaires
             </motion.h2>
             <motion.p
               initial={{ opacity: 0, y: 12 }}

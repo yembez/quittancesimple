@@ -149,6 +149,7 @@ Deno.serve(async (req: Request) => {
         baillorAddress: prop.adresse ?? "",
         nomProprietaire: prop.nom ?? "",
         prenomProprietaire: prop.prenom ?? "",
+        isElectronicSignature: true,
         periode: row.periode,
         loyer: String(Number(loc.loyer_mensuel) || 0),
         charges: String(Number(loc.charges_mensuelles) || 0),

@@ -8,6 +8,7 @@ import EditProprietaireModal from '../components/EditProprietaireModal';
 import EditLocataireModal from '../components/EditLocataireModal';
 import EditRappelModal from '../components/EditRappelModal';
 import ReminderPreviewModal from '../components/ReminderPreviewModal';
+import AutomationConfigModal from '../components/AutomationConfigModal';
 import LocatairesTable from '../components/LocatairesTable';
 import AddLocataireForm from '../components/AddLocataireForm';
 import RentDetectionModal, { RentDetectionConfig } from '../components/RentDetectionModal';
@@ -93,6 +94,8 @@ const Dashboard = () => {
   const [selectedLocataireForReminder, setSelectedLocataireForReminder] = useState<Locataire | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [showAddLocataire, setShowAddLocataire] = useState(false);
+  const [automationDetailOpen, setAutomationDetailOpen] = useState<1 | 2 | null>(null);
+  const [showAutomationConfigModal, setShowAutomationConfigModal] = useState(false);
   const [bankConnection, setBankConnection] = useState<any>(null);
   const [latestTransactions, setLatestTransactions] = useState<any[]>([]);
 
@@ -808,6 +811,45 @@ setRecentTransactions(txData || []);
     }
   };
 
+  const handleDisableAutomation = async () => {
+    if (!proprietaire) return;
+
+    if (!window.confirm("Voulez-vous vraiment désactiver l'automatisation des quittances pour tous vos locataires ?")) {
+      return;
+    }
+
+    try {
+      const updates = {
+        date_rappel: null as unknown as number,
+        heure_rappel: null as unknown as number,
+        minute_rappel: null as unknown as number,
+        mode_envoi_quittance: null as 'rappel_classique' | 'systematic_preavis_5j' | null,
+      };
+
+      const { error } = await supabase
+        .from('locataires')
+        .update(updates)
+        .eq('proprietaire_id', proprietaire.id);
+
+      if (error) throw error;
+
+      setLocataires((prev) =>
+        prev.map((l) => ({
+          ...l,
+          date_rappel: 0,
+          heure_rappel: undefined,
+          minute_rappel: undefined,
+          mode_envoi_quittance: null,
+        }))
+      );
+
+      alert('✅ Automatisation désactivée pour vos locataires.');
+    } catch (error) {
+      console.error('❌ Erreur désactivation automatisation:', error);
+      alert("❌ Impossible de désactiver l'automatisation pour le moment.");
+    }
+  };
+
   const handleAddLocataireChange = (field: string, value: string) => {
     setAddLocataireForm(prev => ({ ...prev, [field]: value }));
   };
@@ -1178,6 +1220,35 @@ const handleResendAccessLink = async () => {
     );
   }
 
+  // État global d'automatisation (pour la carte de synthèse)
+  const hasAutomationConfig =
+    locataires.length > 0 &&
+    locataires.some(
+      (l) =>
+        typeof l.date_rappel === 'number' &&
+        l.date_rappel > 0 &&
+        typeof l.heure_rappel === 'number' &&
+        typeof l.minute_rappel === 'number' &&
+        !!l.mode_envoi_quittance
+    );
+
+  const firstConfiguredLocataire = hasAutomationConfig
+    ? locataires.find(
+        (l) =>
+          typeof l.date_rappel === 'number' &&
+          l.date_rappel > 0 &&
+          typeof l.heure_rappel === 'number' &&
+          typeof l.minute_rappel === 'number' &&
+          !!l.mode_envoi_quittance
+      ) || null
+    : null;
+
+  const prochaineQuittanceLabel = firstConfiguredLocataire
+    ? `le ${firstConfiguredLocataire.date_rappel} de chaque mois à ${String(
+        firstConfiguredLocataire.heure_rappel ?? 0
+      ).padStart(2, '0')}:${String(firstConfiguredLocataire.minute_rappel ?? 0).padStart(2, '0')}`
+    : null;
+
   return (
     <>
     <div className="flex-1 flex flex-col min-h-0 min-w-0">
@@ -1231,7 +1302,7 @@ const handleResendAccessLink = async () => {
           )}
 
           {/* Main Content */}
-          <div className="min-w-0 overflow-hidden">
+          <div className="min-w-0 overflow-visible">
             {activeTab === 'bilan-annuel' && (
               <BilanAnnuel
                 proprietaireId={proprietaire.id}
@@ -1241,11 +1312,151 @@ const handleResendAccessLink = async () => {
 
             {activeTab === 'dashboard' && (
               <div className="space-y-4 min-w-0">
-                {/* Section Informations propriétaire — bandeau charte */}
+                {/* Carte Automatisation des quittances (inspirée du modèle) */}
+                <div className="bg-white rounded-xl border border-[#e2e8f0] shadow-sm overflow-visible min-w-0 p-5 sm:p-6">
+                  {hasAutomationConfig ? (
+                    <>
+                      <div className="flex items-start gap-3 mb-4">
+                        <div className="flex-shrink-0 mt-0.5">
+                          <CheckCircle className="w-6 h-6 text-green-600" />
+                        </div>
+                        <div>
+                          <h2 className="text-lg font-bold text-[#212a3e]">
+                            Automatisation des quittances{' '}
+                            <span className="text-green-700">activée</span>
+                          </h2>
+                        </div>
+                      </div>
+
+                      {prochaineQuittanceLabel && firstConfiguredLocataire && (
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                          <p className="text-sm text-[#166534]">
+                            <span className="font-semibold">Prochaine quittance :</span>{' '}
+                            {prochaineQuittanceLabel}
+                          </p>
+                          <p className="text-xs text-[#166534] mt-1">
+                            Mode :{' '}
+                            {firstConfiguredLocataire.mode_envoi_quittance === 'systematic_preavis_5j'
+                              ? 'Automatique avec préavis 5 jours'
+                              : 'Rappel puis validation en un clic'}
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowAutomationConfigModal(true)}
+                          className="inline-flex items-center justify-center px-5 py-2.5 rounded-lg border border-[#cbd5e1] text-[14px] font-medium text-[#1e293b] bg-white hover:bg-[#f8fafc] transition-colors"
+                        >
+                          Modifier les paramètres
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleDisableAutomation}
+                          className="inline-flex items-center justify-center px-5 py-2.5 rounded-lg border border-red-200 text-[14px] font-medium text-red-700 bg-red-50 hover:bg-red-100 transition-colors"
+                        >
+                          Désactiver l'automatisation
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Zap className="w-5 h-5 text-[#E65F3F]" aria-hidden />
+                        <h2 className="text-lg font-bold text-[#212a3e]">
+                          Activer l'automatisation des quittances
+                        </h2>
+                      </div>
+                      <p className="text-[14px] text-[#5e6478] mb-2">
+                        Au choix :
+                      </p>
+                      <ul className="list-none space-y-2 mb-4 text-[14px] text-[#5e6478]">
+                        <li className="flex flex-wrap items-baseline gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#E65F3F] flex-shrink-0 mt-1.5 self-start" aria-hidden />
+                          <span>
+                            <strong>100% Automatique</strong> (on vous envoie un rappel 5 jours avant l'envoi)
+                            <span
+                              className="relative inline-block ml-1 align-baseline"
+                              onMouseEnter={() => setAutomationDetailOpen(1)}
+                              onMouseLeave={() => setAutomationDetailOpen(null)}
+                            >
+                              <span
+                                role="button"
+                                tabIndex={0}
+                                className="text-[#E65F3F] hover:text-[#d95530] underline font-medium cursor-help"
+                                onFocus={() => setAutomationDetailOpen(1)}
+                                onBlur={() => setAutomationDetailOpen(null)}
+                              >
+                                Détail
+                              </span>
+                              {automationDetailOpen === 1 && (
+                                <div className="absolute left-0 top-full mt-1 z-20 min-w-[260px] max-w-[360px] p-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg text-[13px] text-[#334155] leading-relaxed shadow-lg">
+                                  Vous recevez un email 5 jours avant l'envoi réel.<br />Sans action de votre part sous 5 jours, la quittance part automatiquement.<br />Pour garder le contrôle, il y a 3 boutons dans le mail : « Annuler », « Relancer le locataire », ou « Envoyer la quittance manuellement ».
+                                </div>
+                              )}
+                            </span>
+                          </span>
+                        </li>
+                        <li>
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#E65F3F] flex-shrink-0" aria-hidden />
+                          Ou bien :
+                        </li>
+                        <li className="flex flex-wrap items-baseline gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#E65F3F] flex-shrink-0 mt-1.5 self-start" aria-hidden />
+                          <span>
+                            <strong>En un clic</strong> dans le SMS ou l'e-mail de rappel
+                            <span
+                              className="relative inline-block ml-1 align-baseline"
+                              onMouseEnter={() => setAutomationDetailOpen(2)}
+                              onMouseLeave={() => setAutomationDetailOpen(null)}
+                            >
+                              <span
+                                role="button"
+                                tabIndex={0}
+                                className="text-[#E65F3F] hover:text-[#d95530] underline font-medium cursor-help"
+                                onFocus={() => setAutomationDetailOpen(2)}
+                                onBlur={() => setAutomationDetailOpen(null)}
+                              >
+                                Détail
+                              </span>
+                              {automationDetailOpen === 2 && (
+                                <div className="absolute left-0 top-full mt-1 z-20 min-w-[260px] max-w-[360px] p-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg text-[13px] text-[#334155] leading-relaxed shadow-lg">
+                                  Pour plus de contrôle : Vous recevez un rappel (SMS/email) à la date programmée, puis vous envoyez la quittance en un clic dans le SMS ou le mail.
+                                </div>
+                              )}
+                            </span>
+                          </span>
+                        </li>
+                      </ul>
+                      <div className="mb-1">
+                        {proprietaire?.abonnement_actif ? (
+                          <button
+                            type="button"
+                            onClick={() => setShowAutomationConfigModal(true)}
+                            className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 rounded-xl bg-[#E65F3F] hover:bg-[#d95530] text-white font-semibold text-[15px] transition-colors shadow-sm"
+                          >
+                            Paramétrer l'automatisation
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => navigate('/automation')}
+                            className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 rounded-xl bg-[#E65F3F] hover:bg-[#d95530] text-white font-semibold text-[15px] transition-colors shadow-sm"
+                          >
+                            Activer l'automatisation
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Section Informations Bailleur */}
                 <div className="bg-white rounded-xl border border-[#e2e8f0] shadow-sm overflow-hidden min-w-0">
-                  <div className="px-4 sm:px-5 py-3 border-b border-[#1e3a5f]/50 bg-[#1e3a5f]/10 flex items-center gap-2">
-                    <h2 className="text-[13px] font-semibold text-[#1e3a5f] uppercase tracking-wider">
-                      Informations propriétaire
+                  <div className="px-4 sm:px-5 py-3 border-b border-[#e8e7ef] flex items-center gap-2">
+                    <h2 className="text-[15px] font-bold text-[#212a3e]">
+                      Informations Bailleur
                     </h2>
                     {!isProprietaireInfoComplete(proprietaire) ? (
                       <button
@@ -1456,8 +1667,8 @@ const handleResendAccessLink = async () => {
                   </div>
                 </div>
 
-                {/* Section Mes locataires — bandeau charte */}
-                <div className="bg-white rounded-xl border border-[#e2e8f0] shadow-sm overflow-hidden min-w-0">
+                {/* Section Mes locataires — tableau actuel conservé tel quel */}
+                <div id="mes-locataires" className="bg-white rounded-xl border border-[#e2e8f0] shadow-sm overflow-hidden min-w-0">
                   <div className="px-4 sm:px-5 py-3 border-b border-[#1e3a5f]/50 bg-[#1e3a5f]/10 flex items-center gap-2">
                     <h2 className="text-[13px] font-semibold text-[#1e3a5f] uppercase tracking-wider">Mes locataires</h2>
                     {locataires.length > 0 && (
@@ -1543,6 +1754,26 @@ const handleResendAccessLink = async () => {
           onSave={async (updates) => {
             await handleUpdateLocataire(editingRappel.id, updates);
             setEditingRappel(null);
+          }}
+        />
+      )}
+
+      {proprietaire && (
+        <AutomationConfigModal
+          isOpen={showAutomationConfigModal}
+          onClose={() => setShowAutomationConfigModal(false)}
+          proprietaireId={proprietaire.id}
+          locataires={locataires}
+          onSuccess={(updates) => {
+            setLocataires((prev) =>
+              prev.map((l) => ({
+                ...l,
+                date_rappel: updates.date_rappel,
+                heure_rappel: updates.heure_rappel,
+                minute_rappel: updates.minute_rappel,
+                mode_envoi_quittance: updates.mode_envoi_quittance,
+              }))
+            );
           }}
         />
       )}

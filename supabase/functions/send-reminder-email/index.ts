@@ -73,12 +73,7 @@ ${baillorName}`;
       throw new Error('RESEND_API_KEY not configured');
     }
 
-    const toRecipients: string[] = [locataireEmail];
-    const ownerEmail = (proprietaireEmail || "").trim();
-    if (ownerEmail && ownerEmail !== locataireEmail) {
-      toRecipients.push(ownerEmail);
-    }
-
+    // 1) Envoi au locataire
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -87,7 +82,7 @@ ${baillorName}`;
       },
       body: JSON.stringify({
         from: 'Quittance Simple <noreply@quittancesimple.fr>',
-        to: toRecipients,
+        to: [locataireEmail],
         subject: 'Rappel de paiement du loyer',
         text: emailBody,
       }),
@@ -100,6 +95,33 @@ ${baillorName}`;
     }
 
     const data = await response.json();
+
+    // 2) Copie au bailleur, si renseigné et différent
+    const ownerEmail = (proprietaireEmail || '').trim();
+    if (ownerEmail && ownerEmail !== locataireEmail) {
+      try {
+        const ownerResponse = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${resendApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: 'Quittance Simple <noreply@quittancesimple.fr>',
+            to: [ownerEmail],
+            subject: 'Copie – Rappel de paiement du loyer',
+            text: emailBody,
+          }),
+        });
+
+        if (!ownerResponse.ok) {
+          const ownerErr = await ownerResponse.text();
+          console.warn('Resend API error (owner copy):', ownerErr);
+        }
+      } catch (copyErr) {
+        console.warn('Error sending owner copy of reminder email:', copyErr);
+      }
+    }
 
     return new Response(
       JSON.stringify({

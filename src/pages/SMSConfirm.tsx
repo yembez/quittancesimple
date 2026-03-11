@@ -173,7 +173,7 @@ const SMSConfirm = () => {
         body: JSON.stringify({
           locataireEmail: locataire.email,
           locataireName: [locataire.prenom, locataire.nom].filter(Boolean).join(' ') || locataire.nom,
-          baillorName: proprietaire?.nom || 'Propriétaire',
+          baillorName: [proprietaire?.prenom, proprietaire?.nom].filter(Boolean).join(' ') || 'Votre bailleur',
           loyer: locataire.loyer_mensuel || 0,
           charges: locataire.charges_mensuelles || 0,
           adresseLogement: adresseLogement || 'ce logement',
