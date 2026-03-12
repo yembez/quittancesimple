@@ -299,7 +299,8 @@ Deno.serve(async (req: Request) => {
     const unsubscribeUrl = `${SITE_URL}/unsubscribe?email=${encodeURIComponent(r.email.trim())}`;
 
     const html = buildEmailHtml({
-      title: "Quittance Simple",
+      // Campagnes marketing : pas de titre/logo bleu en en-tête
+      title: "",
       bodyHtml: bodyPersonalized,
       ctaText: payload.ctaText,
       ctaUrl: ctaUrlForEmail,

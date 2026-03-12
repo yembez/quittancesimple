@@ -43,50 +43,85 @@ CREATE INDEX IF NOT EXISTS idx_quittances_systematic_status
 -- RLS sur quittances_systematic
 ALTER TABLE quittances_systematic ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view their own quittances_systematic"
-  ON quittances_systematic
-  FOR SELECT
-  TO authenticated
-  USING (
-    proprietaire_id IN (
-      SELECT id FROM proprietaires WHERE email = auth.jwt()->>'email'
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'quittances_systematic'
+      AND policyname = 'Users can view their own quittances_systematic'
+  ) THEN
+    CREATE POLICY "Users can view their own quittances_systematic"
+      ON quittances_systematic
+      FOR SELECT
+      TO authenticated
+      USING (
+        proprietaire_id IN (
+          SELECT id FROM proprietaires WHERE email = auth.jwt()->>'email'
+        )
+      );
+  END IF;
 
-CREATE POLICY "Users can insert their own quittances_systematic"
-  ON quittances_systematic
-  FOR INSERT
-  TO authenticated
-  WITH CHECK (
-    proprietaire_id IN (
-      SELECT id FROM proprietaires WHERE email = auth.jwt()->>'email'
-    )
-  );
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'quittances_systematic'
+      AND policyname = 'Users can insert their own quittances_systematic'
+  ) THEN
+    CREATE POLICY "Users can insert their own quittances_systematic"
+      ON quittances_systematic
+      FOR INSERT
+      TO authenticated
+      WITH CHECK (
+        proprietaire_id IN (
+          SELECT id FROM proprietaires WHERE email = auth.jwt()->>'email'
+        )
+      );
+  END IF;
 
-CREATE POLICY "Users can update their own quittances_systematic"
-  ON quittances_systematic
-  FOR UPDATE
-  TO authenticated
-  USING (
-    proprietaire_id IN (
-      SELECT id FROM proprietaires WHERE email = auth.jwt()->>'email'
-    )
-  )
-  WITH CHECK (
-    proprietaire_id IN (
-      SELECT id FROM proprietaires WHERE email = auth.jwt()->>'email'
-    )
-  );
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'quittances_systematic'
+      AND policyname = 'Users can update their own quittances_systematic'
+  ) THEN
+    CREATE POLICY "Users can update their own quittances_systematic"
+      ON quittances_systematic
+      FOR UPDATE
+      TO authenticated
+      USING (
+        proprietaire_id IN (
+          SELECT id FROM proprietaires WHERE email = auth.jwt()->>'email'
+        )
+      )
+      WITH CHECK (
+        proprietaire_id IN (
+          SELECT id FROM proprietaires WHERE email = auth.jwt()->>'email'
+        )
+      );
+  END IF;
 
-CREATE POLICY "Users can delete their own quittances_systematic"
-  ON quittances_systematic
-  FOR DELETE
-  TO authenticated
-  USING (
-    proprietaire_id IN (
-      SELECT id FROM proprietaires WHERE email = auth.jwt()->>'email'
-    )
-  );
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'quittances_systematic'
+      AND policyname = 'Users can delete their own quittances_systematic'
+  ) THEN
+    CREATE POLICY "Users can delete their own quittances_systematic"
+      ON quittances_systematic
+      FOR DELETE
+      TO authenticated
+      USING (
+        proprietaire_id IN (
+          SELECT id FROM proprietaires WHERE email = auth.jwt()->>'email'
+        )
+      );
+  END IF;
+END $$;
 
 -- Trigger updated_at sur quittances_systematic
 DROP TRIGGER IF EXISTS update_quittances_systematic_updated_at ON quittances_systematic;

@@ -1,0 +1,7 @@
+-- Met à jour le contenu de la campagne J+2 (free leads)
+UPDATE campaign_templates
+SET
+  body_html = '<p style="margin: 0 0 1.15em 0; line-height: 1.75;">Bonjour {{ prenom }},</p><p style="margin: 0 0 1.15em 0; line-height: 1.75;">Vous avez créé une quittance récemment sur Quittance Simple, merci&nbsp;!</p><p style="margin: 0 0 1.15em 0; line-height: 1.75;">Je voulais simplement vous dire une chose :</p><p style="margin: 0 0 1.15em 0; line-height: 1.75;">👉 Votre espace bailleur gratuit est déjà prêt.</p><p style="margin: 0 0 1.15em 0; line-height: 1.75;">Vous pouvez maintenant gérer vos quittances automatiquement sans refaire les mêmes manipulations tous les mois.</p><p style="margin: 0 0 0.9em 0; line-height: 1.75;">Par exemple :</p><ul style="margin: 0.2em 0 1.25em 1.2em; padding-left: 1em; line-height: 1.75;"><li style="margin-bottom: 0.7em;">vos informations et celles de votre locataire sont déjà enregistrées</li><li style="margin-bottom: 0.7em;">vos quittances peuvent s''envoyer automatiquement</li><li style="margin-bottom: 0.1em;">vous pouvez aussi envoyer en un clic si vous préférez garder la main</li></ul><p style="margin: 0 0 1.15em 0; line-height: 1.75;">Bref, l''idée est simple :<br>ne plus perdre de temps avec Word, Excel et les copier-coller.</p><p style="margin: 0 0 1.15em 0; line-height: 1.75;">Si vous avez 30&nbsp;secondes, je suis curieux de savoir :<br>combien de locataires gérez-vous aujourd''hui ?<br>Vous pouvez simplement répondre à cet email.</p>',
+  cta_text = 'Découvrir mon espace bailleur'
+WHERE campaign_key = 'j2';
+

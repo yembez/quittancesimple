@@ -11,10 +11,10 @@
 
 export const EMAIL_BLEU_VIF = '#2563eb';
 
-export type EmailTitle = 'Quittance Simple' | 'QS- Espace Bailleur';
+export type EmailTitle = 'Quittance Simple' | 'QS- Espace Bailleur' | '';
 
 export interface EmailTemplateOptions {
-  /** Titre affiché en en-tête : "Quittance Simple" ou "QS- Espace Bailleur" */
+  /** Titre affiché en en-tête : "Quittance Simple", "QS- Espace Bailleur" ou vide pour aucun titre */
   title: EmailTitle;
   /** Contenu principal (HTML) : paragraphes, listes, etc. */
   bodyHtml: string;
@@ -59,6 +59,10 @@ export function buildEmailHtml(options: EmailTemplateOptions): string {
       ? `<p style="margin-top: 25px; text-align: center;"><a href="${ctaUrl}" class="button">${ctaText}</a></p>`
       : '';
 
+  const logoBlock = title
+    ? `<div class="logo">${title}</div>`
+    : '';
+
   return `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -75,7 +79,7 @@ export function buildEmailHtml(options: EmailTemplateOptions): string {
 </head>
 <body>
   <div class="container">
-    <div class="logo">${title}</div>
+    ${logoBlock}
 
     ${bodyHtml}
 ${ctaBlock}
