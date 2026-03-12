@@ -304,6 +304,28 @@ const QuittanceSuccess = () => {
                   </div>
                 </div>
               </motion.div>
+
+              {/* Deuxième bulle : message "en train d'arriver" — Gilles Martin, légèrement plus petit que la première */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 0.92, scale: 1 }}
+                transition={{ duration: 0.6, delay: 0.8 }}
+                className="absolute top-10 right-4 sm:top-16 sm:right-10 z-10"
+              >
+                <div className="bg-white/85 backdrop-blur-sm rounded-xl px-2.5 py-2 shadow-md border border-[#e2e8f0] max-w-[170px]">
+                  <div className="flex items-start gap-1.5">
+                    <Check className="w-3.5 h-3.5 text-green-600 shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-medium text-[#212a3e] leading-snug">
+                        Quittance envoyée automatiquement
+                      </p>
+                      <p className="text-[10px] text-[#5e6478] mt-0.5 leading-snug">
+                        Locataire : Gilles Martin
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
             </div>
           </div>
         </motion.div>
