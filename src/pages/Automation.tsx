@@ -137,10 +137,10 @@ const Automation = () => {
               className="order-2 lg:order-1 text-center sm:text-left"
             >
               <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-[#212a3e] leading-tight">
-                Fini les quittances manuelles.
+                Fini les quittances manuelles
               </h1>
               <h1 className="mt-1 text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-[#212a3e] leading-tight">
-                Elles partent automatiquement.
+                Elles partent automatiquement
               </h1>
               <p className="mt-4 text-sm sm:text-base text-[#212a3e]">
                 2 modes d'automatisation au choix :
@@ -148,11 +148,11 @@ const Automation = () => {
               <ul className="mt-2 space-y-1.5 text-sm sm:text-base text-[#5e6478] leading-relaxed list-none">
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-green-600 shrink-0" />
-                  <span><strong className="text-[#212a3e]">100% automatique</strong> — elles partent toutes seules</span>
+                  <span><strong className="text-[#212a3e]">100% automatique</strong> — Elles partent toutes seules, mais toujours sous contrôle</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-green-600 shrink-0" />
-                  <span><strong className="text-[#212a3e]">Validation en un clic</strong> — vous gardez le contrôle</span>
+                  <span><strong className="text-[#212a3e]">Validation en un clic</strong> — Un contrôle renforcé</span>
                 </li>
               </ul>
 
@@ -231,14 +231,18 @@ const Automation = () => {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.5, delay: 0.4 }}
-                  className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20"
+                  className="absolute top-3 right-2 sm:top-5 sm:right-6 z-20"
                 >
-                  <div className="bg-white/95 backdrop-blur-sm rounded-xl px-3 py-2.5 shadow-lg border border-[#e2e8f0] max-w-[200px]">
-                    <div className="flex items-start gap-2">
-                      <Check className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+                  <div className="bg-white/95 backdrop-blur-sm rounded-xl px-2.5 py-2 shadow-lg border border-[#e2e8f0] max-w-[180px]">
+                    <div className="flex items-start gap-1.5">
+                      <Check className="w-3.5 h-3.5 text-green-600 shrink-0 mt-0.5" />
                       <div className="min-w-0">
-                        <p className="text-xs font-medium text-[#212a3e]">Quittance envoyée automatiquement</p>
-                        <p className="text-xs text-[#5e6478] mt-1">Locataire : Marie Dubois</p>
+                        <p className="text-[11px] sm:text-xs font-medium text-[#212a3e] leading-snug">
+                          Quittance envoyée automatiquement
+                        </p>
+                        <p className="text-[10px] sm:text-[11px] text-[#5e6478] mt-0.5 leading-snug">
+                          Locataire : Marie Dubois
+                        </p>
                       </div>
                     </div>
                   </div>
