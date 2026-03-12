@@ -471,7 +471,7 @@ const Automation = () => {
                 </div>
                 <div className="order-1 lg:order-2 flex justify-center lg:justify-start relative z-10">
                   <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white shadow-[0_4px_12px_rgba(33,42,62,0.12)] ring-4 ring-[#f7f5fa] flex items-center justify-center p-2.5">
-                    <img src="/public/icons/icon-historique-clair-organise.png" alt="" className="w-full h-full object-contain" aria-hidden />
+                    <img src="/icons/icon-historique-clair-organise.png" alt="" className="w-full h-full object-contain" aria-hidden />
                   </div>
                 </div>
               </div>
