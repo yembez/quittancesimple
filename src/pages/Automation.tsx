@@ -142,24 +142,12 @@ const Automation = () => {
               <h1 className="mt-1 text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-[#212a3e] leading-tight">
                 Elles partent automatiquement
               </h1>
-              <p className="mt-4 text-sm sm:text-base text-[#212a3e]">
-                2 modes d'automatisation au choix :
-              </p>
-              <ul className="mt-2 space-y-1.5 text-sm sm:text-base text-[#5e6478] leading-relaxed list-none">
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-600 shrink-0" />
-                  <span><strong className="text-[#212a3e]">100% automatique</strong> — Elles partent toutes seules, mais toujours sous contrôle</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-green-600 shrink-0" />
-                  <span><strong className="text-[#212a3e]">Validation en un clic</strong> — Un contrôle renforcé</span>
-                </li>
-              </ul>
+             
 
               {/* Carte : Choisissez votre niveau d'automatisation */}
               <div className="mt-6 p-4 sm:p-5 bg-white border border-[#e2e8f0] rounded-xl shadow-sm">
                 <p className="text-sm font-medium text-[#212a3e] mb-3">
-                  Choisissez votre niveau d'automatisation
+                  Deux modes au choix&nbsp;:
                 </p>
                 <div className="space-y-3">
                   <div className="flex items-start gap-3 p-3 rounded-lg border border-[#e2e8f0]">
@@ -193,7 +181,7 @@ const Automation = () => {
                   }}
                   className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl px-6 py-3 bg-[#E65F3F] hover:bg-[#d95530] text-white text-sm font-semibold transition-colors shadow-[0_2px_6px_rgba(15,23,42,0.1)]"
                 >
-                  Activer les quittances automatiques
+                  Activer le Pack Automatique gratuit
                 </button>
                 <ul className="flex flex-wrap justify-center sm:justify-start gap-x-4 gap-y-1 text-xs text-[#5e6478] list-none">
                   <li className="flex items-center gap-1.5">
@@ -222,7 +210,7 @@ const Automation = () => {
                 {/* Photo avec arrondis (overflow uniquement sur l'image) */}
                 <div className="overflow-hidden rounded-2xl lg:rounded-3xl">
                   <img
-                    src="/images/femme_shopping.png"
+                    src="/images/femme_terrasse_amis2.png"
                     alt="Pack Automatique"
                     className="w-full h-auto object-contain"
                   />
@@ -242,6 +230,27 @@ const Automation = () => {
                         </p>
                         <p className="text-[10px] sm:text-[11px] text-[#5e6478] mt-0.5 leading-snug">
                           Locataire : Marie Dubois
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+                {/* Deuxième bulle : message "en train d'arriver" — Gilles Martin, légèrement plus petit que la première */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.85 }}
+                  animate={{ opacity: 0.92, scale: 1 }}
+                  transition={{ duration: 0.6, delay: 0.8 }}
+                  className="absolute top-14 right-8 sm:top-20 sm:right-14 z-10"
+                >
+                  <div className="bg-white/85 backdrop-blur-sm rounded-xl px-2.5 py-2 shadow-md border border-[#e2e8f0] max-w-[170px]">
+                    <div className="flex items-start gap-1.5">
+                      <Check className="w-3.5 h-3.5 text-green-600 shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-medium text-[#212a3e] leading-snug">
+                          Quittance envoyée automatiquement
+                        </p>
+                        <p className="text-[10px] text-[#5e6478] mt-0.5 leading-snug">
+                          Locataire : Gilles Martin
                         </p>
                       </div>
                     </div>
@@ -442,7 +451,7 @@ const Automation = () => {
                   <span className="text-xs font-semibold text-[#E65F3F] uppercase tracking-wider">Étape 2</span>
                   <h3 className="text-lg sm:text-xl font-bold text-[#212a3e] mt-1.5 mb-2">Choisissez la date de rappel d'échéance</h3>
                   <p className="text-[#5e6478] text-sm sm:text-base leading-relaxed mb-2">
-                  Selon le mode choisi, c'est la date où vous receverez soit&nbsp;: <br /> - Un mail pour vous prevenir de l'envoi 5 jours avant.<br /> soit <br />- 1 SMS + un email, pour valider en 1 clic.<br /> <strong>Et c'est tout !</strong>
+                  Selon le mode choisi, c'est la date où vous receverez soit&nbsp;: <br /> - Un mail pour vous prevenir 5 jours avant l'envoi.<br /> soit&nbsp;:<br />- 1 SMS + un email, pour valider en 1 clic.<br /> <strong>Et c'est tout !</strong>
                   </p>
                   <span className="inline-block text-xs font-medium text-[#212a3e] bg-[#E65F3F]/10 px-2.5 py-1 rounded-full">30 secondes</span>
                 </div>

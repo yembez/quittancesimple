@@ -85,18 +85,21 @@ Deno.serve(async (req: Request) => {
       ? `${SITE_URL}/send-quittance-manual?token=${encodeURIComponent(token)}`
       : `${SITE_URL}/dashboard`;
 
+    const ctaBaseStyle =
+      "display: inline-block; padding: 8px 16px; border-radius: 8px; border: 1px solid #1e3a5f; color: #1e3a5f !important; background-color: #ffffff; text-decoration: none; font-weight: bold; margin: 4px; min-width: 240px; text-align: center;";
+
     const bodyHtml = `
       <p>Votre quittance pour la période <strong>${periode}</strong> est prête pour le locataire <strong>${locataireNom}</strong>.</p>
       <p>Elle sera envoyée automatiquement à votre locataire dans 5 jours si vous ne faites rien.</p>
       <p style="margin-top: 20px;">Vous pouvez :</p>
       <p style="margin-top: 12px; text-align: center;">
-        <a href="${cancelUrl}" style="display: inline-block; padding: 12px 20px; background-color: #6b7280; color: #ffffff !important; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 4px;">Annuler l'envoi</a>
+        <a href="${cancelUrl}" style="${ctaBaseStyle}">Annuler l'envoi</a>
       </p>
       <p style="text-align: center;">
-        <a href="${relanceUrl}" style="display: inline-block; padding: 12px 20px; background-color: #2563eb; color: #ffffff !important; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 4px;">Relancer le locataire</a>
+        <a href="${relanceUrl}" style="${ctaBaseStyle}">Relancer le locataire</a>
       </p>
       <p style="text-align: center;">
-        <a href="${sendManualUrl}" style="display: inline-block; padding: 12px 20px; background-color: #059669; color: #ffffff !important; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 4px;">Envoyer la quittance maintenant</a>
+        <a href="${sendManualUrl}" style="${ctaBaseStyle}">Envoyer la quittance maintenant</a>
       </p>
     `;
 

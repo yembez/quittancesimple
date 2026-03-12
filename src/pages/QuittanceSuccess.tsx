@@ -278,7 +278,7 @@ const QuittanceSuccess = () => {
             </div>
             <div className="relative w-full aspect-[3/1.5] md:aspect-[4/2] overflow-hidden bg-black">
               <img
-                src="/images/femme_shopping.png"
+                src="/images/femme_terrasse_amis2.png"
                 alt="Bailleur recevant la confirmation de quittance"
                 className="absolute inset-0 w-full h-full object-cover object-top"
               />
