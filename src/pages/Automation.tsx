@@ -438,7 +438,7 @@ const Automation = () => {
                   <span className="text-xs font-semibold text-[#E65F3F] uppercase tracking-wider">Étape 2</span>
                   <h3 className="text-lg sm:text-xl font-bold text-[#212a3e] mt-1.5 mb-2">Choisissez la date de rappel d'échéance</h3>
                   <p className="text-[#5e6478] text-sm sm:text-base leading-relaxed mb-2">
-                  Selon le mode choisi, c'est la date où vous receverez un mail pour vous prevenir de l'envoi 5 jours avant.<br /> ou <br />1 SMS + un email, pour valider en 1 clic.
+                  Selon le mode choisi, c'est la date où vous receverez soit&nbsp;: <br /> - Un mail pour vous prevenir de l'envoi 5 jours avant.<br /> soit <br />- 1 SMS + un email, pour valider en 1 clic.<br /> <strong>Et c'est tout !</strong>
                   </p>
                   <span className="inline-block text-xs font-medium text-[#212a3e] bg-[#E65F3F]/10 px-2.5 py-1 rounded-full">30 secondes</span>
                 </div>
@@ -447,27 +447,28 @@ const Automation = () => {
 
             {/* Étape 3 : Texte à gauche, icône au centre */}
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
+              initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5 }}
               viewport={{ once: true }}
-              className="relative pl-12 lg:pl-0"
+              className="relative mb-12 sm:mb-16 pl-12 lg:pl-0"
             >
               {/* Point sur la ligne (desktop centre / mobile gauche) */}
               <div className="hidden lg:block absolute left-1/2 top-1/2 w-4 h-4 bg-[#E65F3F] rounded-full border-3 border-white shadow-md transform -translate-x-1/2 -translate-y-1/2 z-20"></div>
               <div className="lg:hidden absolute left-[1.125rem] top-10 w-4 h-4 bg-[#E65F3F] rounded-full border-[3px] border-[#f7f5fa] shadow-md transform -translate-x-1/2 -translate-y-1/2 z-20"></div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-center">
-                <div className="order-1 lg:order-1 flex justify-center lg:justify-end relative z-10">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white shadow-[0_4px_12px_rgba(33,42,62,0.12)] ring-4 ring-[#f7f5fa] flex items-center justify-center p-2.5">
-                    <Briefcase className="w-8 h-8 sm:w-10 sm:h-10 text-[#E65F3F]" aria-hidden />
-                  </div>
-                </div>
-                <div className="order-2 lg:order-2 lg:text-left">
+                <div className="order-2 lg:order-1 lg:text-right">
                   <span className="text-xs font-semibold text-[#E65F3F] uppercase tracking-wider">Étape 3</span>
                   <h3 className="text-lg sm:text-xl font-bold text-[#212a3e] mt-1.5 mb-2">Utilisez tous les outils "simples et intelligents" dans votre espace bailleur</h3>
                   <p className="text-[#5e6478] text-sm sm:text-base leading-relaxed mb-2">
-                    Création d'annonces avec IA, Rédaction et siganture de bail en ligne, Calcul Révision IRL automatique au bon moment, Coffre fort de tous vos documents, Modèles de bails, Bilan annuel... Et d'autres bonus encore.
+                  Création d'annonces avec IA, Rédaction et siganture de bail en ligne, Calcul Révision IRL automatique au bon moment, Coffre fort de tous vos documents, Modèles de bails, Bilan annuel... Et d'autres bonus encore.
                   </p>
+                  <span className="inline-block text-xs font-medium text-[#212a3e] bg-[#E65F3F]/10 px-2.5 py-1 rounded-full">Quand vous voulez</span>
+                </div>
+                <div className="order-1 lg:order-2 flex justify-center lg:justify-start relative z-10">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white shadow-[0_4px_12px_rgba(33,42,62,0.12)] ring-4 ring-[#f7f5fa] flex items-center justify-center p-2.5">
+                    <img src="/public/icons/icon-historique-clair-organise.png" alt="" className="w-full h-full object-contain" aria-hidden />
+                  </div>
                 </div>
               </div>
             </motion.div>
