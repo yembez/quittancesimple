@@ -310,7 +310,7 @@ const QuittanceSuccess = () => {
                 initial={{ opacity: 0, scale: 0.85 }}
                 animate={{ opacity: 0.92, scale: 1 }}
                 transition={{ duration: 0.6, delay: 0.8 }}
-                className="absolute top-10 right-4 sm:top-16 sm:right-10 z-10"
+                className="absolute top-16 right-4 sm:top-24 sm:right-10 z-10"
               >
                 <div className="bg-white/85 backdrop-blur-sm rounded-xl px-2.5 py-2 shadow-md border border-[#e2e8f0] max-w-[170px]">
                   <div className="flex items-start gap-1.5">
