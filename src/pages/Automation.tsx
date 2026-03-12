@@ -1263,7 +1263,7 @@ const Automation = () => {
       {/* CTA fixe mobile */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#e8e7ef] shadow-[0_-4px_20px_rgba(15,23,42,0.08)] p-4 z-50 md:hidden">
         <button
-          onClick={() => openModal('auto')}
+          onClick={() => openModal('Pack Automatique')}
           className="w-full px-6 py-3.5 rounded-xl bg-[#E65F3F] hover:bg-[#d95530] text-white font-semibold text-sm transition-colors shadow-[0_2px_8px_rgba(15,23,42,0.12)]"
         >
           Essai gratuit

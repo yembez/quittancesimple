@@ -114,7 +114,37 @@ const QuittanceSuccess = () => {
     return () => timeouts.forEach((t) => clearTimeout(t));
   }, [reducedMotion]);
 
-  const handleSatisfactionResponse = (response: 'yes' | 'no') => {
+  const handleSatisfactionResponse = async (response: 'yes' | 'no') => {
+    const responseType = response === 'yes' ? 'positive' : 'negative';
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const device = isMobile ? 'mobile' : 'desktop';
+
+    // 1. Enregistrer dans Supabase (instantané)
+    try {
+      const supabaseResponse = await fetch('https://jfpbddtdblqakabyjxkq.supabase.co/rest/v1/satisfaction_clicks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmcGJkZHRkYmxxYWthYnlqeGtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3MDc4OTUsImV4cCI6MjA3NDI4Mzg5NX0.6RmDCMJRN5lsmaI3H3Jfurs0Idz5-MbQRkV40zbnQIU',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmcGJkZHRkYmxxYWthYnlqeGtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3MDc4OTUsImV4cCI6MjA3NDI4Mzg5NX0.6RmDCMJRN5lsmaI3H3Jfurs0Idz5-MbQRkV40zbnQIU',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+          email: email || null,
+          response: responseType,
+          page_source: 'quittance_success',
+          device: device
+        })
+      });
+      if (!supabaseResponse.ok) {
+        const errorText = await supabaseResponse.text();
+        console.error('❌ Supabase satisfaction error:', supabaseResponse.status, errorText);
+      }
+    } catch (error) {
+      console.error('❌ Error saving satisfaction click:', error);
+    }
+
+    // 2. Track GA4 + état local
     if (response === 'yes') {
       setSatisfactionStep('positive');
       trackGA4Event('satisfaction_positive', { page_source: 'quittance_success' });
@@ -132,7 +162,7 @@ const QuittanceSuccess = () => {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmcGJkZHRkYmxxYWthYnlqeGtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY2MjE2ODUsImV4cCI6MjA1MjE5NzY4NX0.LRorMT1dq6sMB1xNMcpvAFl97TCz8c2WnSuKTdwMshY'
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmcGJkZHRkYmxxYWthYnlqeGtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3MDc4OTUsImV4cCI6MjA3NDI4Mzg5NX0.6RmDCMJRN5lsmaI3H3Jfurs0Idz5-MbQRkV40zbnQIU'
         },
         body: JSON.stringify({
           feedback,
