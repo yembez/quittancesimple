@@ -158,24 +158,10 @@ const LocatairesTable = ({
     loc.heure_rappel !== null
   );
 
-  // Afficher le message seulement si l'abonnement est actif et les rappels ne sont pas tous configurés
-  const showReminderSetupMessage = isSubscriptionActive && !allRemindersConfigured && planType !== 'connectee_plus';
-
   return (
     <>
       {/* Desktop Table View - Hidden on Mobile */}
-      <div className="hidden lg:block min-w-0 overflow-hidden">
-        {/* Message pour configurer les rappels */}
-        {showReminderSetupMessage && (
-          <div className="mb-2 px-4">
-            <p className="text-green-600 font-semibold text-sm">
-              Paramètrez date et heure de rappel dans le tableau
-            </p>
-            <p className="text-green-600 text-xs">
-              pour recevoir vos rappels SMS + Email quand vous le souhaitez
-            </p>
-          </div>
-        )}
+      <div className="hidden lg:block min-w-0 overflow-visible">
         <table className="w-full table-fixed text-[13px] sm:text-[14px]">
           <thead className="bg-[#f8fafc] border-b border-[#f1f5f9]">
             <tr>
@@ -249,13 +235,18 @@ const LocatairesTable = ({
                         </p>
                         {onEditRappel && (
                           isSubscriptionActive ? (
-                            <button
-                              onClick={() => onEditRappel(locataire)}
-                              className="flex items-center space-x-1 text-[#64748b] hover:text-[#0f172a] transition-colors"
-                            >
-                              <Calendar className="w-3.5 h-3.5" />
-                              <span className="text-xs whitespace-nowrap">Modifier</span>
-                            </button>
+                            <div className="group relative">
+                              <button
+                                onClick={() => onEditRappel(locataire)}
+                                className="flex items-center space-x-1 text-[#64748b] hover:text-[#0f172a] transition-colors"
+                              >
+                                <Calendar className="w-3.5 h-3.5" />
+                                <span className="text-xs whitespace-nowrap">Modifier</span>
+                              </button>
+                              <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-normal pointer-events-none z-50 w-72">
+                                Pour ce locataire, modifier la date et l'heure à laquelle vous souhaitez recevoir vos e-mails et/ou SMS de rappel d'échéance de quittances.
+                              </div>
+                            </div>
                           ) : (
                             <div className="group relative">
                               <button
@@ -393,18 +384,7 @@ const LocatairesTable = ({
       </div>
 
       {/* Mobile Card View - Hidden on Desktop - min-w-0 pour éviter débordement */}
-      <div className="lg:hidden space-y-4 p-4 min-w-0 max-w-full overflow-hidden">
-        {/* Message pour configurer les rappels - Mobile */}
-        {showReminderSetupMessage && (
-          <div className="mb-2 px-2">
-            <p className="text-green-600 font-semibold text-sm">
-              Paramètrez date et heure de rappel dans le tableau
-            </p>
-            <p className="text-green-600 text-xs">
-              pour recevoir vos rappels SMS + Email quand vous le souhaitez
-            </p>
-          </div>
-        )}
+      <div className="lg:hidden space-y-4 p-4 min-w-0 max-w-full overflow-visible">
         {locataires.map((locataire, index) => (
           <div key={locataire.id} className="bg-white border border-[#e2e8f0] rounded-xl shadow-sm overflow-hidden min-w-0 max-w-full">
             {/* Card Header — style Overview */}
