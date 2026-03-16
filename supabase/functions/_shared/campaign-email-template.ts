@@ -3,7 +3,7 @@
  * Placeholders : PRENOM, LIEN_ACTIVATION, LIEN_DESABONNEMENT, PHOTO_VINCENT_URL
  */
 
-const DEFAULT_PHOTO_VINCENT = "https://www.quittancesimple.fr/images/vincent-photo.png";
+const DEFAULT_PHOTO_VINCENT = "https://www.quittancesimple.fr/images/automation/marc_2.png";
 const DEFAULT_CONTACT = "mailto:contact@quittancesimple.fr";
 
 export interface CampaignEmailOptions {
@@ -50,7 +50,7 @@ export function buildCampaignEmailHtml(options: CampaignEmailOptions): string {
       .wrapper { padding: 16px !important; }
       .content { padding-left: 20px !important; padding-right: 20px !important; max-width: 100% !important; }
       .cta-block { padding: 12px 24px !important; font-size: 16px !important; }
-      .signature-img { width: 56px !important; height: 56px !important; }
+      .signature-img { width: 64px !important; height: 64px !important; object-fit: cover !important; }
     }
   </style>
 </head>
@@ -220,7 +220,7 @@ export function buildCampaignEmailHtml(options: CampaignEmailOptions): string {
               <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                 <tr>
                   <td style="width: 70px; vertical-align: top; padding-right: 16px;">
-                    <img src="${photoVincentUrl.replace(/"/g, "&quot;")}" alt="Marc" width="70" height="70" class="signature-img" style="border-radius: 50%; display: block; max-width: 100%; height: auto;">
+                    <img src="${photoVincentUrl.replace(/"/g, "&quot;")}" alt="Marc" width="80" height="80" class="signature-img" style="border-radius: 50%; display: block; object-fit: cover;">
                   </td>
                   <td style="vertical-align: middle;">
                     <p style="margin: 0 0 4px; font-size: 17px; font-weight: 600; color: #000000; line-height: 1.4;">

@@ -658,7 +658,7 @@ Deno.serve(async (req) => {
       `,
       ctaText: undefined,
       ctaUrl: undefined,
-      closingHtml: '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top: 4px;"><tr><td style="padding-right: 12px; vertical-align: middle;"><img src="https://www.quittancesimple.fr/images/vincent-photo.png" alt="Marc, Quittance Simple" style="width: 76px; height: 76px; border-radius: 999px; display: block; object-fit: cover; object-position: 50% 28%;"></td><td style="font-size: 14px; line-height: 1.5; color: #111827; vertical-align: middle;">À bientôt,<br><strong>Marc</strong><br><span style="color:#4b5563;">Co-fondateur de Quittance Simple</span><br><span style="color:#4b5563;">Bailleur comme vous</span></td></tr></table>',
+      closingHtml: '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top: 4px;"><tr><td style="padding-right: 12px; vertical-align: middle;"><img src="https://www.quittancesimple.fr/images/automation/marc_2.png" alt="Marc, Quittance Simple" style="width: 84px; height: 84px; border-radius: 999px; display: block; object-fit: cover; object-position: 50% 32%;"></td><td style="font-size: 14px; line-height: 1.5; color: #111827; vertical-align: middle;">À bientôt,<br><strong>Marc</strong><br><span style="color:#4b5563;">Co-fondateur de Quittance Simple</span><br><span style="color:#4b5563;">Bailleur comme vous</span></td></tr></table>',
       unsubscribeUrl: emailForCta ? `${SITE_URL}/unsubscribe?email=${encodeURIComponent(emailForCta)}` : undefined,
     });
 
