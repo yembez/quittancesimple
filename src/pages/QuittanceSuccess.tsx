@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Check, CheckCircle, ArrowRight, ArrowLeft } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { trackGA4Event, trackCtaClick } from '../utils/analytics';
 import PackActivationFlow from '../components/PackActivationFlow';
 
@@ -18,6 +18,12 @@ function splitFullName(fullName: string): { prenom: string; nom: string } {
   if (parts.length === 1) return { prenom: '', nom: parts[0] };
   return { prenom: parts[0], nom: parts.slice(1).join(' ') };
 }
+
+const BUBBLE_TENANTS = [
+  { id: 'marie', name: 'Marie Dubois' },
+  { id: 'gilles', name: 'Gilles Martin' },
+  { id: 'vincent', name: 'Vincent Debourg' },
+] as const;
 
 const QuittanceSuccess = () => {
   const navigate = useNavigate();
@@ -36,6 +42,7 @@ const QuittanceSuccess = () => {
   const [satisfactionStep, setSatisfactionStep] = useState<'question' | 'positive' | 'negative' | 'sent'>('question');
   const [feedback, setFeedback] = useState('');
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [bubbleIndex, setBubbleIndex] = useState(0);
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -44,6 +51,16 @@ const QuittanceSuccess = () => {
     mq.addEventListener('change', fn);
     return () => mq.removeEventListener('change', fn);
   }, []);
+
+  // Animation des bulles sur la photo : rotation Marie → Gilles → Vincent
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setBubbleIndex((prev) => (prev + 1) % BUBBLE_TENANTS.length);
+    }, 3600);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const primaryBubble = BUBBLE_TENANTS[bubbleIndex];
 
   // Track page view + store email
   useEffect(() => {
@@ -284,48 +301,32 @@ const QuittanceSuccess = () => {
               />
 
               {/* Bulle statique réutilisant le message du hero Automation */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                className="absolute top-3 right-2 sm:top-5 sm:right-6 z-20"
-              >
-                <div className="bg-white/95 backdrop-blur-sm rounded-xl px-2.5 py-2 shadow-lg border border-[#e2e8f0] max-w-[180px]">
-                  <div className="flex items-start gap-1.5">
-                    <Check className="w-3.5 h-3.5 text-green-600 shrink-0 mt-0.5" />
-                    <div className="min-w-0">
-                      <p className="text-[11px] sm:text-xs font-medium text-[#212a3e] leading-snug">
-                        Quittance envoyée automatiquement
-                      </p>
-                      <p className="text-[10px] sm:text-[11px] text-[#5e6478] mt-0.5 leading-snug">
-                        Locataire : Marie Dubois
-                      </p>
+              {/* Bulle principale (en haut) — locataire courant */}
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={primaryBubble.id}
+                  initial={{ opacity: 0, scale: 0.9, y: -6 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -40, scale: 0.9 }}
+                  transition={{ duration: 0.4, ease: 'easeOut' }}
+                  className="absolute top-3 right-2 sm:top-5 sm:right-6 z-20"
+                >
+                  <div className="bg-white/95 backdrop-blur-sm rounded-xl px-2.5 py-2 shadow-lg border border-[#e2e8f0] max-w-[180px]">
+                    <div className="flex items-start gap-1.5">
+                      <Check className="w-3.5 h-3.5 text-green-600 shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-[11px] sm:text-xs font-medium text-[#212a3e] leading-snug">
+                          Quittance envoyée automatiquement
+                        </p>
+                        <p className="text-[10px] sm:text-[11px] text-[#5e6478] mt-0.5 leading-snug">
+                          Locataire : {primaryBubble.name}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </motion.div>
+                </motion.div>
+              </AnimatePresence>
 
-              {/* Deuxième bulle : message "en train d'arriver" — Gilles Martin, légèrement plus petit que la première */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.85 }}
-                animate={{ opacity: 0.92, scale: 1 }}
-                transition={{ duration: 0.6, delay: 0.8 }}
-                className="absolute top-16 right-4 sm:top-24 sm:right-10 z-10"
-              >
-                <div className="bg-white/85 backdrop-blur-sm rounded-xl px-2.5 py-2 shadow-md border border-[#e2e8f0] max-w-[170px]">
-                  <div className="flex items-start gap-1.5">
-                    <Check className="w-3.5 h-3.5 text-green-600 shrink-0 mt-0.5" />
-                    <div className="min-w-0">
-                      <p className="text-[11px] font-medium text-[#212a3e] leading-snug">
-                        Quittance envoyée automatiquement
-                      </p>
-                      <p className="text-[10px] text-[#5e6478] mt-0.5 leading-snug">
-                        Locataire : Gilles Martin
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
             </div>
           </div>
         </motion.div>

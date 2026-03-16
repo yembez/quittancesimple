@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { buildEmailHtml } from "../_shared/email-template.ts";
+import { buildCampaignEmailHtml } from "../_shared/campaign-email-template.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -264,7 +265,8 @@ Deno.serve(async (req: Request) => {
     const prenom = (r.prenom || "").trim() || "";
     let bodyPersonalized = bodyHtml
       .replace(/\{\{\s*prenom\s*\}\}/gi, prenom)
-      .replace(/\[\s*Prénom\s*\]/gi, prenom);
+      .replace(/\[\s*Prénom\s*\]/gi, prenom)
+      .replace(/\{\{\s*email\s*\}\}/gi, encodeURIComponent(r.email.trim()));
     if (!prenom) {
       bodyPersonalized = bodyPersonalized.replace(/\bBonjour\s+,/gi, "Bonjour,");
     }
@@ -298,26 +300,32 @@ Deno.serve(async (req: Request) => {
     const SITE_URL = "https://www.quittancesimple.fr";
     const unsubscribeUrl = `${SITE_URL}/unsubscribe?email=${encodeURIComponent(r.email.trim())}`;
 
-    const html = buildEmailHtml({
-      // Campagnes marketing : pas de titre/logo bleu en en-tête
-      title: "",
-      bodyHtml: bodyPersonalized,
-      ctaText: payload.ctaText,
-      ctaUrl: ctaUrlForEmail,
-      closingHtml: payload.closingHtml,
-      unsubscribeUrl,
-    });
+    const isCampaign = ["free_leads", "leads_j2", "leads_j2_catchup", "leads_j5", "leads_j8"].includes(payload.segment || "");
+    const html = isCampaign
+      ? buildCampaignEmailHtml({
+          prenom: prenom || "Prénom",
+          lienActivation: ctaUrlForEmail || ctaUrlPersonalized || "",
+          lienDesabonnement: unsubscribeUrl,
+        })
+      : buildEmailHtml({
+          title: "",
+          bodyHtml: bodyPersonalized,
+          ctaText: payload.ctaText,
+          ctaUrl: ctaUrlForEmail,
+          closingHtml: payload.closingHtml,
+          unsubscribeUrl,
+        });
 
     try {
-      const res = await fetch("https://api.resend.com/emails", {
+    const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${resendKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: "Vincent – Quittance Simple <contact@quittancesimple.fr>",
-          reply_to: "Vincent – Quittance Simple <contact@quittancesimple.fr>",
+          from: "Marc – Quittance Simple <contact@quittancesimple.fr>",
+          reply_to: "Marc – Quittance Simple <contact@quittancesimple.fr>",
           to: [r.email.trim()],
           subject: subjectPersonalized || subject,
           html,

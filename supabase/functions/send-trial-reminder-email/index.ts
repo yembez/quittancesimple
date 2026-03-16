@@ -72,8 +72,8 @@ Deno.serve(async (req: Request) => {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              from: 'Vincent – Quittance Simple <contact@quittancesimple.fr>',
-              reply_to: 'Vincent – Quittance Simple <contact@quittancesimple.fr>',
+              from: 'Marc – Quittance Simple <contact@quittancesimple.fr>',
+              reply_to: 'Marc – Quittance Simple <contact@quittancesimple.fr>',
               to: [previewEmail],
               subject: `[PREVIEW] ${subject}`,
               html,
@@ -220,8 +220,8 @@ Deno.serve(async (req: Request) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from: 'Vincent – Quittance Simple <contact@quittancesimple.fr>',
-            reply_to: 'Vincent – Quittance Simple <contact@quittancesimple.fr>',
+            from: 'Marc – Quittance Simple <contact@quittancesimple.fr>',
+            reply_to: 'Marc – Quittance Simple <contact@quittancesimple.fr>',
             to: [proprietaire.email],
             subject: subject,
             html: emailHtml,
@@ -415,7 +415,7 @@ Vos données sont toujours là. Vous pouvez réactiver votre compte à tout mome
       break;
   }
 
-  const closing = `Si vous avez la moindre question, répondez simplement à ce mail. Je vous répondrai personnellement.<br><br>Bonne journée,<br><br><strong>Vincent</strong><br>Co-fondateur – Quittance Simple`;
+  const closing = `Si vous avez la moindre question, répondez simplement à ce mail. Je vous répondrai personnellement.<br><br>Bonne journée,<br><br><strong>Marc</strong><br>Co-fondateur – Quittance Simple`;
 
   return buildEmailHtml({
     title: 'QS- Espace Bailleur',

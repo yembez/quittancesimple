@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { buildEmailHtml } from "../_shared/email-template.ts";
+import { buildCampaignEmailHtml } from "../_shared/campaign-email-template.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -110,23 +110,16 @@ Deno.serve(async (req: Request) => {
   }
 
   const prenom = "Prénom";
-  const bodyPersonalized = bodyHtml
-    .replace(/\{\{\s*prenom\s*\}\}/gi, prenom)
-    .replace(/\[\s*Prénom\s*\]/gi, prenom);
   const subjectPersonalized = (subject || "")
     .replace(/\{\{\s*prenom\s*\}\}/gi, prenom)
     .replace(/\[\s*Prénom\s*\]/gi, prenom);
   const ctaUrlPersonalized = (ctaUrl || "").replace(/\{\{\s*email\s*\}\}/gi, encodeURIComponent(testEmail));
   const unsubscribeUrl = `${SITE_URL}/unsubscribe?email=${encodeURIComponent(testEmail)}`;
 
-  const html = buildEmailHtml({
-    // Campagnes marketing : même rendu que l'envoi réel (pas de gros titre bleu)
-    title: "",
-    bodyHtml: bodyPersonalized,
-    ctaText: ctaText || undefined,
-    ctaUrl: ctaUrlPersonalized || undefined,
-    closingHtml: closingHtml || undefined,
-    unsubscribeUrl,
+  const html = buildCampaignEmailHtml({
+    prenom,
+    lienActivation: ctaUrlPersonalized || `${SITE_URL}/`,
+    lienDesabonnement: unsubscribeUrl,
   });
 
   const res = await fetch("https://api.resend.com/emails", {
@@ -136,8 +129,8 @@ Deno.serve(async (req: Request) => {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "Vincent – Quittance Simple <contact@quittancesimple.fr>",
-      reply_to: "Vincent – Quittance Simple <contact@quittancesimple.fr>",
+      from: "Marc – Quittance Simple <contact@quittancesimple.fr>",
+      reply_to: "Marc – Quittance Simple <contact@quittancesimple.fr>",
       to: [testEmail],
       subject: subjectPersonalized || subject || "Test campagne",
       html,

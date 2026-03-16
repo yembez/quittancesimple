@@ -106,12 +106,12 @@ Deno.serve(async (req: Request) => {
                 src="${VINCENT_SIGNATURE_IMAGE_URL}"
                 width="40"
                 height="40"
-                alt="Vincent"
+                alt="Marc"
                 style="display: block; width: 40px; height: 40px; border-radius: 9999px; object-fit: cover; object-position: center top;"
               />
             </td>
             <td style="padding: 0; vertical-align: middle;">
-              À très vite dans votre Espace Bailleur,<br><strong>Vincent de Quittance Simple</strong>
+              À très vite dans votre Espace Bailleur,<br><strong>Marc de Quittance Simple</strong>
             </td>
           </tr>
         </table>
@@ -125,8 +125,8 @@ Deno.serve(async (req: Request) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Vincent – Quittance Simple <contact@quittancesimple.fr>",
-        reply_to: "Vincent – Quittance Simple <contact@quittancesimple.fr>",
+        from: "Marc – Quittance Simple <contact@quittancesimple.fr>",
+        reply_to: "Marc – Quittance Simple <contact@quittancesimple.fr>",
         to: [email.trim()],
         subject: "Bienvenue sur votre Espace Bailleur — Quittance Simple",
         html,

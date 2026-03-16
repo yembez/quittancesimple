@@ -22,7 +22,7 @@ export interface EmailTemplateOptions {
   ctaText?: string;
   /** URL du bouton CTA (optionnel) */
   ctaUrl?: string;
-  /** Signature / fin de message (HTML), ex. "À très vite,<br><strong>Vincent de Quittance Simple</strong>" */
+  /** Signature / fin de message (HTML), ex. "À très vite,<br><strong>Marc de Quittance Simple</strong>" */
   closingHtml?: string;
   /** URL de contact (défaut: mailto:contact@quittancesimple.fr) */
   contactUrl?: string;
@@ -47,7 +47,7 @@ export function buildEmailHtml(options: EmailTemplateOptions): string {
     bodyHtml,
     ctaText,
     ctaUrl,
-    closingHtml = `À très vite,<br><strong>Vincent de Quittance Simple</strong>`,
+    closingHtml = `À très vite,<br><strong>Marc de Quittance Simple</strong>`,
     unsubscribeUrl = DEFAULT_UNSUBSCRIBE_URL,
     contactUrl = DEFAULT_CONTACT_URL,
     year = new Date().getFullYear(),
