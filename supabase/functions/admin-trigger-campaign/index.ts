@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { buildEmailHtml } from "../_shared/email-template.ts";
+import { buildCampaignEmailHtml } from "../_shared/campaign-email-template.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -162,12 +162,6 @@ Deno.serve(async (req: Request) => {
   for (let i = 0; i < list.length; i++) {
     const r = list[i];
     const prenom = (r.prenom || "").trim() || "";
-    let bodyPersonalized = bodyHtml
-      .replace(/\{\{\s*prenom\s*\}\}/gi, prenom)
-      .replace(/\[\s*Prénom\s*\]/gi, prenom);
-    if (!prenom) {
-      bodyPersonalized = bodyPersonalized.replace(/\bBonjour\s+,/gi, "Bonjour,");
-    }
     let subjectPersonalized = subjectTemplate
       .replace(/\{\{\s*prenom\s*\}\}/gi, prenom)
       .replace(/\[\s*Prénom\s*\]/gi, prenom);
@@ -180,13 +174,13 @@ Deno.serve(async (req: Request) => {
       : undefined;
     const unsubscribeUrl = `${SITE_URL}/unsubscribe?email=${encodeURIComponent(r.email.trim())}`;
 
-    const html = buildEmailHtml({
-      title: "Quittance Simple",
-      bodyHtml: bodyPersonalized,
-      ctaText: ctaText || undefined,
-      ctaUrl: ctaUrlForEmail || undefined,
-      closingHtml: closingHtml || undefined,
-      unsubscribeUrl,
+    const html = buildCampaignEmailHtml({
+      prenom: prenom || "Prénom",
+      lienActivation: ctaUrlForEmail || ctaUrlPersonalized || `${SITE_URL}/`,
+      lienDesabonnement: unsubscribeUrl,
+      bodyHtml,
+      ctaText,
+      closingHtml,
     });
 
     try {

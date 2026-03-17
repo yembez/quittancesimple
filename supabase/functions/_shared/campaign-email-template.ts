@@ -10,6 +10,9 @@ export interface CampaignEmailOptions {
   prenom: string;
   lienActivation: string;
   lienDesabonnement: string;
+  bodyHtml?: string;
+  ctaText?: string;
+  closingHtml?: string;
   photoVincentUrl?: string;
   contactUrl?: string;
 }
@@ -30,6 +33,9 @@ export function buildCampaignEmailHtml(options: CampaignEmailOptions): string {
     prenom,
     lienActivation,
     lienDesabonnement,
+    bodyHtml,
+    ctaText,
+    closingHtml,
     photoVincentUrl = DEFAULT_PHOTO_VINCENT,
     contactUrl = DEFAULT_CONTACT,
   } = options;
@@ -37,6 +43,9 @@ export function buildCampaignEmailHtml(options: CampaignEmailOptions): string {
   const prenomSafe = escapeHtml(prenom.trim() || "Prénom");
 
   const lienSafe = lienActivation.replace(/"/g, "&quot;");
+  const hasCustomBody = !!bodyHtml && bodyHtml.trim().length > 0;
+  const hasCustomClosing = !!closingHtml && closingHtml.trim().length > 0;
+  const ctaLabel = (ctaText && ctaText.trim()) || "Découvrir mon espace&nbsp;gratuit";
 
   return `<!DOCTYPE html>
 <html lang="fr">
@@ -70,6 +79,13 @@ export function buildCampaignEmailHtml(options: CampaignEmailOptions): string {
             </td>
           </tr>
           
+          ${hasCustomBody ? `
+          <tr>
+            <td class="content" style="padding: 0 32px 24px;">
+              ${bodyHtml}
+            </td>
+          </tr>
+          ` : `
           <tr>
             <td class="content" style="padding: 0 32px;">
               <p style="margin: 0 0 18px; font-size: 16px; line-height: 1.5; color: #000000;">
@@ -84,7 +100,6 @@ export function buildCampaignEmailHtml(options: CampaignEmailOptions): string {
               </p>
             </td>
           </tr>
-          
           <tr>
             <td class="content" style="padding: 0 32px 24px;">
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
@@ -98,7 +113,6 @@ export function buildCampaignEmailHtml(options: CampaignEmailOptions): string {
               </table>
             </td>
           </tr>
-          
           <tr>
             <td class="content" style="padding: 0 32px;">
               <p style="margin: 0 0 18px; font-size: 16px; line-height: 1.5; color: #000000;">
@@ -106,7 +120,6 @@ export function buildCampaignEmailHtml(options: CampaignEmailOptions): string {
               </p>
             </td>
           </tr>
-          
           <tr>
             <td class="content" style="padding: 0 32px;">
               <p style="margin: 0 0 12px; font-size: 16px; line-height: 1.5; color: #000000;">
@@ -114,10 +127,8 @@ export function buildCampaignEmailHtml(options: CampaignEmailOptions): string {
               </p>
             </td>
           </tr>
-          
           <tr>
             <td class="content" style="padding: 0 32px 0 48px;">
-              
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 12px;">
                 <tr>
                   <td style="width: 20px; vertical-align: top; padding-top: 6px;">
@@ -130,7 +141,6 @@ export function buildCampaignEmailHtml(options: CampaignEmailOptions): string {
                   </td>
                 </tr>
               </table>
-              
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 12px;">
                 <tr>
                   <td style="width: 20px; vertical-align: top; padding-top: 6px;">
@@ -143,7 +153,6 @@ export function buildCampaignEmailHtml(options: CampaignEmailOptions): string {
                   </td>
                 </tr>
               </table>
-              
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                 <tr>
                   <td style="width: 20px; vertical-align: top; padding-top: 6px;">
@@ -156,10 +165,8 @@ export function buildCampaignEmailHtml(options: CampaignEmailOptions): string {
                   </td>
                 </tr>
               </table>
-              
             </td>
           </tr>
-          
           <tr>
             <td class="content" style="padding: 18px 32px 0;">
               <p style="margin: 0 0 18px; font-size: 16px; line-height: 1.5; color: #000000;">
@@ -167,7 +174,6 @@ export function buildCampaignEmailHtml(options: CampaignEmailOptions): string {
               </p>
             </td>
           </tr>
-          
           <tr>
             <td class="content" style="padding: 0 32px;">
               <p style="margin: 0 0 8px; font-size: 16px; line-height: 1.5; color: #000000;">
@@ -178,6 +184,7 @@ export function buildCampaignEmailHtml(options: CampaignEmailOptions): string {
               </p>
             </td>
           </tr>
+          `}
           
           <tr>
             <td class="content" style="padding: 0 32px 32px;">
@@ -185,7 +192,7 @@ export function buildCampaignEmailHtml(options: CampaignEmailOptions): string {
                 <tr>
                   <td style="text-align: center;">
                     <a href="${lienSafe}" class="cta-block" style="display: inline-block; background-color: #4A90E2; color: #ffffff !important; text-decoration: none; padding: 14px 32px; font-size: 17px; font-weight: 600; border-radius: 6px;">
-                      Découvrir mon espace&nbsp;gratuit
+                      ${ctaLabel}
                     </a>
                   </td>
                 </tr>
@@ -215,6 +222,13 @@ export function buildCampaignEmailHtml(options: CampaignEmailOptions): string {
             </td>
           </tr>
           
+          ${hasCustomClosing ? `
+          <tr>
+            <td class="content" style="padding: 0 32px 32px;">
+              ${closingHtml}
+            </td>
+          </tr>
+          ` : `
           <tr>
             <td class="content" style="padding: 0 32px 32px;">
               <table role="presentation" cellspacing="0" cellpadding="0" border="0">
@@ -235,6 +249,7 @@ export function buildCampaignEmailHtml(options: CampaignEmailOptions): string {
               </table>
             </td>
           </tr>
+          `}
           
           <tr>
             <td class="content" style="padding: 24px 32px; background-color: #f8f9fa; border-top: 1px solid #e1e8ed;">

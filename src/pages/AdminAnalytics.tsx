@@ -84,6 +84,7 @@ const AdminAnalytics: React.FC = () => {
   const [editViewSignature, setEditViewSignature] = useState<'source' | 'preview'>('preview');
   const [editBodyText, setEditBodyText] = useState('');
   const [ctaClicks, setCtaClicks] = useState<{ j2: number; j5: number; j8: number; total: number } | null>(null);
+  const [openStats, setOpenStats] = useState<{ j2: number; j5: number; j8: number; total: number } | null>(null);
 
   type TrialEmailLog = {
     reminder_type: string;
@@ -180,6 +181,31 @@ const AdminAnalytics: React.FC = () => {
     }
   }, []);
 
+  const fetchOpenStats = useCallback(async () => {
+    try {
+      const { data, error: err } = await supabase.functions.invoke('get-campaign-open-stats', {
+        body: { adminPassword: ADMIN_PASSWORD },
+      });
+      if (err) {
+        setOpenStats(null);
+        return;
+      }
+      const d = data as { j2?: number; j5?: number; j8?: number; total?: number } | null;
+      if (d && typeof d.j2 === 'number' && typeof d.j5 === 'number' && typeof d.j8 === 'number') {
+        setOpenStats({
+          j2: d.j2,
+          j5: d.j5,
+          j8: d.j8,
+          total: typeof d.total === 'number' ? d.total : d.j2 + d.j5 + d.j8,
+        });
+      } else {
+        setOpenStats(null);
+      }
+    } catch {
+      setOpenStats(null);
+    }
+  }, []);
+
   const fetchTrialLeads = useCallback(async () => {
     setTrialLoading(true);
     setTrialError('');
@@ -246,9 +272,10 @@ const AdminAnalytics: React.FC = () => {
     if (authenticated) {
       fetchAndAnalyze();
       fetchCtaStats();
+      fetchOpenStats();
       fetchTrialLeads();
     }
-  }, [authenticated, fetchAndAnalyze, fetchCtaStats, fetchTrialLeads]);
+  }, [authenticated, fetchAndAnalyze, fetchCtaStats, fetchOpenStats, fetchTrialLeads]);
 
   const handleExportAllValid = () => {
     if (!result) return;
@@ -783,6 +810,21 @@ const AdminAnalytics: React.FC = () => {
                     J+2 : <strong>{ctaClicks.j2}</strong> · J+5 : <strong>{ctaClicks.j5}</strong> · J+8 : <strong>{ctaClicks.j8}</strong>
                     {ctaClicks.total > 0 && (
                       <span className="text-[#6b7280] ml-2">(total : {ctaClicks.total})</span>
+                    )}
+                  </p>
+                </div>
+              )}
+              {/* Ouvertures des e-mails */}
+              {openStats && (
+                <div className="p-4 border-t border-[#e5e7eb] bg-[#ecfdf3]">
+                  <h3 className="text-sm font-semibold text-[#111827] mb-1">Ouvertures des e-mails</h3>
+                  <p className="text-xs text-[#6b7280] mb-2">
+                    Nombre d&apos;événements <code className="bg-[#e5e7eb] px-1 rounded text-[10px]">email.opened</code> remontés par campagne depuis Resend.
+                  </p>
+                  <p className="text-sm text-[#374151]">
+                    J+2 : <strong>{openStats.j2}</strong> · J+5 : <strong>{openStats.j5}</strong> · J+8 : <strong>{openStats.j8}</strong>
+                    {openStats.total > 0 && (
+                      <span className="text-[#6b7280] ml-2">(total : {openStats.total})</span>
                     )}
                   </p>
                 </div>

@@ -204,7 +204,7 @@ const About = () => {
             </div>
           </div>
           <h2 className="text-2xl lg:text-3xl font-bold mb-5">
-            Vous voulez gagner du temps et vous libérer des corvées administratives ?
+            Vous voulez gagner du temps et vous libérer des corvées administratives&nbsp;?
           </h2>
           <p className="text-lg mb-8 opacity-90">
             N'hésitez pas à essayer dès aujourd'hui nos solutions d'envoi automatique.

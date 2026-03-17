@@ -46,6 +46,8 @@ const Generator = () => {
     console.log('🔄 Initialisation formData avec période:', currentPeriode);
 
     return {
+      baillorFirstName: '',
+      baillorLastName: '',
       baillorName: '',
       baillorAddress: '',
       baillorEmail: '',
@@ -103,8 +105,19 @@ const Generator = () => {
         device_detected_at: new Date().toISOString()
       };
 
-      // Parse name if available
-      if (data.baillorName && data.baillorName.trim()) {
+      // Prénom / nom bailleur
+      const prenom = (data as any).baillorFirstName?.trim?.() || '';
+      const nom = (data as any).baillorLastName?.trim?.() || '';
+
+      if (prenom) {
+        proprietaireData.prenom = prenom;
+      }
+      if (nom) {
+        proprietaireData.nom = nom;
+      }
+
+      // Rétro‑compatibilité : si pas de champs séparés mais baillorName rempli, on découpe
+      if (!proprietaireData.prenom && !proprietaireData.nom && data.baillorName && data.baillorName.trim()) {
         const nameParts = data.baillorName.trim().split(/\s+/);
         if (nameParts.length >= 2) {
           proprietaireData.prenom = nameParts[0];
@@ -141,7 +154,7 @@ const Generator = () => {
     const { name } = e.target;
 
     // Capture immediately on blur for important fields
-    if (name === 'baillorEmail' || name === 'baillorName' || name === 'baillorAddress') {
+    if (name === 'baillorEmail' || name === 'baillorName' || name === 'baillorFirstName' || name === 'baillorLastName' || name === 'baillorAddress') {
       if (captureTimerRef.current) {
         clearTimeout(captureTimerRef.current);
       }
@@ -232,7 +245,7 @@ const Generator = () => {
   }, [formData.isProrata, formData.dateDebut, formData.dateFin, formData.loyer, formData.charges]);
 
   const hasContent = () => {
-    return formData.baillorName || formData.locataireName || formData.loyer || formData.charges;
+    return formData.baillorName || (formData as any).baillorFirstName || (formData as any).baillorLastName || formData.locataireName || formData.loyer || formData.charges;
   };
 
   const hasAnyContent = () => {
@@ -268,11 +281,19 @@ const Generator = () => {
 
       setFormData(updatedFormData);
     } else {
-      const updatedFormData = { ...formData, [name]: value };
+      const updatedFormData: any = { ...formData, [name]: value };
+
+      // Maintenir un nom complet cohérent à partir de Prénom / Nom
+      if (name === 'baillorFirstName' || name === 'baillorLastName') {
+        const prenom = name === 'baillorFirstName' ? value : (updatedFormData.baillorFirstName || '');
+        const nom = name === 'baillorLastName' ? value : (updatedFormData.baillorLastName || '');
+        updatedFormData.baillorName = [prenom, nom].filter(Boolean).join(' ');
+      }
+
       setFormData(updatedFormData);
 
       // Auto-capture proprietaire data when key fields change (debounced)
-      if (name === 'baillorEmail' || name === 'baillorName' || name === 'baillorAddress') {
+      if (name === 'baillorEmail' || name === 'baillorName' || name === 'baillorFirstName' || name === 'baillorLastName' || name === 'baillorAddress') {
         if (captureTimerRef.current) {
           clearTimeout(captureTimerRef.current);
         }
@@ -513,24 +534,45 @@ const Generator = () => {
                   </div>
 
                   <div className="space-y-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-[#5e6478] mb-1.5">Nom complet</label>
-                      <input
-                        type="text"
-                        name="baillorName"
-                        autoComplete="off"
-                        readOnly={!formUnlocked}
-                        value={formData.baillorName}
-                        onChange={handleInputChange}
-                        onBlur={handleBlur}
-                        className={`w-full px-3 py-2 rounded-xl border transition-all duration-200 text-sm ${
-                          validationErrors.some(error => error.includes('nom du bailleur'))
-                            ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-200'
-                            : 'border-[#e3e4f0] focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/20'
-                        }`}
-                        placeholder="Ex: Jean Dupont"
-                        required
-                      />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-[#5e6478] mb-1.5">Prénom</label>
+                        <input
+                          type="text"
+                          name="baillorFirstName"
+                          autoComplete="off"
+                          readOnly={!formUnlocked}
+                          value={(formData as any).baillorFirstName || ''}
+                          onChange={handleInputChange}
+                          onBlur={handleBlur}
+                          className={`w-full px-3 py-2 rounded-xl border transition-all duration-200 text-sm ${
+                            validationErrors.some(error => error.includes('nom du bailleur'))
+                              ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-200'
+                              : 'border-[#e3e4f0] focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/20'
+                          }`}
+                          placeholder="Ex: Jean"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-[#5e6478] mb-1.5">Nom</label>
+                        <input
+                          type="text"
+                          name="baillorLastName"
+                          autoComplete="off"
+                          readOnly={!formUnlocked}
+                          value={(formData as any).baillorLastName || ''}
+                          onChange={handleInputChange}
+                          onBlur={handleBlur}
+                          className={`w-full px-3 py-2 rounded-xl border transition-all duration-200 text-sm ${
+                            validationErrors.some(error => error.includes('nom du bailleur'))
+                              ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-200'
+                              : 'border-[#e3e4f0] focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/20'
+                          }`}
+                          placeholder="Ex: Dupont"
+                          required
+                        />
+                      </div>
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-[#5e6478] mb-1.5">Adresse complète</label>

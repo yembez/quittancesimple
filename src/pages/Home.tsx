@@ -47,6 +47,8 @@ const Home = () => {
   };
 
   const [formData, setFormData] = React.useState({
+    baillorFirstName: '',
+    baillorLastName: '',
     baillorName: '',
     baillorAddress: '',
     baillorEmail: '',
@@ -167,7 +169,7 @@ const Home = () => {
   }, [formData.isProrata, formData.dateDebut, formData.dateFin, formData.loyer, formData.charges]);
 
   const hasContent = () => {
-    return formData.baillorName || formData.locataireName || formData.loyer || formData.charges;
+    return formData.baillorName || formData.baillorFirstName || formData.baillorLastName || formData.locataireName || formData.loyer || formData.charges;
   };
 
   const hasAnyContent = () => {
@@ -195,8 +197,19 @@ const Home = () => {
         device_detected_at: new Date().toISOString()
       };
 
-      // Parse name if available
-      if (data.baillorName && data.baillorName.trim()) {
+      // Prénom / nom bailleur
+      const prenom = (data as any).baillorFirstName?.trim?.() || '';
+      const nom = (data as any).baillorLastName?.trim?.() || '';
+
+      if (prenom) {
+        proprietaireData.prenom = prenom;
+      }
+      if (nom) {
+        proprietaireData.nom = nom;
+      }
+
+      // Rétro‑compatibilité : si pas de champs séparés mais baillorName rempli, on découpe
+      if (!proprietaireData.prenom && !proprietaireData.nom && data.baillorName && data.baillorName.trim()) {
         const nameParts = data.baillorName.trim().split(/\s+/);
         if (nameParts.length >= 2) {
           proprietaireData.prenom = nameParts[0];
@@ -233,7 +246,7 @@ const Home = () => {
     const { name } = e.target;
 
     // Capture immediately on blur for important fields
-    if (name === 'baillorEmail' || name === 'baillorName' || name === 'baillorAddress') {
+    if (name === 'baillorEmail' || name === 'baillorName' || name === 'baillorFirstName' || name === 'baillorLastName' || name === 'baillorAddress') {
       if (captureTimerRef.current) {
         clearTimeout(captureTimerRef.current);
       }
@@ -264,11 +277,18 @@ const Home = () => {
 
       setFormData(updatedFormData);
     } else {
-      const updatedFormData = { ...formData, [name]: value };
+      const updatedFormData: any = { ...formData, [name]: value };
+
+      // Maintenir un nom complet cohérent à partir de Prénom / Nom
+      if (name === 'baillorFirstName' || name === 'baillorLastName') {
+        const prenom = name === 'baillorFirstName' ? value : (updatedFormData.baillorFirstName || '');
+        const nom = name === 'baillorLastName' ? value : (updatedFormData.baillorLastName || '');
+        updatedFormData.baillorName = [prenom, nom].filter(Boolean).join(' ');
+      }
       setFormData(updatedFormData);
 
       // Auto-capture proprietaire data when key fields change (debounced)
-      if (name === 'baillorEmail' || name === 'baillorName' || name === 'baillorAddress') {
+      if (name === 'baillorEmail' || name === 'baillorName' || name === 'baillorFirstName' || name === 'baillorLastName' || name === 'baillorAddress') {
         if (captureTimerRef.current) {
           clearTimeout(captureTimerRef.current);
         }
@@ -781,20 +801,37 @@ const Home = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <div>
-                      <label className="block text-[10px] font-semibold text-slate-600 mb-1">Nom complet</label>
-                      <input
-                        type="text"
-                        name="baillorName"
-                        autoComplete="off"
-                        readOnly={!formUnlocked}
-                        value={formData.baillorName}
-                        onChange={handleInputChange}
-                        onBlur={handleBlur}
-                        className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all duration-200 text-xs"
-                        placeholder="Ex: Jean Dupont"
-                        required
-                      />
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-600 mb-1">Prénom</label>
+                        <input
+                          type="text"
+                          name="baillorFirstName"
+                          autoComplete="off"
+                          readOnly={!formUnlocked}
+                          value={(formData as any).baillorFirstName || ''}
+                          onChange={handleInputChange}
+                          onBlur={handleBlur}
+                          className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all duration-200 text-xs"
+                          placeholder="Ex: Jean"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-600 mb-1">Nom</label>
+                        <input
+                          type="text"
+                          name="baillorLastName"
+                          autoComplete="off"
+                          readOnly={!formUnlocked}
+                          value={(formData as any).baillorLastName || ''}
+                          onChange={handleInputChange}
+                          onBlur={handleBlur}
+                          className="w-full px-2.5 py-1.5 rounded-xl border border-slate-300 focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all duration-200 text-xs"
+                          placeholder="Ex: Dupont"
+                          required
+                        />
+                      </div>
                     </div>
                     <div>
                       <label className="block text-[10px] font-semibold text-slate-600 mb-1">Adresse complète</label>

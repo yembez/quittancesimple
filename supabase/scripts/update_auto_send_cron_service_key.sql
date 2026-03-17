@@ -1,4 +1,4 @@
-/*
+  /*
   Mise à jour du cron auto-send-quittances avec la clé service_role actuelle
 
   À exécuter dans Supabase : SQL Editor (une seule fois, ou après rotation de la clé).
@@ -19,7 +19,7 @@ SELECT cron.schedule(
     url := 'https://jfpbddtdblqakabyjxkq.supabase.co/functions/v1/auto-send-quittances',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
-      'Authorization', 'Bearer ' || 'YOUR_SERVICE_ROLE_KEY_HERE'
+      'Authorization', 'Bearer ' || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmcGJkZHRkYmxxYWthYnlqeGtxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1ODcwNzg5NSwiZXhwIjoyMDc0MjgzODk1fQ.zw8lY_n0fiydg4qFgQIXlPvsXWsm1nXNbmA7F5KnT1U'
     ),
     body := '{}'::jsonb
   ) as request_id;

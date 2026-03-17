@@ -306,6 +306,9 @@ Deno.serve(async (req: Request) => {
           prenom: prenom || "Prénom",
           lienActivation: ctaUrlForEmail || ctaUrlPersonalized || "",
           lienDesabonnement: unsubscribeUrl,
+          bodyHtml: bodyPersonalized,
+          ctaText: payload.ctaText,
+          closingHtml: payload.closingHtml,
         })
       : buildEmailHtml({
           title: "",

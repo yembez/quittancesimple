@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, User, Home as HomeIcon, Euro, Shield, Check } from 'lucide-react';
 
 interface FormData {
+  baillorFirstName: string;
+  baillorLastName: string;
   baillorName: string;
   baillorAddress: string;
   baillorEmail: string;
@@ -95,7 +97,8 @@ const MobileMultiStepForm: React.FC<MobileMultiStepFormProps> = ({
   const canProceedToNextStep = (step: number): boolean => {
     switch(step) {
       case 1:
-        return formData.baillorName.trim() !== '' &&
+        return formData.baillorFirstName.trim() !== '' &&
+               formData.baillorLastName.trim() !== '' &&
                formData.baillorAddress.trim() !== '' &&
                formData.baillorEmail.trim() !== '';
       case 2:
@@ -166,23 +169,43 @@ const MobileMultiStepForm: React.FC<MobileMultiStepFormProps> = ({
                 <h4 className="text-sm font-bold text-[#2b2b2b]">Vos informations</h4>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-[#545454] mb-1.5">
-                  Votre nom complet *
-                </label>
-                <input
-                  type="text"
-                  name="baillorName"
-                  autoComplete="off"
-                  readOnly={!formUnlocked}
-                  onFocus={handleFieldFocus}
-                  value={formData.baillorName}
-                  onChange={handleInputChange}
-                  onBlur={handleBlur}
-                  className="w-full px-3 py-3 rounded-xl border border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20 transition-all text-sm"
-                  placeholder="Ex: Jean Dupont"
-                  required
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-[#545454] mb-1.5">
+                    Votre prénom *
+                  </label>
+                  <input
+                    type="text"
+                    name="baillorFirstName"
+                    autoComplete="off"
+                    readOnly={!formUnlocked}
+                    onFocus={handleFieldFocus}
+                    value={formData.baillorFirstName}
+                    onChange={handleInputChange}
+                    onBlur={handleBlur}
+                    className="w-full px-3 py-3 rounded-xl border border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20 transition-all text-sm"
+                    placeholder="Ex: Jean"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#545454] mb-1.5">
+                    Votre nom *
+                  </label>
+                  <input
+                    type="text"
+                    name="baillorLastName"
+                    autoComplete="off"
+                    readOnly={!formUnlocked}
+                    onFocus={handleFieldFocus}
+                    value={formData.baillorLastName}
+                    onChange={handleInputChange}
+                    onBlur={handleBlur}
+                    className="w-full px-3 py-3 rounded-xl border border-gray-300 focus:border-[#7CAA89] focus:ring-2 focus:ring-[#7CAA89]/20 transition-all text-sm"
+                    placeholder="Ex: Dupont"
+                    required
+                  />
+                </div>
               </div>
 
               <div>

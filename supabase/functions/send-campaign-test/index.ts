@@ -120,6 +120,9 @@ Deno.serve(async (req: Request) => {
     prenom,
     lienActivation: ctaUrlPersonalized || `${SITE_URL}/`,
     lienDesabonnement: unsubscribeUrl,
+    bodyHtml,
+    ctaText,
+    closingHtml,
   });
 
   const res = await fetch("https://api.resend.com/emails", {
