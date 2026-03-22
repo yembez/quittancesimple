@@ -2,6 +2,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { encodeBase64 } from 'https://deno.land/std@0.208.0/encoding/base64.ts';
 import { jsPDF } from 'npm:jspdf@2.5.1';
 import { buildEmailHtml } from '../_shared/email-template.ts';
+import { parseFrenchPeriodLabel } from '../_shared/french-period.ts';
 
 const SITE_URL = 'https://www.quittancesimple.fr';
 
@@ -152,14 +153,10 @@ export const generateProfessionalPDF = (data: any) => {
         };
       }
 
-      const [month, year] = periode.split(' ');
-      const monthNames: Record<string, number> = {
-        'Janvier': 0, 'Février': 1, 'Mars': 2, 'Avril': 3, 'Mai': 4, 'Juin': 5,
-        'Juillet': 6, 'Août': 7, 'Septembre': 8, 'Octobre': 9, 'Novembre': 10, 'Décembre': 11
-      };
-
-      const monthIndex = monthNames[month] || 8;
-      const yearNum = parseInt(year) || 2025;
+      const parsed = parseFrenchPeriodLabel(periode);
+      const now = new Date();
+      const monthIndex = parsed?.monthIndex ?? now.getMonth();
+      const yearNum = parsed?.year ?? now.getFullYear();
       const startDate = new Date(yearNum, monthIndex, 1);
       const endDate = new Date(yearNum, monthIndex + 1, 0);
 
@@ -175,7 +172,7 @@ export const generateProfessionalPDF = (data: any) => {
     }
   };
 
-  const periodDates = getPeriodDates(data.periode || 'Septembre 2025');
+  const periodDates = getPeriodDates(data.periode || '');
 
   const getVille = (address: string) => {
     if (!address) return 'Paris';

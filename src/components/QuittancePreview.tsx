@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, FileText, Shield, Stamp } from 'lucide-react';
+import { parseFrenchPeriodLabel } from '../utils/frenchPeriod';
 
 // Fonction pour convertir un nombre en lettres (français)
 const numberToFrench = (num: number): string => {
@@ -219,15 +220,11 @@ const QuittancePreview: React.FC<QuittancePreviewProps> = ({ data, formData, isE
       };
     }
     
-    // Logique existante pour les périodes normales
-    const [month, year] = periode.split(' ');
-    const monthNames: { [key: string]: number } = {
-      'Janvier': 0, 'Février': 1, 'Mars': 2, 'Avril': 3, 'Mai': 4, 'Juin': 5,
-      'Juillet': 6, 'Août': 7, 'Septembre': 8, 'Octobre': 9, 'Novembre': 10, 'Décembre': 11
-    };
-    
-    const monthIndex = monthNames[month] || 8; // Default to September
-    const yearNum = parseInt(year) || 2025;
+    // Période "Mois YYYY" : parsing robuste (espaces insécables, accents, casse)
+    const parsed = parseFrenchPeriodLabel(periode);
+    const now = new Date();
+    const monthIndex = parsed?.monthIndex ?? now.getMonth();
+    const yearNum = parsed?.year ?? now.getFullYear();
     
     const startDate = new Date(yearNum, monthIndex, 1);
     const endDate = new Date(yearNum, monthIndex + 1, 0);
