@@ -305,11 +305,11 @@ const QuittanceSuccess = () => {
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={primaryBubble.id}
-                  initial={{ opacity: 0, scale: 0.9, y: -6 }}
+                  initial={{ opacity: 0, scale: 0.92, y: 10 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -40, scale: 0.9 }}
+                  exit={{ opacity: 0, y: 16, scale: 0.92 }}
                   transition={{ duration: 0.4, ease: 'easeOut' }}
-                  className="absolute top-3 right-2 sm:top-5 sm:right-6 z-20"
+                  className="absolute bottom-4 right-3 z-20 md:top-5 md:right-6 md:bottom-auto"
                 >
                   <div className="bg-white/95 backdrop-blur-sm rounded-xl px-2.5 py-2 shadow-lg border border-[#e2e8f0] max-w-[180px]">
                     <div className="flex items-start gap-1.5">
