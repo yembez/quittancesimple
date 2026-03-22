@@ -309,16 +309,16 @@ const QuittanceSuccess = () => {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, y: 16, scale: 0.92 }}
                   transition={{ duration: 0.4, ease: 'easeOut' }}
-                  className="absolute bottom-4 right-3 z-20 md:top-5 md:right-6 md:bottom-auto"
+                  className="absolute bottom-3 right-2 z-20 md:top-5 md:right-6 md:bottom-auto"
                 >
-                  <div className="bg-white/95 backdrop-blur-sm rounded-xl px-2.5 py-2 shadow-lg border border-[#e2e8f0] max-w-[180px]">
-                    <div className="flex items-start gap-1.5">
-                      <Check className="w-3.5 h-3.5 text-green-600 shrink-0 mt-0.5" />
+                  <div className="bg-white/95 backdrop-blur-sm rounded-lg px-2 py-1.5 shadow-md border border-[#e2e8f0] max-w-[142px] md:rounded-xl md:px-2.5 md:py-2 md:shadow-lg md:max-w-[180px]">
+                    <div className="flex items-start gap-1 md:gap-1.5">
+                      <Check className="w-3 h-3 text-green-600 shrink-0 mt-px md:w-3.5 md:h-3.5 md:mt-0.5" />
                       <div className="min-w-0">
-                        <p className="text-[11px] sm:text-xs font-medium text-[#212a3e] leading-snug">
+                        <p className="text-[10px] font-medium text-[#212a3e] leading-tight md:text-xs md:leading-snug">
                           Quittance envoyée automatiquement
                         </p>
-                        <p className="text-[10px] sm:text-[11px] text-[#5e6478] mt-0.5 leading-snug">
+                        <p className="text-[9px] text-[#5e6478] mt-0.5 leading-tight md:text-[11px] md:leading-snug">
                           Locataire : {primaryBubble.name}
                         </p>
                       </div>
