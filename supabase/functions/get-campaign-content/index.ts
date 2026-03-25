@@ -49,7 +49,7 @@ Deno.serve(async (req: Request) => {
   const supabase = createClient(supabaseUrl, serviceKey);
   const { data: rows, error } = await supabase
     .from("campaign_templates")
-    .select("campaign_key, subject, body_html, cta_text, cta_url, closing_html, updated_at");
+    .select("campaign_key, subject, body_html, cta_text, cta_url, closing_html, slots, updated_at");
 
   if (error) {
     return new Response(
@@ -62,7 +62,7 @@ Deno.serve(async (req: Request) => {
   const j5 = (rows || []).find((r: { campaign_key: string }) => r.campaign_key === "j5");
   const j8 = (rows || []).find((r: { campaign_key: string }) => r.campaign_key === "j8");
 
-  const mapRow = (r: { subject: string; body_html: string; cta_text: string; cta_url: string; closing_html: string; updated_at: string } | undefined) =>
+  const mapRow = (r: { subject: string; body_html: string; cta_text: string; cta_url: string; closing_html: string; slots?: unknown; updated_at: string } | undefined) =>
     r
       ? {
           subject: r.subject,
@@ -70,9 +70,10 @@ Deno.serve(async (req: Request) => {
           ctaText: r.cta_text,
           ctaUrl: r.cta_url,
           closingHtml: r.closing_html,
+          slots: (r.slots && typeof r.slots === "object") ? r.slots : {},
           updatedAt: r.updated_at,
         }
-      : { subject: "", bodyHtml: "", ctaText: "", ctaUrl: "", closingHtml: "", updatedAt: "" };
+      : { subject: "", bodyHtml: "", ctaText: "", ctaUrl: "", closingHtml: "", slots: {}, updatedAt: "" };
 
   return new Response(
     JSON.stringify({

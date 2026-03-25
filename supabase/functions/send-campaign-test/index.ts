@@ -74,6 +74,7 @@ Deno.serve(async (req: Request) => {
   let ctaText: string;
   let ctaUrl: string;
   let closingHtml: string;
+  let slots: unknown = undefined;
 
   if (body.payload?.subject != null) {
     subject = body.payload.subject ?? "";
@@ -92,7 +93,7 @@ Deno.serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, serviceKey);
     const { data: row, error } = await supabase
       .from("campaign_templates")
-      .select("subject, body_html, cta_text, cta_url, closing_html")
+      .select("subject, body_html, cta_text, cta_url, closing_html, slots")
       .eq("campaign_key", campaign)
       .single();
 
@@ -107,6 +108,8 @@ Deno.serve(async (req: Request) => {
     ctaText = row.cta_text ?? "";
     ctaUrl = row.cta_url ?? "";
     closingHtml = row.closing_html ?? "";
+    // Option A (slots) : si présents, on les passe au template sans parsing.
+    slots = (row as { slots?: unknown }).slots;
   }
 
   const prenom = "Prénom";
@@ -123,6 +126,7 @@ Deno.serve(async (req: Request) => {
     bodyHtml,
     ctaText,
     closingHtml,
+    slots: (slots && typeof slots === "object") ? (slots as Record<string, unknown>) : undefined,
   });
 
   const res = await fetch("https://api.resend.com/emails", {

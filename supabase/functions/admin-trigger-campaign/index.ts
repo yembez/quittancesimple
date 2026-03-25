@@ -81,7 +81,7 @@ Deno.serve(async (req: Request) => {
   const supabase = createClient(supabaseUrl, serviceKey);
   const { data: row, error } = await supabase
     .from("campaign_templates")
-    .select("subject, body_html, cta_text, cta_url, closing_html")
+    .select("subject, body_html, cta_text, cta_url, closing_html, slots")
     .eq("campaign_key", campaign)
     .single();
 
@@ -153,6 +153,7 @@ Deno.serve(async (req: Request) => {
   const ctaText = row.cta_text ?? "";
   const ctaUrlRaw = row.cta_url ?? "";
   const closingHtml = row.closing_html ?? "";
+  const slots = (row as { slots?: unknown }).slots;
   const delayMs = Math.max(500, DEFAULT_DELAY_MS);
 
   let sent = 0;
@@ -181,6 +182,7 @@ Deno.serve(async (req: Request) => {
       bodyHtml,
       ctaText,
       closingHtml,
+      slots: (slots && typeof slots === "object") ? (slots as Record<string, unknown>) : undefined,
     });
 
     try {

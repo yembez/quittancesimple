@@ -23,32 +23,6 @@ const ADMIN_ANALYTICS_STORAGE_KEY = 'admin_analytics_auth';
 const ADMIN_LOGIN = 'yem';
 const ADMIN_PASSWORD = 'Lucie2007!';
 
-function htmlToPlainText(html: string): string {
-  if (!html) return '';
-  let text = html;
-  text = text.replace(/<br\s*\/?>/gi, '\n');
-  text = text.replace(/<\/p>\s*<p>/gi, '\n\n');
-  text = text.replace(/<\/p>/gi, '\n\n');
-  text = text.replace(/<li>/gi, '- ');
-  text = text.replace(/<\/li>/gi, '\n');
-  text = text.replace(/&nbsp;/gi, ' ');
-  text = text.replace(/<[^>]+>/g, '');
-  return text.trim();
-}
-
-function plainTextToHtml(text: string): string {
-  if (!text) return '';
-  const normalized = text.replace(/\r\n/g, '\n');
-  const paragraphs = normalized.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
-  if (paragraphs.length === 0) return '';
-  return paragraphs
-    .map((p) => {
-      const withLineBreaks = p.replace(/\n/g, '<br>');
-      return `<p style="margin: 0 0 1.15em 0; line-height: 1.75;">${withLineBreaks}</p>`;
-    })
-    .join('');
-}
-
 function getStoredAuth(): boolean {
   if (typeof sessionStorage === 'undefined') return false;
   return sessionStorage.getItem(ADMIN_ANALYTICS_STORAGE_KEY) === '1';
@@ -70,8 +44,49 @@ const AdminAnalytics: React.FC = () => {
   const [triggerError, setTriggerError] = useState<string>('');
   const [triggerResult, setTriggerResult] = useState<{ sent?: number; message?: string } | null>(null);
 
-  const [editCampaign, setEditCampaign] = useState<'j2' | 'j5' | 'j8' | null>(null);
-  const [editForm, setEditForm] = useState({ subject: '', bodyHtml: '', ctaText: '', ctaUrl: '', closingHtml: '' });
+  type CampaignKey = 'j2' | 'j5' | 'j8';
+  type CampaignSlots = {
+    welcome: string;
+    thanksMid: string;
+    community: string;
+    box: string;
+    transition: string;
+    listIntro: string;
+    bullet1: string;
+    bullet2: string;
+    bullet3: string;
+    conclusion: string;
+    final1: string;
+    final2: string;
+    question: string;
+    thanks: string;
+  };
+
+  const emptySlots: CampaignSlots = {
+    welcome: '',
+    thanksMid: '',
+    community: '',
+    box: '',
+    transition: '',
+    listIntro: '',
+    bullet1: '',
+    bullet2: '',
+    bullet3: '',
+    conclusion: '',
+    final1: '',
+    final2: '',
+    question: '',
+    thanks: '',
+  };
+
+  const [editCampaign, setEditCampaign] = useState<CampaignKey | null>(null);
+  const [editForm, setEditForm] = useState({
+    subject: '',
+    ctaText: '',
+    ctaUrl: '',
+    closingHtml: '',
+    slots: emptySlots,
+  });
   const [editPassword, setEditPassword] = useState('');
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState<string>('');
@@ -80,9 +95,14 @@ const AdminAnalytics: React.FC = () => {
   const [testSendLoading, setTestSendLoading] = useState(false);
   const [testSendResult, setTestSendResult] = useState<string>('');
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editViewBody, setEditViewBody] = useState<'source' | 'preview'>('preview');
+  // Option A : plus d'édition HTML libre du body — uniquement des slots texte.
   const [editViewSignature, setEditViewSignature] = useState<'source' | 'preview'>('preview');
-  const [editBodyText, setEditBodyText] = useState('');
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState('');
+  const [previewHtml, setPreviewHtml] = useState('');
+  const [previewHtmlHash, setPreviewHtmlHash] = useState('');
+  const [previewSubject, setPreviewSubject] = useState('');
+  const [previewSubjectHash, setPreviewSubjectHash] = useState('');
   const [ctaClicks, setCtaClicks] = useState<{ j2: number; j5: number; j8: number; total: number } | null>(null);
   const [openStats, setOpenStats] = useState<{ j2: number; j5: number; j8: number; total: number } | null>(null);
 
@@ -324,25 +344,32 @@ const AdminAnalytics: React.FC = () => {
     setShowTriggerModal(true);
   };
 
-  const openEditModal = (campaign: 'j2' | 'j5' | 'j8') => {
+  const openEditModal = (campaign: CampaignKey) => {
     setEditCampaign(campaign);
-    setEditForm({ subject: '', bodyHtml: '', ctaText: '', ctaUrl: '', closingHtml: '' });
-    setEditPassword('');
+    setEditForm({ subject: '', ctaText: '', ctaUrl: '', closingHtml: '', slots: emptySlots });
+    // Base-first : on préremplit le mot de passe admin et on charge immédiatement depuis la base.
+    setEditPassword(ADMIN_PASSWORD);
     setEditError('');
     setEditSuccess('');
     setTestEmail('');
     setTestSendResult('');
-    setEditViewBody('preview');
+    setPreviewLoading(false);
+    setPreviewError('');
+    setPreviewHtml('');
+    setPreviewHtmlHash('');
+    setPreviewSubject('');
+    setPreviewSubjectHash('');
     setEditViewSignature('preview');
-    setEditBodyText('');
     setShowEditModal(true);
   };
 
   const previewClosingHtml = editForm.closingHtml || '';
 
-  const loadCampaignContent = async () => {
-    if (!editCampaign) return;
-    if (!editPassword.trim()) {
+  const loadCampaignContent = async (campaignOverride?: 'j2' | 'j5' | 'j8', passwordOverride?: string) => {
+    const campaign = campaignOverride ?? editCampaign;
+    if (!campaign) return;
+    const adminPwd = (passwordOverride ?? editPassword).trim();
+    if (!adminPwd) {
       setEditError('Saisissez votre mot de passe admin pour charger le contenu.');
       return;
     }
@@ -350,7 +377,7 @@ const AdminAnalytics: React.FC = () => {
     setEditError('');
     try {
       const { data, error } = await supabase.functions.invoke('get-campaign-content', {
-        body: { adminPassword: editPassword.trim() },
+        body: { adminPassword: adminPwd },
       });
       if (error) {
         setEditError(error.message || 'Erreur chargement');
@@ -360,17 +387,15 @@ const AdminAnalytics: React.FC = () => {
         setEditError(data.error);
         return;
       }
-      const key = editCampaign as 'j2' | 'j5' | 'j8';
-      const c = data?.[key];
+      const c = data?.[campaign];
       if (c) {
         setEditForm({
           subject: c.subject ?? '',
-          bodyHtml: c.bodyHtml ?? '',
           ctaText: c.ctaText ?? '',
           ctaUrl: c.ctaUrl ?? '',
           closingHtml: c.closingHtml ?? '',
+          slots: { ...emptySlots, ...(c.slots ?? {}) },
         });
-        setEditBodyText(htmlToPlainText(c.bodyHtml ?? ''));
       }
     } catch (err) {
       setEditError(err instanceof Error ? err.message : String(err));
@@ -378,6 +403,13 @@ const AdminAnalytics: React.FC = () => {
       setEditLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (showEditModal && editCampaign) {
+      void loadCampaignContent(editCampaign, ADMIN_PASSWORD);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showEditModal, editCampaign]);
 
   const handleSaveCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -394,10 +426,10 @@ const AdminAnalytics: React.FC = () => {
           adminPassword: editPassword.trim(),
           campaign: editCampaign,
           subject: editForm.subject,
-          bodyHtml: editForm.bodyHtml,
           ctaText: editForm.ctaText,
           ctaUrl: editForm.ctaUrl,
           closingHtml: editForm.closingHtml,
+          slots: editForm.slots,
         },
       });
       if (error) {
@@ -422,6 +454,10 @@ const AdminAnalytics: React.FC = () => {
       setEditError('Mot de passe admin requis.');
       return;
     }
+    if (!editCampaign) {
+      setEditError('Campagne non sélectionnée.');
+      return;
+    }
     const email = testEmail.trim();
     if (!email || !email.includes('@')) {
       setTestSendResult('Indiquez une adresse e-mail valide.');
@@ -431,17 +467,30 @@ const AdminAnalytics: React.FC = () => {
     setEditError('');
     setTestSendResult('');
     try {
+      // Garantie "test == réel" :
+      // on persiste d'abord le contenu actuel du formulaire en base (campaign_templates),
+      // puis on envoie le test avec la même donnée côté backend.
+      const { error: saveError } = await supabase.functions.invoke('update-campaign-content', {
+        body: {
+          adminPassword: editPassword.trim(),
+          campaign: editCampaign,
+          subject: editForm.subject,
+          ctaText: editForm.ctaText,
+          ctaUrl: editForm.ctaUrl,
+          closingHtml: editForm.closingHtml,
+          slots: editForm.slots,
+        },
+      });
+      if (saveError) {
+        setTestSendResult(saveError.message || 'Erreur lors de la sauvegarde');
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('send-campaign-test', {
         body: {
           adminPassword: editPassword.trim(),
           testEmail: email,
-          payload: {
-            subject: editForm.subject,
-            bodyHtml: editForm.bodyHtml,
-            ctaText: editForm.ctaText,
-            ctaUrl: editForm.ctaUrl,
-            closingHtml: editForm.closingHtml,
-          },
+          campaign: editCampaign,
         },
       });
       if (error) {
@@ -457,6 +506,50 @@ const AdminAnalytics: React.FC = () => {
       setTestSendResult(err instanceof Error ? err.message : String(err));
     } finally {
       setTestSendLoading(false);
+    }
+  };
+
+  const handlePreviewFinalEmail = async () => {
+    if (!editPassword.trim()) {
+      setPreviewError('Mot de passe admin requis.');
+      return;
+    }
+    if (!editCampaign) {
+      setPreviewError('Campagne non sélectionnée.');
+      return;
+    }
+    setPreviewLoading(true);
+    setPreviewError('');
+    setPreviewHtml('');
+    setPreviewHtmlHash('');
+    setPreviewSubject('');
+    setPreviewSubjectHash('');
+    try {
+      const email = testEmail.trim() || 'preview@quittancesimple.fr';
+      const { data, error } = await supabase.functions.invoke('preview-campaign-email', {
+        body: {
+          adminPassword: editPassword.trim(),
+          campaign: editCampaign,
+          email,
+          prenom: 'Prénom',
+        },
+      });
+      if (error) {
+        setPreviewError(error.message || 'Erreur preview');
+        return;
+      }
+      if (data?.error) {
+        setPreviewError(data.error);
+        return;
+      }
+      setPreviewSubject(String(data?.subject ?? ''));
+      setPreviewSubjectHash(String(data?.subjectHash ?? ''));
+      setPreviewHtml(String(data?.html ?? ''));
+      setPreviewHtmlHash(String(data?.htmlHash ?? ''));
+    } catch (err) {
+      setPreviewError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setPreviewLoading(false);
     }
   };
 
@@ -1296,7 +1389,7 @@ const AdminAnalytics: React.FC = () => {
                       Éditer campagne J+{editCampaign === 'j2' ? '2' : editCampaign === 'j5' ? '5' : '8'}
                     </h3>
                     <p className="text-sm text-[#6b7280] mt-1">
-                      Saisissez votre mot de passe admin pour charger, enregistrer ou envoyer un test.
+                      Le contenu est chargé automatiquement depuis la base à l&apos;ouverture. Vous pouvez recharger manuellement si besoin.
                     </p>
                     <div className="mt-4 flex gap-2">
                       <input
@@ -1328,48 +1421,160 @@ const AdminAnalytics: React.FC = () => {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-[#374151] mb-1">Corps de l&apos;e-mail</label>
-                        <p className="text-xs text-[#6b7280] mb-2">Choisir l&apos;affichage et le mode d&apos;édition :</p>
-                        <div className="flex gap-2 mb-2">
-                          <button
-                            type="button"
-                            onClick={() => setEditViewBody('preview')}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-colors ${editViewBody === 'preview' ? 'bg-[#2563eb] text-white border-[#2563eb]' : 'bg-white text-[#6b7280] border-[#e5e7eb] hover:border-[#d1d5db] hover:bg-[#f9fafb]'}`}
-                          >
-                            Aperçu (texte)
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setEditViewBody('source')}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium border-2 transition-colors ${editViewBody === 'source' ? 'bg-[#2563eb] text-white border-[#2563eb]' : 'bg-white text-[#6b7280] border-[#e5e7eb] hover:border-[#d1d5db] hover:bg-[#f9fafb]'}`}
-                          >
-                            Code HTML
-                          </button>
+                        <label className="block text-sm font-medium text-[#374151] mb-1">Corps de l&apos;e-mail (par blocs)</label>
+                        <p className="text-xs text-[#6b7280] mb-3">
+                          Option A : vous remplissez des champs simples. La mise en page (template) ne change jamais, donc <strong>test = réel</strong>.
+                        </p>
+
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-medium text-[#6b7280] mb-1">Bloc 1 — Intro</label>
+                            <textarea
+                              value={editForm.slots.welcome}
+                              onChange={(e) => setEditForm((f) => ({ ...f, slots: { ...f.slots, welcome: e.target.value } }))}
+                              className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm"
+                              rows={2}
+                              placeholder="Vous avez créé une quittance récemment sur Quittance Simple."
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-[#6b7280] mb-1">Bloc 2 — Merci (petite phrase)</label>
+                            <input
+                              type="text"
+                              value={editForm.slots.thanksMid}
+                              onChange={(e) => setEditForm((f) => ({ ...f, slots: { ...f.slots, thanksMid: e.target.value } }))}
+                              className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm"
+                              placeholder="Alors merci et bienvenue !"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-[#6b7280] mb-1">Bloc 3 — Communauté</label>
+                            <textarea
+                              value={editForm.slots.community}
+                              onChange={(e) => setEditForm((f) => ({ ...f, slots: { ...f.slots, community: e.target.value } }))}
+                              className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm"
+                              rows={2}
+                              placeholder="Quittance Simple, c'est un peu comme une petite communauté..."
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-[#6b7280] mb-1">Bloc gris — Accès à l&apos;Espace</label>
+                            <textarea
+                              value={editForm.slots.box}
+                              onChange={(e) => setEditForm((f) => ({ ...f, slots: { ...f.slots, box: e.target.value } }))}
+                              className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm"
+                              rows={2}
+                              placeholder="Et justement, pour vous faciliter la vie, je vous ai ouvert l'accès à votre Espace Bailleur gratuit."
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-[#6b7280] mb-1">Transition</label>
+                            <input
+                              type="text"
+                              value={editForm.slots.transition}
+                              onChange={(e) => setEditForm((f) => ({ ...f, slots: { ...f.slots, transition: e.target.value } }))}
+                              className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm"
+                              placeholder="Dedans, vous trouverez ce que j'appelle des « facilitateurs de vie »."
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-[#6b7280] mb-1">Intro liste</label>
+                            <textarea
+                              value={editForm.slots.listIntro}
+                              onChange={(e) => setEditForm((f) => ({ ...f, slots: { ...f.slots, listIntro: e.target.value } }))}
+                              className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm"
+                              rows={2}
+                              placeholder="Le premier ? Automatiser vos quittances..."
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                              <label className="block text-xs font-medium text-[#6b7280] mb-1">Puce 1</label>
+                              <textarea
+                                value={editForm.slots.bullet1}
+                                onChange={(e) => setEditForm((f) => ({ ...f, slots: { ...f.slots, bullet1: e.target.value } }))}
+                                className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm"
+                                rows={3}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-[#6b7280] mb-1">Puce 2</label>
+                              <textarea
+                                value={editForm.slots.bullet2}
+                                onChange={(e) => setEditForm((f) => ({ ...f, slots: { ...f.slots, bullet2: e.target.value } }))}
+                                className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm"
+                                rows={3}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-[#6b7280] mb-1">Puce 3</label>
+                              <textarea
+                                value={editForm.slots.bullet3}
+                                onChange={(e) => setEditForm((f) => ({ ...f, slots: { ...f.slots, bullet3: e.target.value } }))}
+                                className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm"
+                                rows={3}
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-[#6b7280] mb-1">Conclusion</label>
+                            <textarea
+                              value={editForm.slots.conclusion}
+                              onChange={(e) => setEditForm((f) => ({ ...f, slots: { ...f.slots, conclusion: e.target.value } }))}
+                              className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm"
+                              rows={2}
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs font-medium text-[#6b7280] mb-1">Final 1</label>
+                              <textarea
+                                value={editForm.slots.final1}
+                                onChange={(e) => setEditForm((f) => ({ ...f, slots: { ...f.slots, final1: e.target.value } }))}
+                                className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm"
+                                rows={2}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-[#6b7280] mb-1">Final 2</label>
+                              <textarea
+                                value={editForm.slots.final2}
+                                onChange={(e) => setEditForm((f) => ({ ...f, slots: { ...f.slots, final2: e.target.value } }))}
+                                className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm"
+                                rows={2}
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-[#6b7280] mb-1">Question</label>
+                            <textarea
+                              value={editForm.slots.question}
+                              onChange={(e) => setEditForm((f) => ({ ...f, slots: { ...f.slots, question: e.target.value } }))}
+                              className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm"
+                              rows={2}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-[#6b7280] mb-1">Merci final</label>
+                            <input
+                              type="text"
+                              value={editForm.slots.thanks}
+                              onChange={(e) => setEditForm((f) => ({ ...f, slots: { ...f.slots, thanks: e.target.value } }))}
+                              className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm"
+                              placeholder="Merci, et encore bienvenue !"
+                            />
+                          </div>
                         </div>
-                        {editViewBody === 'preview' ? (
-                          <textarea
-                            value={editBodyText}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              setEditBodyText(value);
-                              setEditForm((f) => ({
-                                ...f,
-                                bodyHtml: plainTextToHtml(value),
-                              }));
-                            }}
-                            className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm min-h-[140px]"
-                            placeholder={'Bonjour {{ prenom }},\n\nTexte de votre campagne...\n\nParagraphe suivant.'}
-                            rows={8}
-                          />
-                        ) : (
-                          <textarea
-                            value={editForm.bodyHtml}
-                            onChange={(e) => setEditForm((f) => ({ ...f, bodyHtml: e.target.value }))}
-                            className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm font-mono min-h-[120px]"
-                            placeholder="<p>Bonjour {{ prenom }},</p>..."
-                            rows={6}
-                          />
-                        )}
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
@@ -1450,7 +1655,7 @@ const AdminAnalytics: React.FC = () => {
                     <div className="mt-6 pt-4 border-t border-[#e5e7eb]">
                       <p className="text-sm font-medium text-[#374151] mb-2">Envoyer un e-mail de test</p>
                       <p className="text-xs text-[#6b7280] mb-2">
-                        Utilise le contenu actuel du formulaire (pas besoin d&apos;enregistrer avant).
+                        On enregistre automatiquement en base, puis on envoie le test. Comme ça le test correspond exactement aux emails réels.
                       </p>
                       <form onSubmit={handleSendTest} className="flex flex-wrap items-end gap-2">
                         <div className="flex-1 min-w-[200px]">
@@ -1469,11 +1674,48 @@ const AdminAnalytics: React.FC = () => {
                         >
                           {testSendLoading ? 'Envoi…' : 'Envoyer le test'}
                         </button>
+                        <button
+                          type="button"
+                          onClick={handlePreviewFinalEmail}
+                          disabled={previewLoading}
+                          className="px-4 py-2 rounded-lg border border-[#e5e7eb] bg-white text-[#374151] text-sm font-medium hover:bg-[#f9fafb] disabled:opacity-60"
+                        >
+                          {previewLoading ? 'Prévisualisation…' : 'Voir le HTML final'}
+                        </button>
                       </form>
                       {testSendResult && (
                         <p className={`mt-2 text-sm ${testSendResult.startsWith('E-mail') ? 'text-green-700' : 'text-red-600'}`}>
                           {testSendResult}
                         </p>
+                      )}
+
+                      {previewError && (
+                        <p className="mt-2 text-sm text-red-600">{previewError}</p>
+                      )}
+                      {(previewHtml || previewSubject) && (
+                        <div className="mt-3 rounded-lg border border-[#e5e7eb] bg-[#f9fafb] p-3 space-y-2">
+                          <div className="text-xs text-[#6b7280]">
+                            <div>
+                              <strong>Sujet</strong> : {previewSubject || '—'}
+                            </div>
+                            <div>
+                              <strong>Subject hash</strong> : <code className="break-all">{previewSubjectHash || '—'}</code>
+                            </div>
+                            <div className="mt-1">
+                              <strong>HTML hash</strong> : <code className="break-all">{previewHtmlHash || '—'}</code>
+                            </div>
+                          </div>
+                          <details>
+                            <summary className="cursor-pointer text-sm font-medium text-[#111827]">
+                              Voir / copier le HTML final (exactement ce qui partira)
+                            </summary>
+                            <textarea
+                              readOnly
+                              value={previewHtml}
+                              className="mt-2 w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-xs font-mono min-h-[180px] bg-white"
+                            />
+                          </details>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -1502,6 +1744,7 @@ const AdminAnalytics: React.FC = () => {
                         onChange={(e) => setTriggerLimit(Number(e.target.value))}
                         className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm text-[#111827] bg-white"
                       >
+                        <option value={10}>10</option>
                         <option value={20}>20</option>
                         <option value={50}>50</option>
                         <option value={100}>100</option>

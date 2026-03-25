@@ -47,6 +47,8 @@ interface BulkPayload {
   ctaUrl?: string;
   /** Signature personnalisée (HTML), insérée après le CTA. */
   closingHtml?: string;
+  /** Option A : texte par blocs (slots) pour campagnes. */
+  slots?: Record<string, unknown>;
   /** Nombre max d'e-mails à envoyer dans cette exécution (défaut 100). */
   limit?: number;
   /** Décalage dans la liste (pour envoi sur plusieurs jours). */
@@ -309,6 +311,7 @@ Deno.serve(async (req: Request) => {
           bodyHtml: bodyPersonalized,
           ctaText: payload.ctaText,
           closingHtml: payload.closingHtml,
+          slots: (payload.slots && typeof payload.slots === "object") ? payload.slots : undefined,
         })
       : buildEmailHtml({
           title: "",
