@@ -42,7 +42,11 @@ const AdminAnalytics: React.FC = () => {
   const [triggerLimit, setTriggerLimit] = useState<number>(50);
   const [triggerLoading, setTriggerLoading] = useState(false);
   const [triggerError, setTriggerError] = useState<string>('');
-  const [triggerResult, setTriggerResult] = useState<{ sent?: number; message?: string } | null>(null);
+  const [triggerResult, setTriggerResult] = useState<{
+    sent?: number;
+    message?: string;
+    failedDetails?: { email: string; error: string }[];
+  } | null>(null);
 
   type CampaignKey = 'j2' | 'j5' | 'j8';
   type CampaignSlots = {
@@ -572,7 +576,11 @@ const AdminAnalytics: React.FC = () => {
         setTriggerError(msg);
         return;
       }
-      setTriggerResult({ sent: data?.sent, message: data?.message });
+      setTriggerResult({
+        sent: data?.sent,
+        message: data?.message,
+        failedDetails: (data as { failedDetails?: { email: string; error: string }[] }).failedDetails,
+      });
       fetchAndAnalyze();
     } catch (err) {
       setTriggerError(err instanceof Error ? err.message : String(err));
@@ -1761,6 +1769,23 @@ const AdminAnalytics: React.FC = () => {
                         {triggerResult.sent != null && `${triggerResult.sent} e-mail(s) envoyé(s). `}
                         {triggerResult.message}
                       </p>
+                    )}
+                    {triggerResult?.failedDetails && triggerResult.failedDetails.length > 0 && (
+                      <div className="mt-3 rounded-lg border border-red-100 bg-red-50 p-3">
+                        <p className="text-sm font-semibold text-red-800 mb-2">Détails des échecs (Resend/API)</p>
+                        <div className="space-y-1">
+                          {triggerResult.failedDetails.slice(0, 5).map((f) => (
+                            <p key={f.email} className="text-xs text-red-700 break-all">
+                              {f.email}: {f.error}
+                            </p>
+                          ))}
+                        </div>
+                        {triggerResult.failedDetails.length > 5 && (
+                          <p className="text-xs text-red-700 mt-2">
+                            ... et {triggerResult.failedDetails.length - 5} autre(s) échec(s).
+                          </p>
+                        )}
+                      </div>
                     )}
                     <div className="flex gap-2 justify-end">
                       <button

@@ -17,6 +17,7 @@ const Pricing = () => {
   const [loginMode, setLoginMode] = useState<'login' | 'signup'>('signup');
   const [simulatedTenants, setSimulatedTenants] = useState(1);
   const [currentPlan, setCurrentPlan] = useState<string>('');
+  const [currentPlanType, setCurrentPlanType] = useState<string>('');
   const [isInTrialPeriod, setIsInTrialPeriod] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<'auto' | 'plus'>('auto');
@@ -69,11 +70,12 @@ const Pricing = () => {
   const loadUserSubscription = async (email: string) => {
     const { data, error } = await supabase
       .from('proprietaires')
-      .select('plan_actuel, abonnement_actif, date_fin_essai')
+      .select('plan_type, plan_actuel, abonnement_actif, date_fin_essai')
       .eq('email', email)
       .maybeSingle();
 
     if (!error && data && data.abonnement_actif) {
+      setCurrentPlanType(data.plan_type || '');
       setCurrentPlan(data.plan_actuel || '');
       // Essai gratuit = date_fin_essai renseignée et dans le futur
       const inTrial =
@@ -85,7 +87,10 @@ const Pricing = () => {
 
   const openModal = async (plan: string) => {
     // Abonnement payant actif (pas en essai) : on bloque et on redirige vers "Gérer mon abonnement"
-    if (userEmail && currentPlan && !isInTrialPeriod) {
+    const isCurrentlyFreePlan =
+      currentPlanType === 'free' || (currentPlan || '').toLowerCase().includes('plan gratuit');
+
+    if (userEmail && currentPlan && !isInTrialPeriod && !isCurrentlyFreePlan) {
       alert('Vous avez déjà un abonnement actif. Pour changer d\'abonnement, veuillez d\'abord annuler votre abonnement actuel depuis la page "Gérer mon abonnement", puis souscrire à une nouvelle formule.');
       return;
     }
