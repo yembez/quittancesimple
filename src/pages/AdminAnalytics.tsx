@@ -109,6 +109,12 @@ const AdminAnalytics: React.FC = () => {
   const [previewSubjectHash, setPreviewSubjectHash] = useState('');
   const [ctaClicks, setCtaClicks] = useState<{ j2: number; j5: number; j8: number; total: number } | null>(null);
   const [openStats, setOpenStats] = useState<{ j2: number; j5: number; j8: number; total: number } | null>(null);
+  const [supportEmail, setSupportEmail] = useState('');
+  const [supportReason, setSupportReason] = useState('');
+  const [supportLoading, setSupportLoading] = useState(false);
+  const [supportError, setSupportError] = useState('');
+  const [supportLink, setSupportLink] = useState('');
+  const [supportMeta, setSupportMeta] = useState<{ planType?: string; redirectPath?: string; linkType?: string } | null>(null);
 
   type TrialEmailLog = {
     reminder_type: string;
@@ -291,6 +297,45 @@ const AdminAnalytics: React.FC = () => {
       setTrialLoading(false);
     }
   }, []);
+
+  const handleGenerateSupportLink = async () => {
+    const email = supportEmail.trim();
+    if (!email || !email.includes('@')) {
+      setSupportError('Indiquez une adresse e-mail valide.');
+      return;
+    }
+    setSupportLoading(true);
+    setSupportError('');
+    setSupportLink('');
+    setSupportMeta(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-support-login', {
+        body: {
+          adminPassword: ADMIN_PASSWORD,
+          email,
+          reason: supportReason.trim(),
+        },
+      });
+      if (error) {
+        setSupportError(error.message || 'Erreur génération lien');
+        return;
+      }
+      if (data?.error) {
+        setSupportError(data.error);
+        return;
+      }
+      setSupportLink(String(data?.actionLink ?? ''));
+      setSupportMeta({
+        planType: String(data?.planType ?? ''),
+        redirectPath: String(data?.redirectPath ?? ''),
+        linkType: String(data?.linkType ?? ''),
+      });
+    } catch (e) {
+      setSupportError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSupportLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (authenticated) {
@@ -713,6 +758,73 @@ const AdminAnalytics: React.FC = () => {
           <p className="text-[#6b7280]">Chargement…</p>
         ) : result ? (
           <>
+            {/* Accès support */}
+            <div className="bg-white rounded-xl shadow-sm border border-[#e5e7eb] overflow-hidden">
+              <div className="p-4 border-b border-[#e5e7eb]">
+                <h2 className="text-lg font-semibold text-[#111827]">Support : accès à un compte client</h2>
+                <p className="text-sm text-[#6b7280] mt-1">
+                  Génère un lien à usage unique (magic link) pour ouvrir le dashboard du client (route choisie selon <code>plan_type</code>).
+                </p>
+              </div>
+              <div className="p-4 space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="md:col-span-1">
+                    <label className="block text-sm font-medium text-[#374151] mb-1">Email client</label>
+                    <input
+                      value={supportEmail}
+                      onChange={(e) => setSupportEmail(e.target.value)}
+                      className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm"
+                      placeholder="client@exemple.fr"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-[#374151] mb-1">Raison (audit)</label>
+                    <input
+                      value={supportReason}
+                      onChange={(e) => setSupportReason(e.target.value)}
+                      className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm"
+                      placeholder="Ex: dépannage ajout locataire / vérif paiement / debug..."
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleGenerateSupportLink}
+                    disabled={supportLoading}
+                    className="px-4 py-2 rounded-lg bg-[#111827] text-white text-sm font-medium hover:bg-[#374151] disabled:opacity-60"
+                  >
+                    {supportLoading ? 'Génération…' : 'Générer le lien support'}
+                  </button>
+                  {supportMeta?.redirectPath && (
+                    <p className="text-xs text-[#6b7280]">
+                      Redirection : <code>{supportMeta.redirectPath}</code> · plan : <code>{supportMeta.planType}</code> · type : <code>{supportMeta.linkType}</code>
+                    </p>
+                  )}
+                </div>
+                {supportError && <p className="text-sm text-red-600">{supportError}</p>}
+                {supportLink && (
+                  <div className="rounded-lg border border-[#e5e7eb] bg-[#f9fafb] p-3">
+                    <p className="text-xs text-[#6b7280] mb-2">Ouvre ce lien dans un nouvel onglet (il connecte réellement au compte).</p>
+                    <div className="flex gap-2 items-start">
+                      <input
+                        readOnly
+                        value={supportLink}
+                        className="flex-1 rounded-lg border border-[#e5e7eb] px-3 py-2 text-xs font-mono bg-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => window.open(supportLink, '_blank', 'noopener,noreferrer')}
+                        className="px-3 py-2 rounded-lg bg-[#2563eb] text-white text-xs font-medium hover:bg-[#1d4ed8]"
+                      >
+                        Ouvrir
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* 4 Stats Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-white rounded-xl shadow-sm border border-[#e5e7eb] p-4">

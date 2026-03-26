@@ -103,7 +103,7 @@ const FreeSignupModal: React.FC<FreeSignupModalProps> = ({ isOpen, onClose, pref
             prenom: prenom,
             plan_type: 'free',
             plan_actuel: 'Plan Gratuit',
-            abonnement_actif: true,
+            abonnement_actif: false,
             max_locataires: 1,
             max_quittances: 3,
             features_enabled: {
@@ -135,7 +135,7 @@ const FreeSignupModal: React.FC<FreeSignupModalProps> = ({ isOpen, onClose, pref
             adresse: '',
             plan_type: 'free',
             plan_actuel: 'Plan Gratuit',
-            abonnement_actif: true,
+            abonnement_actif: false,
             max_locataires: 1,
             max_quittances: 3,
             features_enabled: {
