@@ -10,111 +10,129 @@ const corsHeaders = {
 const SITE_URL = "https://www.quittancesimple.fr";
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { status: 200, headers: corsHeaders });
-  }
-  if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Méthode non autorisée" }), {
-      status: 405,
+  const json = (payload: unknown, status = 200) =>
+    new Response(JSON.stringify(payload), {
+      status,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  }
 
-  const adminPassword = Deno.env.get("ADMIN_ANALYTICS_PASSWORD");
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!adminPassword || !supabaseUrl || !serviceKey) {
-    return new Response(JSON.stringify({ error: "Configuration serveur manquante" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
-  let body: { adminPassword?: string; email?: string; reason?: string };
   try {
-    body = await req.json();
-  } catch {
-    return new Response(JSON.stringify({ error: "Body JSON invalide" }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    if (req.method === "OPTIONS") {
+      return new Response(null, { status: 200, headers: corsHeaders });
+    }
+    if (req.method !== "POST") {
+      return json({ error: "Méthode non autorisée" }, 405);
+    }
+
+    const adminPassword = Deno.env.get("ADMIN_ANALYTICS_PASSWORD");
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!adminPassword || !supabaseUrl || !serviceKey) {
+      return json({ error: "Configuration serveur manquante" }, 500);
+    }
+
+    let body: { adminPassword?: string; email?: string; reason?: string };
+    try {
+      body = await req.json();
+    } catch {
+      return json({ error: "Body JSON invalide" }, 400);
+    }
+
+    if ((body.adminPassword ?? "") !== adminPassword) {
+      return json({ error: "Non autorisé" }, 401);
+    }
+
+    const email = (body.email ?? "").trim();
+    if (!email || !email.includes("@")) {
+      return json({ error: "Email invalide" }, 400);
+    }
+
+    const supabase = createClient(supabaseUrl, serviceKey);
+
+    // Choisir la destination selon plan_type.
+    const { data: proprietaire, error: propErr } = await supabase
+      .from("proprietaires")
+      .select("plan_type")
+      .ilike("email", email)
+      .maybeSingle();
+    if (propErr) {
+      return json({ error: "Erreur lecture propriétaire", detail: propErr.message }, 500);
+    }
+
+    const planType = (proprietaire as { plan_type?: string } | null)?.plan_type ?? "";
+    const redirectPath =
+      planType === "free"
+        ? `/free-dashboard?email=${encodeURIComponent(email)}`
+        : `/dashboard`;
+
+    const redirectTo = `${SITE_URL}${redirectPath}`;
+    const ua = req.headers.get("user-agent") ?? "";
+
+    // Générer un magic link (ou invite si l’utilisateur Auth n’existe pas).
+    const { data: existingUser, error: getUserErr } = await supabase.auth.admin.getUserByEmail(email);
+    if (getUserErr) {
+      return json({ error: "Erreur lecture Auth user", detail: getUserErr.message }, 500);
+    }
+
+    const linkType: "invite" | "magiclink" = existingUser?.user ? "magiclink" : "invite";
+
+    const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+      type: linkType,
+      email,
+      options: { redirectTo },
     });
-  }
 
-  if ((body.adminPassword ?? "") !== adminPassword) {
-    return new Response(JSON.stringify({ error: "Non autorisé" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+    const actionLink = linkData?.properties?.action_link;
+    if (linkError || !actionLink) {
+      console.error("admin-support-login: generateLink failed", {
+        linkType,
+        email,
+        redirectTo,
+        error: linkError?.message,
+      });
+      return json(
+        {
+          error: "Impossible de générer le lien d'accès",
+          detail: linkError?.message || "action_link manquant",
+          redirectTo,
+          linkType,
+        },
+        500
+      );
+    }
 
-  const email = (body.email ?? "").trim();
-  if (!email || !email.includes("@")) {
-    return new Response(JSON.stringify({ error: "Email invalide" }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+    // Audit log (best-effort).
+    try {
+      await supabase.from("support_access_logs").insert({
+        admin_label: "admin_analytics",
+        target_email: email,
+        reason: String(body.reason ?? ""),
+        redirect_path: redirectPath,
+        link_type: linkType,
+        user_agent: ua,
+      });
+    } catch (e) {
+      console.warn("admin-support-login: audit insert failed", e);
+    }
 
-  const supabase = createClient(supabaseUrl, serviceKey);
-
-  // Choisir la destination selon plan_type.
-  const { data: proprietaire } = await supabase
-    .from("proprietaires")
-    .select("plan_type")
-    .ilike("email", email)
-    .maybeSingle();
-
-  const planType = (proprietaire as { plan_type?: string } | null)?.plan_type ?? "";
-  const redirectPath =
-    planType === "free"
-      ? `/free-dashboard?email=${encodeURIComponent(email)}`
-      : `/dashboard`;
-
-  const redirectTo = `${SITE_URL}${redirectPath}`;
-  const ua = req.headers.get("user-agent") ?? "";
-
-  // Générer un magic link (ou invite si l’utilisateur Auth n’existe pas).
-  const { data: existingUser } = await supabase.auth.admin.getUserByEmail(email);
-  const linkType: "invite" | "magiclink" = existingUser?.user ? "magiclink" : "invite";
-
-  const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
-    type: linkType,
-    email,
-    options: { redirectTo },
-  });
-
-  const actionLink = linkData?.properties?.action_link;
-  if (linkError || !actionLink) {
-    return new Response(JSON.stringify({ error: "Impossible de générer le lien d'accès" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
-  // Audit log (best-effort).
-  try {
-    await supabase.from("support_access_logs").insert({
-      admin_label: "admin_analytics",
-      target_email: email,
-      reason: String(body.reason ?? ""),
-      redirect_path: redirectPath,
-      link_type: linkType,
-      user_agent: ua,
-    });
-  } catch {
-    // no-op
-  }
-
-  return new Response(
-    JSON.stringify({
+    return json({
       success: true,
       email,
       planType,
       redirectPath,
       linkType,
       actionLink,
-    }),
-    { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-  );
+    });
+  } catch (e) {
+    console.error("admin-support-login: unexpected error", e);
+    return json(
+      {
+        error: "Erreur serveur inattendue",
+        detail: e instanceof Error ? e.message : String(e),
+      },
+      500
+    );
+  }
 });
+
 

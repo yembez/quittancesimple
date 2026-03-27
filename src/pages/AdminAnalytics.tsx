@@ -38,7 +38,7 @@ const AdminAnalytics: React.FC = () => {
   const [result, setResult] = useState<AnalyzeLeadsResult | null>(null);
   const [segmentFilter, setSegmentFilter] = useState<string>('all');
   const [showTriggerModal, setShowTriggerModal] = useState(false);
-  const [triggerCampaign, setTriggerCampaign] = useState<'j2' | 'j5' | 'j8' | null>(null);
+  const [triggerCampaign, setTriggerCampaign] = useState<'j2' | 'j5' | 'j8' | 'j2_fix' | null>(null);
   const [triggerLimit, setTriggerLimit] = useState<number>(50);
   const [triggerLoading, setTriggerLoading] = useState(false);
   const [triggerError, setTriggerError] = useState<string>('');
@@ -166,7 +166,7 @@ const AdminAnalytics: React.FC = () => {
     try {
       const { data, error: err } = await supabase
         .from('proprietaires')
-        .select('id, email, nom, prenom, created_at, nombre_quittances, device_type, campaign_j2_sent_at, campaign_j5_sent_at, campaign_j8_sent_at')
+        .select('id, email, nom, prenom, created_at, nombre_quittances, device_type, campaign_j2_sent_at, campaign_j5_sent_at, campaign_j8_sent_at, campaign_j2_fix_sent_at')
         .order('created_at', { ascending: false });
 
       if (err) {
@@ -364,6 +364,8 @@ const AdminAnalytics: React.FC = () => {
   const sentJ8Leads = freeLeadsWithQuittances.filter((l) => !!l.campaign_j8_sent_at);
   const pendingJ2 = freeLeadsWithQuittances.filter((l) => !l.campaign_j2_sent_at).length;
   const sentJ2 = sentJ2Leads.length;
+  const sentJ2Fix = sentJ2Leads.filter((l: any) => !!l.campaign_j2_fix_sent_at).length;
+  const pendingJ2Fix = Math.max(0, sentJ2 - sentJ2Fix);
   const pendingJ5 = freeLeadsWithQuittances.filter((l) => !l.campaign_j5_sent_at).length;
   const sentJ5 = sentJ5Leads.length;
   const pendingJ8 = freeLeadsWithQuittances.filter((l) => !l.campaign_j8_sent_at).length;
@@ -386,7 +388,7 @@ const AdminAnalytics: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  const openTriggerModal = (campaign: 'j2' | 'j5' | 'j8') => {
+  const openTriggerModal = (campaign: 'j2' | 'j5' | 'j8' | 'j2_fix') => {
     setTriggerCampaign(campaign);
     setTriggerError('');
     setTriggerResult(null);
@@ -609,8 +611,12 @@ const AdminAnalytics: React.FC = () => {
     setTriggerError('');
     setTriggerResult(null);
     try {
-      const { data, error } = await supabase.functions.invoke('admin-trigger-campaign', {
-        body: { campaign: triggerCampaign, limit: triggerLimit },
+      const invokeName = triggerCampaign === 'j2_fix' ? 'admin-trigger-j2-corrective' : 'admin-trigger-campaign';
+      const invokeBody = triggerCampaign === 'j2_fix'
+        ? { limit: triggerLimit }
+        : { campaign: triggerCampaign, limit: triggerLimit };
+      const { data, error } = await supabase.functions.invoke(invokeName, {
+        body: invokeBody,
       });
       if (error) {
         setTriggerError(error.message || 'Erreur inconnue');
@@ -937,7 +943,7 @@ const AdminAnalytics: React.FC = () => {
                   Premier email = J+2. Déclenchez l&apos;envoi depuis ici (limite 100/envoi, relancer pour la suite).
                 </p>
               </div>
-              <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-4 grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="border border-[#e5e7eb] rounded-lg p-4 bg-orange-50/50">
                   <p className="font-semibold text-[#111827]">J+2 — Premier email</p>
                   <p className="text-sm text-[#6b7280] mt-1">« Votre Espace Bailleur est prêt »</p>
@@ -984,6 +990,24 @@ const AdminAnalytics: React.FC = () => {
                       className="flex-1 py-2 rounded-lg bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 transition-colors"
                     >
                       Envoyer J+5
+                    </button>
+                  </div>
+                </div>
+                <div className="border border-[#e5e7eb] rounded-lg p-4 bg-rose-50/60">
+                  <p className="font-semibold text-[#111827]">Correctif J+2</p>
+                  <p className="text-sm text-[#6b7280] mt-1">Mini campagne de rattrapage CTA</p>
+                  <p className="text-sm mt-2">
+                    <span className="text-[#6b7280]">{pendingJ2Fix} en attente</span>
+                    {sentJ2Fix > 0 && <span> · {sentJ2Fix} envoyé(s)</span>}
+                  </p>
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openTriggerModal('j2_fix')}
+                      disabled={pendingJ2Fix === 0}
+                      className="w-full py-2 rounded-lg bg-rose-500 text-white text-sm font-medium hover:bg-rose-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Envoyer correctif J+2
                     </button>
                   </div>
                 </div>
@@ -1848,7 +1872,9 @@ const AdminAnalytics: React.FC = () => {
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true">
                 <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6">
                   <h3 className="text-lg font-semibold text-[#111827]">
-                    Envoyer la campagne J+{triggerCampaign === 'j2' ? '2' : triggerCampaign === 'j5' ? '5' : '8'}
+                    {triggerCampaign === 'j2_fix'
+                      ? 'Envoyer la campagne Correctif J+2'
+                      : `Envoyer la campagne J+${triggerCampaign === 'j2' ? '2' : triggerCampaign === 'j5' ? '5' : '8'}`}
                   </h3>
                   <p className="text-sm text-[#6b7280] mt-1">
                     Choisissez la taille du lot puis lancez l&apos;envoi.
