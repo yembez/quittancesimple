@@ -1890,6 +1890,7 @@ const AdminAnalytics: React.FC = () => {
                         onChange={(e) => setTriggerLimit(Number(e.target.value))}
                         className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm text-[#111827] bg-white"
                       >
+                        <option value={1}>1</option>
                         <option value={10}>10</option>
                         <option value={20}>20</option>
                         <option value={50}>50</option>
