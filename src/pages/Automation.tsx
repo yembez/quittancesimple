@@ -16,6 +16,12 @@ const AVIS_MOBILE = [
   { text: "L'idée est super, c'est automatisé mais j'ai le contrôle ", author: 'Marie, propriétaire' },
 ];
 
+/** Bulles sur la photo du hero — sur mobile : une seule à la fois en bas, en boucle */
+const HERO_PHOTO_BUBBLES = [
+  { line1: 'Quittance envoyée automatiquement', line2: 'Locataire : Marie Dubois' },
+  { line1: 'Quittance envoyée automatiquement', line2: 'Locataire : Gilles Martin' },
+];
+
 const Automation = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loginMode, setLoginMode] = useState<'login' | 'signup'>('signup');
@@ -30,10 +36,17 @@ const Automation = () => {
   const [locatairesCount, setLocatairesCount] = useState(0);
   const [enlargedImage, setEnlargedImage] = useState<{ src: string; alt: string } | null>(null);
   const [avisIndex, setAvisIndex] = useState(0);
+  const [heroPhotoBubbleIndex, setHeroPhotoBubbleIndex] = useState(0);
   useEffect(() => {
     const t = setInterval(() => {
       setAvisIndex((i) => (i + 1) % AVIS_MOBILE.length);
     }, 4500);
+    return () => clearInterval(t);
+  }, []);
+  useEffect(() => {
+    const t = setInterval(() => {
+      setHeroPhotoBubbleIndex((i) => (i + 1) % HERO_PHOTO_BUBBLES.length);
+    }, 3200);
     return () => clearInterval(t);
   }, []);
   const schema = {
@@ -215,11 +228,42 @@ const Automation = () => {
                     className="w-full h-auto object-contain"
                   />
                 </div>
+                {/* Mobile : bulle type SMS (étroite), dans la partie basse de la photo, droite pour laisser le badge à gauche */}
+                <div
+                  className="lg:hidden absolute z-20 right-2.5 bottom-2.5 pointer-events-none flex justify-end"
+                  aria-live="polite"
+                >
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.div
+                      key={heroPhotoBubbleIndex}
+                      initial={{ opacity: 0, x: -14 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 36 }}
+                      transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+                      className="inline-flex w-fit max-w-[min(148px,calc(100vw-2rem))]"
+                    >
+                      <div className="rounded-[14px] rounded-br-[5px] bg-[#e9e9ee] py-1.5 pl-2 pr-2 shadow-[0_1px_4px_rgba(15,23,42,0.12)]">
+                        <div className="flex items-start gap-1">
+                          <Check className="w-2.5 h-2.5 text-green-600 shrink-0 mt-[1px]" strokeWidth={2.5} />
+                          <div className="min-w-0">
+                            <p className="text-[9px] font-medium text-[#212a3e] leading-snug text-left">
+                              {HERO_PHOTO_BUBBLES[heroPhotoBubbleIndex].line1}
+                            </p>
+                            <p className="text-[8px] text-[#5e6478] mt-0.5 leading-snug text-left">
+                              {HERO_PHOTO_BUBBLES[heroPhotoBubbleIndex].line2}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+                {/* Desktop : deux bulles comme avant (haut droite) */}
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.5, delay: 0.4 }}
-                  className="absolute top-3 right-2 sm:top-5 sm:right-6 z-20"
+                  className="hidden lg:block absolute top-3 right-2 sm:top-5 sm:right-6 z-20"
                 >
                   <div className="bg-white/95 backdrop-blur-sm rounded-xl px-2.5 py-2 shadow-lg border border-[#e2e8f0] max-w-[180px]">
                     <div className="flex items-start gap-1.5">
@@ -235,12 +279,11 @@ const Automation = () => {
                     </div>
                   </div>
                 </motion.div>
-                {/* Deuxième bulle : message "en train d'arriver" — Gilles Martin, légèrement plus petit que la première */}
                 <motion.div
                   initial={{ opacity: 0, scale: 0.85 }}
                   animate={{ opacity: 0.92, scale: 1 }}
                   transition={{ duration: 0.6, delay: 0.8 }}
-                  className="absolute top-14 right-8 sm:top-20 sm:right-14 z-10"
+                  className="hidden lg:block absolute top-14 right-8 sm:top-20 sm:right-14 z-10"
                 >
                   <div className="bg-white/85 backdrop-blur-sm rounded-xl px-2.5 py-2 shadow-md border border-[#e2e8f0] max-w-[170px]">
                     <div className="flex items-start gap-1.5">
@@ -261,7 +304,7 @@ const Automation = () => {
                   initial={{ opacity: 0, scale: 0, rotate: -10 }}
                   animate={{ opacity: 1, scale: 1, rotate: 0 }}
                   transition={{ duration: 0.6, delay: 0.5, type: "spring", stiffness: 200 }}
-                  className="absolute bottom-4 -left-7 sm:bottom-6 sm:-left-8 md:bottom-8 md:-left-10 lg:bottom-10 lg:-left-12 z-20"
+                  className="absolute bottom-4 left-3 sm:bottom-6 sm:-left-5 md:bottom-8 md:-left-8 lg:bottom-10 lg:-left-12 z-20"
                 >
                   <div className="bg-[#E65F3F]/80 backdrop-blur-sm rounded-full px-2 py-2 sm:px-3 sm:py-2.5 md:px-4 md:py-3 shadow-md border border-white/30 flex flex-col items-center justify-center w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 lg:h-24">
                     <div className="flex flex-col items-center gap-0 sm:gap-0.5">

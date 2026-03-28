@@ -1905,8 +1905,7 @@ const AdminAnalytics: React.FC = () => {
                     )}
                     {triggerResult && (
                       <p className="text-sm text-green-700">
-                        {triggerResult.sent != null && `${triggerResult.sent} e-mail(s) envoyé(s). `}
-                        {triggerResult.message}
+                        {triggerResult.message || (triggerResult.sent != null ? `${triggerResult.sent} e-mail(s) envoyé(s).` : '')}
                       </p>
                     )}
                     {triggerResult?.failedDetails && triggerResult.failedDetails.length > 0 && (

@@ -72,8 +72,16 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  const { data: desabonnesRows } = await supabase.from("mailing_desabonnes").select("email");
+  const desabonnesSet = new Set(
+    (desabonnesRows || []).map((r: { email: string }) => r.email?.toLowerCase()).filter(Boolean)
+  );
+
   const list = (rows || [])
-    .filter((r: { email?: string }) => isEmailValidePourMailing(r.email || ""))
+    .filter((r: { email?: string }) => {
+      const e = (r.email || "").trim().toLowerCase();
+      return isEmailValidePourMailing(r.email || "") && !desabonnesSet.has(e);
+    })
     .map((r: { id: string; email: string; prenom?: string }) => ({
       id: r.id,
       email: r.email.trim(),

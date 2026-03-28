@@ -116,7 +116,10 @@ Deno.serve(async (req: Request) => {
     query = query.eq("lead_statut", "free_quittance_pdf").is("campaign_j8_sent_at", null);
   }
 
-  const { data: rows, error: fetchError } = await query.range(0, limit - 1);
+  // On sur-échantillonne avant filtrage local (désabonnés/table séparée + emails tests)
+  // pour que "limit=1" retourne bien 1 lead réellement envoyable.
+  const prefetchSize = Math.min(500, Math.max(limit * 10, 50));
+  const { data: rows, error: fetchError } = await query.range(0, prefetchSize - 1);
   if (fetchError) {
     return new Response(
       JSON.stringify({ error: fetchError.message }),
@@ -134,6 +137,7 @@ Deno.serve(async (req: Request) => {
       const e = (r.email || "").trim().toLowerCase();
       return isEmailValidePourMailing(r.email || "") && !desabonnesSet.has(e);
     })
+    .slice(0, limit)
     .map((r: { id?: number; email: string; prenom?: string }) => ({
       id: r.id,
       email: r.email,
