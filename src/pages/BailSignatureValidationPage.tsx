@@ -43,6 +43,21 @@ function getPayload(id: string): ValidationPayload | null {
   }
 }
 
+function getFallbackAdresse(payload: ValidationPayload | null): string | null {
+  if (!payload?.id) return null;
+  try {
+    const key =
+      payload.sourcePath === '/bail' ? `bail_vide_data_${payload.id}` : `bail_meuble_data_${payload.id}`;
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const data = JSON.parse(raw) as { logement_adresse?: string };
+    const addr = (data?.logement_adresse ?? '').trim();
+    return addr || null;
+  } catch {
+    return null;
+  }
+}
+
 export default function BailSignatureValidationPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
@@ -67,10 +82,29 @@ export default function BailSignatureValidationPage() {
     setSigners((prev) => prev.map((s) => (s.id === signerId ? { ...s, ...patch } : s)));
   };
 
+  const signerIssues = useMemo(() => {
+    return signers.map((s) => ({
+      id: s.id,
+      missingName: !s.name.trim(),
+      missingEmail: !s.email.trim(),
+      missingPhone: !s.phone.trim(),
+    }));
+  }, [signers]);
+
   const canSend =
     consent &&
     signers.length > 0 &&
     signers.every((s) => s.name.trim() && s.email.trim() && s.phone.trim());
+
+  const helperText = useMemo(() => {
+    const missingConsent = !consent;
+    const missingAnySigner = signerIssues.some((i) => i.missingName || i.missingEmail || i.missingPhone);
+    if (!missingConsent && !missingAnySigner) return null;
+    const parts: string[] = [];
+    if (missingConsent) parts.push('cocher la déclaration');
+    if (missingAnySigner) parts.push('renseigner nom, e-mail et téléphone pour chaque signataire');
+    return `Pour envoyer : ${parts.join(' + ')}.`;
+  }, [consent, signerIssues]);
 
   const handleSend = async () => {
     setError(null);
@@ -148,7 +182,10 @@ export default function BailSignatureValidationPage() {
             <h2 className="text-sm font-semibold text-[#1e3a5f] mb-3">Résumé du bail</h2>
             <div className="space-y-1 text-sm text-gray-700">
               <p><span className="font-medium">Noms :</span> {payload.summary.noms || '-'}</p>
-              <p><span className="font-medium">Adresse :</span> {payload.summary.adresse || '-'}</p>
+              <p>
+                <span className="font-medium">Adresse :</span>{' '}
+                {payload.summary.adresse?.trim() || getFallbackAdresse(payload) || '-'}
+              </p>
               <p><span className="font-medium">Loyer :</span> {payload.summary.loyer || '-'}</p>
               <p><span className="font-medium">Charges :</span> {payload.summary.charges || '-'}</p>
               <p><span className="font-medium">Date d’effet :</span> {payload.summary.dateEffet || '-'}</p>
@@ -159,24 +196,29 @@ export default function BailSignatureValidationPage() {
           <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <h2 className="text-sm font-semibold text-[#1e3a5f] mb-3">Signataires</h2>
             <div className="space-y-3">
-              {signers.map((s) => (
+              {signers.map((s) => {
+                const issue = signerIssues.find((i) => i.id === s.id);
+                const nameBad = !!issue?.missingName;
+                const emailBad = !!issue?.missingEmail;
+                const phoneBad = !!issue?.missingPhone;
+                return (
                 <div key={s.id} className="grid grid-cols-1 gap-2 md:grid-cols-4">
                   <input
                     value={s.name}
                     onChange={(e) => updateSigner(s.id, { name: e.target.value })}
-                    className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    className={`rounded-md border px-3 py-2 text-sm ${nameBad ? 'border-red-300 bg-red-50' : 'border-gray-300'}`}
                     placeholder="Nom"
                   />
                   <input
                     value={s.email}
                     onChange={(e) => updateSigner(s.id, { email: e.target.value })}
-                    className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    className={`rounded-md border px-3 py-2 text-sm ${emailBad ? 'border-red-300 bg-red-50' : 'border-gray-300'}`}
                     placeholder="E-mail"
                   />
                   <input
                     value={s.phone}
                     onChange={(e) => updateSigner(s.id, { phone: e.target.value })}
-                    className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    className={`rounded-md border px-3 py-2 text-sm ${phoneBad ? 'border-red-300 bg-red-50' : 'border-gray-300'}`}
                     placeholder="Téléphone"
                   />
                   <select
@@ -189,7 +231,7 @@ export default function BailSignatureValidationPage() {
                     <option value="garant">Garant</option>
                   </select>
                 </div>
-              ))}
+              )})}
             </div>
           </section>
 
@@ -207,6 +249,12 @@ export default function BailSignatureValidationPage() {
             <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 flex items-start gap-2">
               <AlertCircle className="w-4 h-4 mt-0.5" />
               <span>{error}</span>
+            </div>
+          )}
+          {helperText && !error && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 mt-0.5" />
+              <span>{helperText}</span>
             </div>
           )}
 

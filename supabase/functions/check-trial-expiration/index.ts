@@ -31,6 +31,8 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const stripeSecret = Deno.env.get("STRIPE_SECRET_KEY");
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    const siteUrlEnv = Deno.env.get("SITE_URL") || Deno.env.get("FRONTEND_URL") || "https://www.quittancesimple.fr";
+    const siteUrl = siteUrlEnv.replace(/\/$/, "");
 
     if (!stripeSecret) {
       throw new Error("STRIPE_SECRET_KEY not configured");
@@ -128,7 +130,7 @@ Deno.serve(async (req: Request) => {
 
           // Si l'expiration est exactement aujourd'hui (jour 0), envoyer l'email d'expiration
           if (daysSinceExpiration === 0) {
-            const checkoutUrl = `${supabaseUrl.replace('.supabase.co', '.vercel.app')}/payment-checkout?reactivate=true&email=${encodeURIComponent(proprietaire.email)}`;
+            const checkoutUrl = `${siteUrl}/payment-checkout?reactivate=true&email=${encodeURIComponent(proprietaire.email)}`;
 
             const emailHtml = `
 <!DOCTYPE html>

@@ -28,6 +28,8 @@ Deno.serve(async (req: Request) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    const siteUrlEnv = Deno.env.get("SITE_URL") || Deno.env.get("FRONTEND_URL") || "https://www.quittancesimple.fr";
+    const siteUrl = siteUrlEnv.replace(/\/$/, "");
 
     if (!resendApiKey) {
       throw new Error("RESEND_API_KEY not configured");
@@ -49,8 +51,7 @@ Deno.serve(async (req: Request) => {
         prenom: 'Prénom',
         date_fin_essai: new Date().toISOString(),
       };
-      const baseUrl = supabaseUrl.replace('.supabase.co', '.vercel.app');
-      const checkoutUrl = `${baseUrl}/payment-checkout?trial=true&email=${encodeURIComponent(previewEmail)}`;
+      const checkoutUrl = `${siteUrl}/payment-checkout?trial=true&email=${encodeURIComponent(previewEmail)}`;
       const reminderTypes: { type: string; daysRemaining: number }[] = [
         { type: 'day_7', daysRemaining: 23 },
         { type: 'day_15', daysRemaining: 15 },
@@ -172,6 +173,8 @@ Deno.serve(async (req: Request) => {
           continue;
         }
 
+        const checkoutUrl = `${siteUrl}/payment-checkout?trial=true&email=${encodeURIComponent(proprietaire.email)}`;
+
         // Créer ou mettre à jour l'enregistrement de relance
         // Vérifier d'abord si l'enregistrement existe
         const { data: existingRecord } = await supabase
@@ -204,9 +207,6 @@ Deno.serve(async (req: Request) => {
             .single();
           reminderRecord = created;
         }
-
-        // Générer le lien de checkout
-        const checkoutUrl = `${supabaseUrl.replace('.supabase.co', '.vercel.app')}/payment-checkout?trial=true&email=${encodeURIComponent(proprietaire.email)}`;
 
         // Générer le template d'email selon le type
         const emailHtml = generateEmailTemplate(reminderType, proprietaire, daysRemaining, checkoutUrl);
@@ -387,9 +387,17 @@ ${greeting}<br><br>
 
 Il vous reste <strong>7 jours</strong> d'essai.<br><br>
 
-Si vous souhaitez continuer après cette date, vous pourrez activer un abonnement en quelques clics (à partir de 3,25€/mois en annuel, sans engagement). Paiement sécurisé.`;
-      ctaText = 'Activer mon abonnement';
-      ctaUrl = checkoutUrl;
+Continuez à explorer tranquillement votre espace bailleur.<br><br>
+
+<span class="highlight">Pour plus de tranquillité</span>, vous pouvez aussi activer dès maintenant votre abonnement (à partir de 3,25€/mois en annuel, sans engagement). Paiement sécurisé.<br><br>
+
+<p style="margin-top: 18px; text-align: center;">
+  <a href="${checkoutUrl}" style="display:inline-block;padding:12px 18px;border:1px solid #2563eb;border-radius:5px;color:#2563eb !important;text-decoration:none;font-weight:bold;background:#ffffff;">
+    Activer mon abonnement
+  </a>
+</p>`;
+      ctaText = 'Accéder à mon espace';
+      ctaUrl = dashboardUrl;
       break;
 
     case 'day_29':

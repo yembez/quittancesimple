@@ -385,7 +385,7 @@ const LocatairesTable = ({
 
       {/* Mobile Card View - Hidden on Desktop - min-w-0 pour éviter débordement */}
       <div className="lg:hidden space-y-4 p-4 min-w-0 max-w-full overflow-visible">
-        {locataires.map((locataire, index) => (
+        {locataires.map((locataire) => (
           <div key={locataire.id} className="bg-white border border-[#e2e8f0] rounded-xl shadow-sm overflow-hidden min-w-0 max-w-full">
             {/* Card Header — style Overview */}
             <div className="px-4 py-3 border-b border-[#f1f5f9] min-w-0">
