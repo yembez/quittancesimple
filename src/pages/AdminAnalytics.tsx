@@ -1731,6 +1731,7 @@ const AdminAnalytics: React.FC = () => {
                                 <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Inscrit</th>
                                 <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Stripe</th>
                                 <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Locataire</th>
+                                <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Email locataire</th>
                                 <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Rappel mensuel</th>
                                 <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Lead / essai</th>
                               </tr>
@@ -1752,6 +1753,9 @@ const AdminAnalytics: React.FC = () => {
                                   <td className="px-2 py-1 text-[#4b5563] align-top whitespace-nowrap">{c.stripe}</td>
                                   <td className="px-2 py-1 text-[#4b5563] max-w-[180px] truncate" title={r.locataire.adresse_logement ?? ''}>
                                     {[r.locataire.prenom, r.locataire.nom].filter(Boolean).join(' ') || '—'}
+                                  </td>
+                                  <td className="px-2 py-1 text-[#4b5563] max-w-[200px] truncate" title={r.locataire.email ?? ''}>
+                                    {r.locataire.email ?? '—'}
                                   </td>
                                   <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
                                     {r.locataire.libelle_rappel_mensuel}
