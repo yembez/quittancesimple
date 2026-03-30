@@ -276,6 +276,7 @@ type ValidationPayload = {
     title: string;
     noms: string;
     adresse: string;
+    adresseBailleur: string;
     loyer: string;
     charges: string;
     dateEffet: string;
@@ -997,6 +998,7 @@ export default function BailMeubleWeb() {
       title: 'Contrat de location meublée',
       noms: [data.bailleur_nom, data.locataire_nom, data.locataire_nom_2].filter(Boolean).join(' - '),
       adresse: data.logement_adresse,
+      adresseBailleur: (data.bailleur_adresse || '').trim(),
       loyer: data.loyer_mensuel ? `${data.loyer_mensuel} €` : '',
       charges: data.montant_charges ? `${data.montant_charges} €` : '',
       dateEffet: [data.date_effet_jour, data.date_effet_mois, data.date_effet_annee].filter(Boolean).join('/'),

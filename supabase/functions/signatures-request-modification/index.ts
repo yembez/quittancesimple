@@ -4,6 +4,7 @@ import {
   corsHeaders,
   ESPACE_BAILLEUR_FROM,
   ESPACE_BAILLEUR_SIGNATURE_HTML,
+  getPublicAppBaseUrl,
   getSupabaseAdmin,
   jsonResponse,
 } from "../_shared/signature-utils.ts";
@@ -114,7 +115,7 @@ Deno.serve(async (req: Request) => {
         if (vaultKey && typeof vaultKey === "string") resendApiKey = (vaultKey as string).trim();
       }
       if (resendApiKey) {
-        const appUrl = (Deno.env.get("APP_URL") ?? "https://quittancesimple.fr").replace(/\/$/, "");
+        const appUrl = getPublicAppBaseUrl();
         const signatureUrl = `${appUrl}/dashboard/baux/${request.bail_id}/signature`;
         const resend = new Resend(resendApiKey);
         const { data: sendData, error: mailError } = await resend.emails.send({

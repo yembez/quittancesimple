@@ -132,6 +132,36 @@ export async function hashDocumentFromUrl(documentUrl: string) {
   }
 }
 
+const DEFAULT_PUBLIC_APP_URL = "https://www.quittancesimple.fr";
+
+/**
+ * URL publique du site (sans slash final), pour les liens dans les e-mails (signature, etc.).
+ * Priorité : SITE_URL → FRONTEND_URL → APP_URL.
+ * Les valeurs localhost / 127.0.0.1 sont ignorées (évite les liens dev si APP_URL est mal configuré en prod).
+ */
+export function getPublicAppBaseUrl(): string {
+  const candidates = [
+    Deno.env.get("SITE_URL"),
+    Deno.env.get("FRONTEND_URL"),
+    Deno.env.get("APP_URL"),
+  ].filter((v): v is string => typeof v === "string" && v.trim().length > 0);
+
+  for (const raw of candidates) {
+    const trimmed = raw.trim().replace(/\/$/, "");
+    try {
+      const url = new URL(trimmed);
+      const host = url.hostname.toLowerCase();
+      if (host === "localhost" || host === "127.0.0.1") {
+        continue;
+      }
+      return trimmed;
+    } catch {
+      continue;
+    }
+  }
+  return DEFAULT_PUBLIC_APP_URL;
+}
+
 export function sanitizeSigners(signers: SignatureSigner[]) {
   return signers.map((s) => ({
     id: s.id,

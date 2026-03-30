@@ -4,6 +4,7 @@ import {
   corsHeaders,
   generateSecureTokenHex,
   getClientIp,
+  getPublicAppBaseUrl,
   getSupabaseAdmin,
   getSupabaseUserClient,
   getUserAgent,
@@ -113,7 +114,7 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: "Une demande de signature est déjà en cours pour ce bail" }, 409);
     }
 
-    const appUrl = Deno.env.get("APP_URL") ?? "https://quittancesimple.fr";
+    const appUrl = getPublicAppBaseUrl();
     for (let i = 0; i < normalizedSigners.length; i++) {
       if (i > 0) await new Promise((r) => setTimeout(r, 600));
       const signer = normalizedSigners[i];

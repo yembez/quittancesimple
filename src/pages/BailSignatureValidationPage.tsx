@@ -23,6 +23,7 @@ type ValidationPayload = {
     title: string;
     noms: string;
     adresse: string;
+    adresseBailleur?: string;
     loyer: string;
     charges: string;
     dateEffet: string;
@@ -52,6 +53,21 @@ function getFallbackAdresse(payload: ValidationPayload | null): string | null {
     if (!raw) return null;
     const data = JSON.parse(raw) as { logement_adresse?: string };
     const addr = (data?.logement_adresse ?? '').trim();
+    return addr || null;
+  } catch {
+    return null;
+  }
+}
+
+function getFallbackAdresseBailleur(payload: ValidationPayload | null): string | null {
+  if (!payload?.id) return null;
+  try {
+    const key =
+      payload.sourcePath === '/bail' ? `bail_vide_data_${payload.id}` : `bail_meuble_data_${payload.id}`;
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const data = JSON.parse(raw) as { bailleur_adresse?: string };
+    const addr = (data?.bailleur_adresse ?? '').trim();
     return addr || null;
   } catch {
     return null;
@@ -183,8 +199,12 @@ export default function BailSignatureValidationPage() {
             <div className="space-y-1 text-sm text-gray-700">
               <p><span className="font-medium">Noms :</span> {payload.summary.noms || '-'}</p>
               <p>
-                <span className="font-medium">Adresse :</span>{' '}
+                <span className="font-medium">Adresse du logement :</span>{' '}
                 {payload.summary.adresse?.trim() || getFallbackAdresse(payload) || '-'}
+              </p>
+              <p>
+                <span className="font-medium">Adresse du bailleur :</span>{' '}
+                {payload.summary.adresseBailleur?.trim() || getFallbackAdresseBailleur(payload) || '-'}
               </p>
               <p><span className="font-medium">Loyer :</span> {payload.summary.loyer || '-'}</p>
               <p><span className="font-medium">Charges :</span> {payload.summary.charges || '-'}</p>
