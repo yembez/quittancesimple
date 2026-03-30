@@ -28,6 +28,13 @@ type PropLite = {
   lead_statut: string | null;
   date_fin_essai: string | null;
   abonnement_actif: boolean | null;
+  /** Plan produit (free | auto, etc.) — utile pour voir « gratuit » vs « pack » sans date d’essai. */
+  plan_type: string | null;
+  plan_actuel: string | null;
+  created_at: string | null;
+  date_inscription: string | null;
+  /** Présence d’un client Stripe (historique paiement / essai checkout). */
+  stripe_customer_id: string | null;
 };
 
 /** Aligné sur les exclusions du rapport essai (comptes / e-mails de test). */
@@ -137,7 +144,9 @@ Deno.serve(async (req: Request) => {
   if (propIds.length > 0) {
     const { data: props } = await supabase
       .from("proprietaires")
-      .select("id, email, nom, prenom, lead_statut, date_fin_essai, abonnement_actif")
+      .select(
+        "id, email, nom, prenom, lead_statut, date_fin_essai, abonnement_actif, plan_type, plan_actuel, created_at, date_inscription, stripe_customer_id",
+      )
       .in("id", propIds);
     for (const p of props || []) propMap.set((p as PropLite).id, p as PropLite);
   }
@@ -185,7 +194,9 @@ Deno.serve(async (req: Request) => {
   if (classicPropIds.length > 0) {
     const { data: props2 } = await supabase
       .from("proprietaires")
-      .select("id, email, nom, prenom, lead_statut, date_fin_essai, abonnement_actif")
+      .select(
+        "id, email, nom, prenom, lead_statut, date_fin_essai, abonnement_actif, plan_type, plan_actuel, created_at, date_inscription, stripe_customer_id",
+      )
       .in("id", classicPropIds);
     for (const p of props2 || []) classicPropMap.set((p as PropLite).id, p as PropLite);
   }

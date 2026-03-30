@@ -29,6 +29,57 @@ function getStoredAuth(): boolean {
   return sessionStorage.getItem(ADMIN_ANALYTICS_STORAGE_KEY) === '1';
 }
 
+/** Champs bailleur renvoyés par get-admin-automation-overview (diagnostic sans date_fin_essai). */
+type AutomationProprietaireFields = {
+  id: string;
+  email: string | null;
+  nom: string | null;
+  prenom: string | null;
+  lead_statut: string | null;
+  date_fin_essai: string | null;
+  abonnement_actif: boolean | null;
+  plan_type: string | null;
+  plan_actuel: string | null;
+  created_at: string | null;
+  date_inscription: string | null;
+  stripe_customer_id: string | null;
+};
+
+function formatAutomationCompteLines(p: AutomationProprietaireFields | null): {
+  plan: string;
+  cree: string;
+  stripe: string;
+  joursDepuisInscription: number | null;
+  hintSansEssai: string | null;
+} {
+  if (!p) {
+    return { plan: '—', cree: '—', stripe: '—', joursDepuisInscription: null, hintSansEssai: null };
+  }
+  const plan = [p.plan_type, p.plan_actuel].filter(Boolean).join(' · ') || '—';
+  const ref = p.date_inscription || p.created_at;
+  let cree = '—';
+  let joursDepuisInscription: number | null = null;
+  if (ref) {
+    const d = new Date(ref);
+    joursDepuisInscription = Math.floor((Date.now() - d.getTime()) / 86400000);
+    cree = `${d.toLocaleDateString('fr-FR')} · J+${joursDepuisInscription}`;
+  }
+  const stripe = p.stripe_customer_id ? 'Stripe oui' : 'Stripe non';
+  let hintSansEssai: string | null = null;
+  if (!p.date_fin_essai && joursDepuisInscription !== null) {
+    if (joursDepuisInscription > 30) {
+      hintSansEssai =
+        p.plan_type === 'free' || !p.plan_type
+          ? 'Sans fin d’essai : compte gratuit ou ancien flux ; pas de fenêtre 30 jours en base.'
+          : 'Sans fin d’essai mais plan ≠ free : essai non enregistré, ou essai effacé (ex. après paiement annulé).';
+    } else {
+      hintSansEssai =
+        'Sans fin d’essai : souvent compte sans passage par le flux essai Pack, ou upsert sans colonne date_fin_essai.';
+    }
+  }
+  return { plan, cree, stripe, joursDepuisInscription, hintSansEssai };
+}
+
 const AdminAnalytics: React.FC = () => {
   const [authenticated, setAuthenticated] = useState<boolean>(getStoredAuth);
   const [loginValue, setLoginValue] = useState('');
@@ -163,15 +214,7 @@ const AdminAnalytics: React.FC = () => {
       adresse_logement: string | null;
       mode_envoi_quittance: string | null;
     } | null;
-    proprietaire: {
-      id: string;
-      email: string | null;
-      nom: string | null;
-      prenom: string | null;
-      lead_statut: string | null;
-      date_fin_essai: string | null;
-      abonnement_actif: boolean | null;
-    } | null;
+    proprietaire: AutomationProprietaireFields | null;
   };
 
   type AutomationClassicRow = {
@@ -188,15 +231,7 @@ const AdminAnalytics: React.FC = () => {
       minute_rappel: number | null;
       libelle_rappel_mensuel: string;
     };
-    proprietaire: {
-      id: string;
-      email: string | null;
-      nom: string | null;
-      prenom: string | null;
-      lead_statut: string | null;
-      date_fin_essai: string | null;
-      abonnement_actif: boolean | null;
-    } | null;
+    proprietaire: AutomationProprietaireFields | null;
   };
 
   const [automationLoading, setAutomationLoading] = useState(false);
@@ -1482,7 +1517,10 @@ const AdminAnalytics: React.FC = () => {
                     envoyée). <strong>Rappel classique</strong> : locataires avec mode rappel + jour/heure configurés
                     (récurrence mensuelle). Les comptes bailleur de test (ex.{' '}
                     <code className="bg-gray-100 px-1 rounded text-xs">@maildrop.cc</code>, préfixe{' '}
-                    <code className="bg-gray-100 px-1 rounded text-xs">2speek</code>) sont exclus.
+                    <code className="bg-gray-100 px-1 rounded text-xs">2speek</code>) sont exclus. Colonnes{' '}
+                    <strong>Plan</strong> / <strong>Inscrit</strong> / <strong>Stripe</strong> : pour trancher les cas sans
+                    date de fin d’essai (compte gratuit, ancien flux, essai non persisté, ou client Stripe sans abonnement
+                    actif).
                   </p>
                   {automationStats && (
                     <p className="text-xs text-[#4b5563] mt-1">
@@ -1550,20 +1588,31 @@ const AdminAnalytics: React.FC = () => {
                             onClick={() =>
                               downloadAutomationCsv(
                                 `automation-systematic-${new Date().toISOString().slice(0, 10)}.csv`,
-                                automationSystematic.map((r) => ({
-                                  bailleur_email: r.proprietaire?.email ?? '',
-                                  bailleur_nom: [r.proprietaire?.prenom, r.proprietaire?.nom].filter(Boolean).join(' '),
-                                  lead_statut: r.proprietaire?.lead_statut ?? '',
-                                  date_fin_essai: r.proprietaire?.date_fin_essai ?? '',
-                                  locataire_nom: [r.locataire?.prenom, r.locataire?.nom].filter(Boolean).join(' '),
-                                  locataire_email: r.locataire?.email ?? '',
-                                  locataire_tel: r.locataire?.telephone ?? '',
-                                  adresse_logement: r.locataire?.adresse_logement ?? '',
-                                  periode: r.periode,
-                                  statut: r.status,
-                                  date_preavis: r.date_preavis,
-                                  date_envoi_auto: r.date_envoi_auto,
-                                })),
+                                automationSystematic.map((r) => {
+                                  const c = formatAutomationCompteLines(r.proprietaire);
+                                  return {
+                                    bailleur_email: r.proprietaire?.email ?? '',
+                                    bailleur_nom: [r.proprietaire?.prenom, r.proprietaire?.nom].filter(Boolean).join(' '),
+                                    lead_statut: r.proprietaire?.lead_statut ?? '',
+                                    plan_type: r.proprietaire?.plan_type ?? '',
+                                    plan_actuel: r.proprietaire?.plan_actuel ?? '',
+                                    date_inscription: r.proprietaire?.date_inscription ?? '',
+                                    created_at: r.proprietaire?.created_at ?? '',
+                                    jours_depuis_inscription: c.joursDepuisInscription ?? '',
+                                    date_fin_essai: r.proprietaire?.date_fin_essai ?? '',
+                                    note_sans_fin_essai: r.proprietaire?.date_fin_essai ? '' : c.hintSansEssai ?? '',
+                                    abonnement_actif: r.proprietaire?.abonnement_actif === true ? 'oui' : 'non',
+                                    stripe_lie: r.proprietaire?.stripe_customer_id ? 'oui' : 'non',
+                                    locataire_nom: [r.locataire?.prenom, r.locataire?.nom].filter(Boolean).join(' '),
+                                    locataire_email: r.locataire?.email ?? '',
+                                    locataire_tel: r.locataire?.telephone ?? '',
+                                    adresse_logement: r.locataire?.adresse_logement ?? '',
+                                    periode: r.periode,
+                                    statut: r.status,
+                                    date_preavis: r.date_preavis,
+                                    date_envoi_auto: r.date_envoi_auto,
+                                  };
+                                }),
                               )
                             }
                             className="text-xs text-[#2563eb] hover:underline"
@@ -1576,6 +1625,10 @@ const AdminAnalytics: React.FC = () => {
                             <thead className="bg-[#f9fafb] sticky top-0">
                               <tr>
                                 <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Bailleur</th>
+                                <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Plan</th>
+                                <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Inscrit</th>
+                                <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Stripe</th>
+                                <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Fin essai</th>
                                 <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Locataire</th>
                                 <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Période</th>
                                 <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Statut</th>
@@ -1584,10 +1637,30 @@ const AdminAnalytics: React.FC = () => {
                               </tr>
                             </thead>
                             <tbody>
-                              {automationSystematic.map((r) => (
+                              {automationSystematic.map((r) => {
+                                const c = formatAutomationCompteLines(r.proprietaire);
+                                return (
                                 <tr key={r.id} className="border-t border-[#f3f4f6]">
                                   <td className="px-2 py-1 text-[#111827] max-w-[160px] truncate" title={r.proprietaire?.email ?? ''}>
                                     {r.proprietaire?.email ?? '—'}
+                                  </td>
+                                  <td className="px-2 py-1 text-[#4b5563] max-w-[100px] align-top" title={c.plan}>
+                                    <span className="line-clamp-2">{c.plan}</span>
+                                  </td>
+                                  <td className="px-2 py-1 text-[#4b5563] max-w-[120px] align-top whitespace-nowrap" title={c.cree}>
+                                    {c.cree}
+                                  </td>
+                                  <td className="px-2 py-1 text-[#4b5563] align-top whitespace-nowrap">{c.stripe}</td>
+                                  <td className="px-2 py-1 text-[#4b5563] max-w-[160px] align-top">
+                                    {r.proprietaire?.date_fin_essai ? (
+                                      <span>
+                                        {new Date(r.proprietaire.date_fin_essai).toLocaleDateString('fr-FR')}
+                                      </span>
+                                    ) : (
+                                      <span className="text-[10px] text-amber-800 leading-snug block">
+                                        {c.hintSansEssai ?? '—'}
+                                      </span>
+                                    )}
                                   </td>
                                   <td className="px-2 py-1 text-[#4b5563] max-w-[140px] truncate" title={[r.locataire?.prenom, r.locataire?.nom].filter(Boolean).join(' ')}>
                                     {[r.locataire?.prenom, r.locataire?.nom].filter(Boolean).join(' ') || '—'}
@@ -1601,7 +1674,8 @@ const AdminAnalytics: React.FC = () => {
                                     {r.date_envoi_auto ? new Date(r.date_envoi_auto).toLocaleString('fr-FR') : '—'}
                                   </td>
                                 </tr>
-                              ))}
+                                );
+                              })}
                             </tbody>
                           </table>
                         </div>
@@ -1618,18 +1692,29 @@ const AdminAnalytics: React.FC = () => {
                             onClick={() =>
                               downloadAutomationCsv(
                                 `automation-rappel-classique-${new Date().toISOString().slice(0, 10)}.csv`,
-                                automationClassic.map((r) => ({
-                                  bailleur_email: r.proprietaire?.email ?? '',
-                                  bailleur_nom: [r.proprietaire?.prenom, r.proprietaire?.nom].filter(Boolean).join(' '),
-                                  lead_statut: r.proprietaire?.lead_statut ?? '',
-                                  date_fin_essai: r.proprietaire?.date_fin_essai ?? '',
-                                  locataire_nom: [r.locataire.prenom, r.locataire.nom].filter(Boolean).join(' '),
-                                  locataire_email: r.locataire.email ?? '',
-                                  locataire_tel: r.locataire.telephone ?? '',
-                                  adresse_logement: r.locataire.adresse_logement ?? '',
-                                  rappel_mensuel: r.locataire.libelle_rappel_mensuel,
-                                  mode: r.locataire.mode_envoi_quittance ?? '',
-                                })),
+                                automationClassic.map((r) => {
+                                  const c = formatAutomationCompteLines(r.proprietaire);
+                                  return {
+                                    bailleur_email: r.proprietaire?.email ?? '',
+                                    bailleur_nom: [r.proprietaire?.prenom, r.proprietaire?.nom].filter(Boolean).join(' '),
+                                    lead_statut: r.proprietaire?.lead_statut ?? '',
+                                    plan_type: r.proprietaire?.plan_type ?? '',
+                                    plan_actuel: r.proprietaire?.plan_actuel ?? '',
+                                    date_inscription: r.proprietaire?.date_inscription ?? '',
+                                    created_at: r.proprietaire?.created_at ?? '',
+                                    jours_depuis_inscription: c.joursDepuisInscription ?? '',
+                                    date_fin_essai: r.proprietaire?.date_fin_essai ?? '',
+                                    note_sans_fin_essai: r.proprietaire?.date_fin_essai ? '' : c.hintSansEssai ?? '',
+                                    abonnement_actif: r.proprietaire?.abonnement_actif === true ? 'oui' : 'non',
+                                    stripe_lie: r.proprietaire?.stripe_customer_id ? 'oui' : 'non',
+                                    locataire_nom: [r.locataire.prenom, r.locataire.nom].filter(Boolean).join(' '),
+                                    locataire_email: r.locataire.email ?? '',
+                                    locataire_tel: r.locataire.telephone ?? '',
+                                    adresse_logement: r.locataire.adresse_logement ?? '',
+                                    rappel_mensuel: r.locataire.libelle_rappel_mensuel,
+                                    mode: r.locataire.mode_envoi_quittance ?? '',
+                                  };
+                                }),
                               )
                             }
                             className="text-xs text-[#2563eb] hover:underline"
@@ -1642,36 +1727,55 @@ const AdminAnalytics: React.FC = () => {
                             <thead className="bg-[#f9fafb] sticky top-0">
                               <tr>
                                 <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Bailleur</th>
+                                <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Plan</th>
+                                <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Inscrit</th>
+                                <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Stripe</th>
                                 <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Locataire</th>
                                 <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Rappel mensuel</th>
                                 <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Lead / essai</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {automationClassic.map((r) => (
+                              {automationClassic.map((r) => {
+                                const c = formatAutomationCompteLines(r.proprietaire);
+                                return (
                                 <tr key={r.locataire.id} className="border-t border-[#f3f4f6]">
                                   <td className="px-2 py-1 text-[#111827] max-w-[160px] truncate" title={r.proprietaire?.email ?? ''}>
                                     {r.proprietaire?.email ?? '—'}
                                   </td>
+                                  <td className="px-2 py-1 text-[#4b5563] max-w-[100px] align-top" title={c.plan}>
+                                    <span className="line-clamp-2">{c.plan}</span>
+                                  </td>
+                                  <td className="px-2 py-1 text-[#4b5563] max-w-[120px] align-top whitespace-nowrap" title={c.cree}>
+                                    {c.cree}
+                                  </td>
+                                  <td className="px-2 py-1 text-[#4b5563] align-top whitespace-nowrap">{c.stripe}</td>
                                   <td className="px-2 py-1 text-[#4b5563] max-w-[180px] truncate" title={r.locataire.adresse_logement ?? ''}>
                                     {[r.locataire.prenom, r.locataire.nom].filter(Boolean).join(' ') || '—'}
                                   </td>
                                   <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
                                     {r.locataire.libelle_rappel_mensuel}
                                   </td>
-                                  <td className="px-2 py-1 text-[#4b5563] max-w-[140px]">
+                                  <td className="px-2 py-1 text-[#4b5563] max-w-[200px]">
                                     <span className="block truncate" title={r.proprietaire?.lead_statut ?? ''}>
                                       {r.proprietaire?.lead_statut ?? '—'}
                                     </span>
-                                    {r.proprietaire?.date_fin_essai && (
+                                    {r.proprietaire?.date_fin_essai ? (
                                       <span className="text-[10px] text-[#9ca3af] block">
                                         fin essai :{' '}
                                         {new Date(r.proprietaire.date_fin_essai).toLocaleDateString('fr-FR')}
                                       </span>
+                                    ) : (
+                                      c.hintSansEssai && (
+                                        <span className="text-[10px] text-amber-800 block leading-snug mt-0.5">
+                                          {c.hintSansEssai}
+                                        </span>
+                                      )
                                     )}
                                   </td>
                                 </tr>
-                              ))}
+                                );
+                              })}
                             </tbody>
                           </table>
                         </div>
