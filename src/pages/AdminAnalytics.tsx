@@ -147,6 +147,140 @@ const AdminAnalytics: React.FC = () => {
   const [freeAccountLeads, setFreeAccountLeads] = useState<TrialLeadReportRow[] | null>(null);
   const [freeStats, setFreeStats] = useState<{ count: number; active: number; expired: number } | null>(null);
 
+  type AutomationSystematicRow = {
+    id: string;
+    status: string;
+    periode: string;
+    date_preavis: string;
+    date_envoi_auto: string;
+    locataire: {
+      id: string;
+      nom: string | null;
+      prenom: string | null;
+      email: string | null;
+      telephone: string | null;
+      adresse_logement: string | null;
+      mode_envoi_quittance: string | null;
+    } | null;
+    proprietaire: {
+      id: string;
+      email: string | null;
+      nom: string | null;
+      prenom: string | null;
+      lead_statut: string | null;
+      date_fin_essai: string | null;
+      abonnement_actif: boolean | null;
+    } | null;
+  };
+
+  type AutomationClassicRow = {
+    locataire: {
+      id: string;
+      nom: string | null;
+      prenom: string | null;
+      email: string | null;
+      telephone: string | null;
+      adresse_logement: string | null;
+      mode_envoi_quittance: string | null;
+      date_rappel: number | null;
+      heure_rappel: number | null;
+      minute_rappel: number | null;
+      libelle_rappel_mensuel: string;
+    };
+    proprietaire: {
+      id: string;
+      email: string | null;
+      nom: string | null;
+      prenom: string | null;
+      lead_statut: string | null;
+      date_fin_essai: string | null;
+      abonnement_actif: boolean | null;
+    } | null;
+  };
+
+  const [automationLoading, setAutomationLoading] = useState(false);
+  const [automationError, setAutomationError] = useState('');
+  const [automationStats, setAutomationStats] = useState<{
+    systematic_pending: number;
+    systematic_reminder_sent: number;
+    systematic_total: number;
+    rappel_classique_locataires: number;
+  } | null>(null);
+  const [automationSystematic, setAutomationSystematic] = useState<AutomationSystematicRow[] | null>(null);
+  const [automationClassic, setAutomationClassic] = useState<AutomationClassicRow[] | null>(null);
+  const [automationGeneratedAt, setAutomationGeneratedAt] = useState<string | null>(null);
+  const [automationTab, setAutomationTab] = useState<'systematic' | 'classic'>('systematic');
+
+  const fetchAutomationOverview = useCallback(async () => {
+    setAutomationLoading(true);
+    setAutomationError('');
+    try {
+      const { data, error } = await supabase.functions.invoke('get-admin-automation-overview', {
+        body: { adminPassword: ADMIN_PASSWORD },
+      });
+      if (error) {
+        setAutomationError(error.message || 'Erreur chargement automatisations');
+        setAutomationStats(null);
+        setAutomationSystematic(null);
+        setAutomationClassic(null);
+        setAutomationGeneratedAt(null);
+        return;
+      }
+      if (!data || (data as { error?: string }).error) {
+        setAutomationError((data as { error?: string })?.error || 'Erreur chargement');
+        setAutomationStats(null);
+        setAutomationSystematic(null);
+        setAutomationClassic(null);
+        setAutomationGeneratedAt(null);
+        return;
+      }
+      const p = data as {
+        stats?: {
+          systematic_pending: number;
+          systematic_reminder_sent: number;
+          systematic_total: number;
+          rappel_classique_locataires: number;
+        };
+        systematic?: AutomationSystematicRow[];
+        rappelClassique?: AutomationClassicRow[];
+        generatedAt?: string;
+      };
+      setAutomationStats(p.stats ?? null);
+      setAutomationSystematic(p.systematic ?? []);
+      setAutomationClassic(p.rappelClassique ?? []);
+      setAutomationGeneratedAt(p.generatedAt ?? null);
+    } catch (e) {
+      setAutomationError(e instanceof Error ? e.message : String(e));
+      setAutomationStats(null);
+      setAutomationSystematic(null);
+      setAutomationClassic(null);
+      setAutomationGeneratedAt(null);
+    } finally {
+      setAutomationLoading(false);
+    }
+  }, []);
+
+  const downloadAutomationCsv = (
+    filename: string,
+    rows: Record<string, string | number | boolean | null | undefined>[],
+  ) => {
+    if (rows.length === 0) return;
+    const keys = Object.keys(rows[0]);
+    const escape = (v: unknown) => {
+      const s = v == null ? '' : String(v);
+      if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+      return s;
+    };
+    const lines = [keys.join(','), ...rows.map((r) => keys.map((k) => escape(r[k])).join(','))];
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
@@ -1332,6 +1466,218 @@ const AdminAnalytics: React.FC = () => {
                       </p>
                     )}
                   </div>
+                )}
+              </div>
+            </div>
+
+            {/* Automatisations quittances (admin) */}
+            <div className="bg-white rounded-xl shadow-sm border border-[#e5e7eb] overflow-hidden">
+              <div className="p-4 border-b border-[#e5e7eb] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                  <h2 className="text-lg font-semibold text-[#111827]">Automatisations quittances</h2>
+                  <p className="text-sm text-[#6b7280] mt-1">
+                    <strong>Préavis systématique</strong> : lignes actives dans{' '}
+                    <code className="bg-gray-100 px-1 rounded text-xs">quittances_systematic</code> (en attente ou relance
+                    envoyée). <strong>Rappel classique</strong> : locataires avec mode rappel + jour/heure configurés
+                    (récurrence mensuelle).
+                  </p>
+                  {automationStats && (
+                    <p className="text-xs text-[#4b5563] mt-1">
+                      Systématique : <strong>{automationStats.systematic_total}</strong> dossier(s) (
+                      {automationStats.systematic_pending} en attente action / envoi auto,{' '}
+                      {automationStats.systematic_reminder_sent} relance bailleur) · Rappel classique :{' '}
+                      <strong>{automationStats.rappel_classique_locataires}</strong> locataire(s) configuré(s)
+                    </p>
+                  )}
+                  {automationGeneratedAt && (
+                    <p className="text-[10px] text-[#9ca3af] mt-1">
+                      Données du {new Date(automationGeneratedAt).toLocaleString('fr-FR')}
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={fetchAutomationOverview}
+                  disabled={automationLoading}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#059669] text-white hover:bg-[#047857] transition-colors disabled:opacity-50 self-start sm:self-auto"
+                >
+                  {automationLoading ? 'Chargement…' : 'Charger / actualiser'}
+                </button>
+              </div>
+              <div className="p-4">
+                {automationError && (
+                  <p className="text-sm text-red-600 mb-3">Erreur : {automationError}</p>
+                )}
+                {!automationSystematic && !automationLoading && !automationError && (
+                  <p className="text-sm text-[#6b7280]">
+                    Cliquez sur « Charger / actualiser » pour afficher le détail (tous comptes confondus).
+                  </p>
+                )}
+                {automationSystematic && automationClassic && (
+                  <>
+                    <div className="flex flex-wrap gap-2 mb-3 border-b border-[#e5e7eb] pb-2">
+                      <button
+                        type="button"
+                        onClick={() => setAutomationTab('systematic')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
+                          automationTab === 'systematic'
+                            ? 'bg-[#1e3a5f] text-white'
+                            : 'bg-[#f3f4f6] text-[#374151] hover:bg-[#e5e7eb]'
+                        }`}
+                      >
+                        Préavis systématique ({automationSystematic.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAutomationTab('classic')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
+                          automationTab === 'classic'
+                            ? 'bg-[#1e3a5f] text-white'
+                            : 'bg-[#f3f4f6] text-[#374151] hover:bg-[#e5e7eb]'
+                        }`}
+                      >
+                        Rappel classique ({automationClassic.length})
+                      </button>
+                    </div>
+                    {automationTab === 'systematic' && (
+                      <div className="space-y-2">
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              downloadAutomationCsv(
+                                `automation-systematic-${new Date().toISOString().slice(0, 10)}.csv`,
+                                automationSystematic.map((r) => ({
+                                  bailleur_email: r.proprietaire?.email ?? '',
+                                  bailleur_nom: [r.proprietaire?.prenom, r.proprietaire?.nom].filter(Boolean).join(' '),
+                                  lead_statut: r.proprietaire?.lead_statut ?? '',
+                                  date_fin_essai: r.proprietaire?.date_fin_essai ?? '',
+                                  locataire_nom: [r.locataire?.prenom, r.locataire?.nom].filter(Boolean).join(' '),
+                                  locataire_email: r.locataire?.email ?? '',
+                                  locataire_tel: r.locataire?.telephone ?? '',
+                                  adresse_logement: r.locataire?.adresse_logement ?? '',
+                                  periode: r.periode,
+                                  statut: r.status,
+                                  date_preavis: r.date_preavis,
+                                  date_envoi_auto: r.date_envoi_auto,
+                                })),
+                              )
+                            }
+                            className="text-xs text-[#2563eb] hover:underline"
+                          >
+                            Export CSV
+                          </button>
+                        </div>
+                        <div className="overflow-x-auto max-h-[480px] overflow-y-auto">
+                          <table className="min-w-full text-xs border-t border-b border-[#e5e7eb]">
+                            <thead className="bg-[#f9fafb] sticky top-0">
+                              <tr>
+                                <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Bailleur</th>
+                                <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Locataire</th>
+                                <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Période</th>
+                                <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Statut</th>
+                                <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Préavis</th>
+                                <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Envoi auto prévu</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {automationSystematic.map((r) => (
+                                <tr key={r.id} className="border-t border-[#f3f4f6]">
+                                  <td className="px-2 py-1 text-[#111827] max-w-[160px] truncate" title={r.proprietaire?.email ?? ''}>
+                                    {r.proprietaire?.email ?? '—'}
+                                  </td>
+                                  <td className="px-2 py-1 text-[#4b5563] max-w-[140px] truncate" title={[r.locataire?.prenom, r.locataire?.nom].filter(Boolean).join(' ')}>
+                                    {[r.locataire?.prenom, r.locataire?.nom].filter(Boolean).join(' ') || '—'}
+                                  </td>
+                                  <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">{r.periode}</td>
+                                  <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">{r.status}</td>
+                                  <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
+                                    {r.date_preavis ? new Date(r.date_preavis).toLocaleString('fr-FR') : '—'}
+                                  </td>
+                                  <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
+                                    {r.date_envoi_auto ? new Date(r.date_envoi_auto).toLocaleString('fr-FR') : '—'}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        {automationSystematic.length === 0 && (
+                          <p className="text-xs text-[#6b7280]">Aucun dossier systématique actif pour l’instant.</p>
+                        )}
+                      </div>
+                    )}
+                    {automationTab === 'classic' && (
+                      <div className="space-y-2">
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              downloadAutomationCsv(
+                                `automation-rappel-classique-${new Date().toISOString().slice(0, 10)}.csv`,
+                                automationClassic.map((r) => ({
+                                  bailleur_email: r.proprietaire?.email ?? '',
+                                  bailleur_nom: [r.proprietaire?.prenom, r.proprietaire?.nom].filter(Boolean).join(' '),
+                                  lead_statut: r.proprietaire?.lead_statut ?? '',
+                                  date_fin_essai: r.proprietaire?.date_fin_essai ?? '',
+                                  locataire_nom: [r.locataire.prenom, r.locataire.nom].filter(Boolean).join(' '),
+                                  locataire_email: r.locataire.email ?? '',
+                                  locataire_tel: r.locataire.telephone ?? '',
+                                  adresse_logement: r.locataire.adresse_logement ?? '',
+                                  rappel_mensuel: r.locataire.libelle_rappel_mensuel,
+                                  mode: r.locataire.mode_envoi_quittance ?? '',
+                                })),
+                              )
+                            }
+                            className="text-xs text-[#2563eb] hover:underline"
+                          >
+                            Export CSV
+                          </button>
+                        </div>
+                        <div className="overflow-x-auto max-h-[480px] overflow-y-auto">
+                          <table className="min-w-full text-xs border-t border-b border-[#e5e7eb]">
+                            <thead className="bg-[#f9fafb] sticky top-0">
+                              <tr>
+                                <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Bailleur</th>
+                                <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Locataire</th>
+                                <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Rappel mensuel</th>
+                                <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Lead / essai</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {automationClassic.map((r) => (
+                                <tr key={r.locataire.id} className="border-t border-[#f3f4f6]">
+                                  <td className="px-2 py-1 text-[#111827] max-w-[160px] truncate" title={r.proprietaire?.email ?? ''}>
+                                    {r.proprietaire?.email ?? '—'}
+                                  </td>
+                                  <td className="px-2 py-1 text-[#4b5563] max-w-[180px] truncate" title={r.locataire.adresse_logement ?? ''}>
+                                    {[r.locataire.prenom, r.locataire.nom].filter(Boolean).join(' ') || '—'}
+                                  </td>
+                                  <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
+                                    {r.locataire.libelle_rappel_mensuel}
+                                  </td>
+                                  <td className="px-2 py-1 text-[#4b5563] max-w-[140px]">
+                                    <span className="block truncate" title={r.proprietaire?.lead_statut ?? ''}>
+                                      {r.proprietaire?.lead_statut ?? '—'}
+                                    </span>
+                                    {r.proprietaire?.date_fin_essai && (
+                                      <span className="text-[10px] text-[#9ca3af] block">
+                                        fin essai :{' '}
+                                        {new Date(r.proprietaire.date_fin_essai).toLocaleDateString('fr-FR')}
+                                      </span>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        {automationClassic.length === 0 && (
+                          <p className="text-xs text-[#6b7280]">Aucun locataire en rappel classique configuré.</p>
+                        )}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
