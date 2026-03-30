@@ -62,7 +62,7 @@ export interface AnalyzeLeadsResult {
 }
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const TEST_DOMAINS = ['@maildrop.cc'];
+const TEST_DOMAINS = ['@maildrop.cc', '@maidrop.cc'];
 const TEST_PREFIXES = ['2speek'];
 const TEMP_DOMAINS = [
   'yopmail.com',
@@ -122,7 +122,7 @@ export function analyzeEmail(email: string): EmailAnalysis {
   }
   const lower = e.toLowerCase();
   if (TEST_DOMAINS.some((d) => lower.endsWith(d))) {
-    return { email: e, isValid: false, isTest: true, hasTypo: false, reason: 'Domaine test (maildrop)' };
+    return { email: e, isValid: false, isTest: true, hasTypo: false, reason: 'Domaine test (maildrop / similaire)' };
   }
   if (TEST_PREFIXES.some((p) => lower.startsWith(p))) {
     return { email: e, isValid: false, isTest: true, hasTypo: false, reason: 'Préfixe test (2speek)' };

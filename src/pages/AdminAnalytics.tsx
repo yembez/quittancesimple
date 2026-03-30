@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import {
   analyzeLeads,
   exportSegmentToCSV,
+  isTestEmail,
   type AnalyzeLeadsResult,
   type LeadSegment,
   type ProprietaireRow,
@@ -309,7 +310,7 @@ const AdminAnalytics: React.FC = () => {
         return;
       }
 
-      const rows = (data || []) as ProprietaireRow[];
+      const rows = (data || []).filter((p) => !isTestEmail(p.email || '')) as ProprietaireRow[];
       const analysis = analyzeLeads(rows);
       setResult(analysis);
     } catch (e) {
@@ -1479,7 +1480,9 @@ const AdminAnalytics: React.FC = () => {
                     <strong>Préavis systématique</strong> : lignes actives dans{' '}
                     <code className="bg-gray-100 px-1 rounded text-xs">quittances_systematic</code> (en attente ou relance
                     envoyée). <strong>Rappel classique</strong> : locataires avec mode rappel + jour/heure configurés
-                    (récurrence mensuelle).
+                    (récurrence mensuelle). Les comptes bailleur de test (ex.{' '}
+                    <code className="bg-gray-100 px-1 rounded text-xs">@maildrop.cc</code>, préfixe{' '}
+                    <code className="bg-gray-100 px-1 rounded text-xs">2speek</code>) sont exclus.
                   </p>
                   {automationStats && (
                     <p className="text-xs text-[#4b5563] mt-1">

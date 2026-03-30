@@ -30,6 +30,26 @@ type PropLite = {
   abonnement_actif: boolean | null;
 };
 
+/** Aligné sur les exclusions du rapport essai (comptes / e-mails de test). */
+function isExcludedTestBailleurEmail(email: string | null | undefined): boolean {
+  const e = (email ?? "").trim().toLowerCase();
+  if (!e) return false;
+  if (e.endsWith("@maildrop.cc")) return true;
+  if (e.endsWith("@maidrop.cc")) return true;
+  if (e.includes("@sharklasers.com")) return true;
+  if (e.startsWith("2speek")) return true;
+  if (e.startsWith("skszqtuxxeacphxxhw@ne")) return true;
+  const blocked = new Set([
+    "bailleur@maildrop.cc",
+    "bailleur@maidrop.cc",
+    "bailleur2@gmail.com",
+    "noreply.eazypic@gmail.com",
+    "ioeqwdv@sharklasers.com",
+    "lioeqwdv@sharklasers.com",
+  ]);
+  return blocked.has(e);
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -128,6 +148,13 @@ Deno.serve(async (req: Request) => {
     proprietaire: propMap.get(row.proprietaire_id) ?? null,
   }));
 
+  const systematicFiltered = systematicEnriched
+    .filter((r) => r.proprietaire && !isExcludedTestBailleurEmail(r.proprietaire.email))
+    .sort(
+      (a, b) =>
+        new Date(a.date_envoi_auto).getTime() - new Date(b.date_envoi_auto).getTime(),
+    );
+
   // --- 2) Rappel classique : configs actives (récurrence)
   const { data: classicRows, error: classicErr } = await supabase
     .from("locataires")
@@ -186,18 +213,30 @@ Deno.serve(async (req: Request) => {
     };
   });
 
+  const rappelClassiqueFiltered = rappelClassique
+    .filter((r) => r.proprietaire && !isExcludedTestBailleurEmail(r.proprietaire.email))
+    .sort((a, b) => {
+      const ea = (a.proprietaire?.email ?? "").toLowerCase();
+      const eb = (b.proprietaire?.email ?? "").toLowerCase();
+      const c = ea.localeCompare(eb, "fr");
+      if (c !== 0) return c;
+      const na = [a.locataire.prenom, a.locataire.nom].filter(Boolean).join(" ");
+      const nb = [b.locataire.prenom, b.locataire.nom].filter(Boolean).join(" ");
+      return na.localeCompare(nb, "fr");
+    });
+
   const stats = {
-    systematic_pending: systematicEnriched.filter((r) => r.status === "pending_owner_action").length,
-    systematic_reminder_sent: systematicEnriched.filter((r) => r.status === "reminder_sent").length,
-    systematic_total: systematicEnriched.length,
-    rappel_classique_locataires: rappelClassique.length,
+    systematic_pending: systematicFiltered.filter((r) => r.status === "pending_owner_action").length,
+    systematic_reminder_sent: systematicFiltered.filter((r) => r.status === "reminder_sent").length,
+    systematic_total: systematicFiltered.length,
+    rappel_classique_locataires: rappelClassiqueFiltered.length,
   };
 
   return new Response(
     JSON.stringify({
       stats,
-      systematic: systematicEnriched,
-      rappelClassique,
+      systematic: systematicFiltered,
+      rappelClassique: rappelClassiqueFiltered,
       generatedAt: new Date().toISOString(),
     }),
     { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
