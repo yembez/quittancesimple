@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
+import { sendOwnerReminderEmail } from "../_shared/owner-reminder-email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -309,8 +310,52 @@ Deno.serve(async (req: Request) => {
           }
 
           const prop = proprietaire as Record<string, unknown>;
-          const shortCode = generateShortCode(6);
+          const telephoneStr = String(prop?.telephone ?? prop?.phone ?? '').trim();
 
+          // E-mail bailleur : le join PostgREST peut parfois ne pas exposer email ; on relit la ligne si besoin.
+          let bailleurEmail = String(prop?.email ?? '').trim();
+          if (!bailleurEmail && locataire.proprietaire_id) {
+            const { data: pRow, error: emailFetchErr } = await supabase
+              .from('proprietaires')
+              .select('email')
+              .eq('id', locataire.proprietaire_id)
+              .maybeSingle();
+            if (emailFetchErr) {
+              console.error('⚠️ Lecture email proprietaires (fallback):', emailFetchErr);
+            }
+            bailleurEmail = String(pRow?.email ?? '').trim();
+            if (bailleurEmail) {
+              console.log(`📧 Email bailleur récupéré depuis la table proprietaires (fallback embed)`);
+            }
+          }
+
+          // 1) E-mail d'abord (Resend directement — + clé Resend via env ou Vault comme le reste du projet)
+          let emailResult: { success: boolean; error?: string } = { success: false, error: 'No email configured' };
+          if (bailleurEmail) {
+            console.log(`📧 Sending owner reminder email (inline Resend) for locataire=${locataire.id}`);
+            const sent = await sendOwnerReminderEmail({
+              proprietaireId: String(prop.id ?? ''),
+              proprietaireEmail: bailleurEmail,
+              proprietaireName: `${prop.prenom || ''} ${prop.nom || ''}`.trim(),
+              locataireName: `${locataire.prenom || ''} ${locataire.nom || ''}`.trim(),
+              locataireId: String(locataire.id),
+              mois: `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} ${year}`,
+              annee: year,
+              montantTotal: montantTotal,
+            });
+            if (sent.success) {
+              emailResult = { success: true };
+              console.log(`✅ Email rappel envoyé (bailleur)`);
+            } else {
+              emailResult = { success: false, error: sent.error };
+              console.error(`⚠️ Email failed:`, sent.error);
+            }
+          } else {
+            console.error(`⚠️ Aucun e-mail bailleur pour proprietaire_id=${String(prop?.id ?? locataire.proprietaire_id)} — impossible d'envoyer le mail (le SMS peut quand même partir)`);
+          }
+
+          // 2) Short link + SMS ensuite
+          const shortCode = generateShortCode(6);
           const { error: shortLinkError } = await supabase
             .from('short_links')
             .insert({
@@ -329,14 +374,14 @@ Deno.serve(async (req: Request) => {
             results.push({
               locataire_id: locataire.id,
               success: false,
-              error: 'Failed to create short link'
+              error: 'Failed to create short link',
+              email_sent: emailResult.success
             });
             continue;
           }
 
           console.log(`🔗 Short link created: ${shortCode}`);
 
-          const telephoneStr = String(prop?.telephone ?? prop?.phone ?? '').trim();
           let smsResult: Record<string, unknown> = { success: false };
           if (telephoneStr) {
             const smsPayload = {
@@ -375,64 +420,28 @@ Deno.serve(async (req: Request) => {
             console.error(`❌ Telephone manquant pour propriétaire (locataire ${locataire.id}) – SMS non envoyé. Proprietaire keys: ${Object.keys(prop || {}).join(', ')}`);
           }
 
-          let emailResult = { success: false, error: 'No email configured' };
-          if (prop?.email) {
-            try {
-              const emailPayload = {
-                proprietaireId: prop.id,
-                proprietaireEmail: prop.email,
-                proprietaireName: `${prop.prenom || ''} ${prop.nom || ''}`.trim(),
-                locataireName: `${locataire.prenom || ''} ${locataire.nom || ''}`.trim(),
-                locataireId: locataire.id,
-                mois: `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} ${year}`,
-                annee: year,
-                montantTotal: montantTotal,
-                shortCode: shortCode
-              };
+          const smsOk = (smsResult as { success?: boolean }).success === true;
+          const emailOk = emailResult.success === true;
+          const bothOk = smsOk && emailOk;
 
-              console.log(`📧 Sending email to ${prop.email} with payload:`, emailPayload);
-
-              const emailResponse = await fetch(
-                `${supabaseUrl}/functions/v1/send-owner-reminder`,
-                {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${supabaseServiceKey}`,
-                  },
-                  body: JSON.stringify(emailPayload),
-                }
-              );
-              emailResult = await emailResponse.json();
-              if (emailResult.success) {
-                console.log(`✅ Email sent successfully to ${prop.email}`);
-              } else {
-                console.error(`⚠️ Email failed:`, emailResult.error);
-              }
-            } catch (emailError) {
-              console.error(`⚠️ Email error:`, emailError);
-              emailResult = { success: false, error: (emailError as Error).message };
-            }
-          } else {
-            console.log(`⚠️ No email configured for proprietaire ${prop?.id}`);
-          }
-
-          if ((smsResult as { success?: boolean }).success) {
-            console.log(`✅ SMS sent successfully to ${telephoneStr ? '***' + telephoneStr.slice(-4) : 'n/a'}`);
+          if (bothOk) {
+            console.log(`✅ SMS + e-mail OK pour ${locataire.prenom} ${locataire.nom}`);
             results.push({
               locataire_id: locataire.id,
               success: true,
               shortCode: shortCode,
-              sms_provider: smsResult.data?.provider,
-              email_sent: emailResult.success
+              sms_provider: (smsResult as { data?: { provider?: string } }).data?.provider,
+              email_sent: true
             });
           } else {
-            console.error(`❌ Failed to send SMS:`, (smsResult as { error?: string }).error);
+            const errMsg = `SMS (${smsOk ? 'ok' : 'failed'}) + Email (${emailOk ? 'ok' : 'failed'})${emailResult.error ? `: ${emailResult.error}` : ''}`;
+            console.error(`❌ Rappel incomplet:`, errMsg);
             results.push({
               locataire_id: locataire.id,
               success: false,
-              error: (smsResult as { error?: string }).error,
-              email_sent: emailResult.success
+              error: errMsg,
+              email_sent: emailOk,
+              sms_sent: smsOk
             });
           }
         }
