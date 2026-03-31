@@ -53,12 +53,19 @@ const AutomationConfigModal = ({
         mode_envoi_quittance: mode,
       };
 
-      const { error } = await supabase
+      const { data: updatedRows, error } = await supabase
         .from('locataires')
         .update(payload)
-        .eq('proprietaire_id', proprietaireId);
+        .eq('proprietaire_id', proprietaireId)
+        .select('id');
 
       if (error) throw error;
+      if (!updatedRows?.length) {
+        alert(
+          "Aucun locataire n'a été mis à jour. Vérifiez que vous avez au moins un locataire actif, ou réessayez après rechargement de la page."
+        );
+        return;
+      }
 
       onSuccess(payload);
       onClose();

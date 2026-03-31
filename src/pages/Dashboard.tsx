@@ -428,6 +428,20 @@ setRecentTransactions(txData || []);
     }
   };
 
+  /** Recharge les locataires sans écran de chargement global (ex. après modal automatisation). */
+  const refreshLocatairesOnly = async (proprietaireId: string) => {
+    try {
+      const { data: locatairesData } = await supabase
+        .from('locataires')
+        .select('*')
+        .eq('proprietaire_id', proprietaireId)
+        .eq('actif', true);
+      if (locatairesData) setLocataires(locatairesData);
+    } catch (e) {
+      console.error('refreshLocatairesOnly:', e);
+    }
+  };
+
   const handleSendQuittanceClick = (locataire: Locataire) => {
     if (!proprietaire) return;
 
@@ -1220,27 +1234,25 @@ const handleResendAccessLink = async () => {
     );
   }
 
-  // État global d'automatisation (pour la carte de synthèse)
-  const hasAutomationConfig =
-    locataires.length > 0 &&
-    locataires.some(
-      (l) =>
-        typeof l.date_rappel === 'number' &&
-        l.date_rappel > 0 &&
-        typeof l.heure_rappel === 'number' &&
-        typeof l.minute_rappel === 'number' &&
-        !!l.mode_envoi_quittance
+  // PostgREST peut renvoyer des entiers en number ou string selon les cas — on normalise pour l'affichage.
+  const isAutomationConfiguredForLocataire = (l: Locataire) => {
+    const dr = Number(l.date_rappel);
+    const hr = Number(l.heure_rappel);
+    const mr = Number(l.minute_rappel);
+    return (
+      Number.isFinite(dr) &&
+      dr > 0 &&
+      Number.isFinite(hr) &&
+      Number.isFinite(mr) &&
+      !!l.mode_envoi_quittance
     );
+  };
+
+  const hasAutomationConfig =
+    locataires.length > 0 && locataires.some(isAutomationConfiguredForLocataire);
 
   const firstConfiguredLocataire = hasAutomationConfig
-    ? locataires.find(
-        (l) =>
-          typeof l.date_rappel === 'number' &&
-          l.date_rappel > 0 &&
-          typeof l.heure_rappel === 'number' &&
-          typeof l.minute_rappel === 'number' &&
-          !!l.mode_envoi_quittance
-      ) || null
+    ? locataires.find(isAutomationConfiguredForLocataire) || null
     : null;
 
   const prochaineQuittanceLabel = firstConfiguredLocataire
@@ -1764,7 +1776,7 @@ const handleResendAccessLink = async () => {
           onClose={() => setShowAutomationConfigModal(false)}
           proprietaireId={proprietaire.id}
           locataires={locataires}
-          onSuccess={(updates) => {
+          onSuccess={async (updates) => {
             setLocataires((prev) =>
               prev.map((l) => ({
                 ...l,
@@ -1774,6 +1786,9 @@ const handleResendAccessLink = async () => {
                 mode_envoi_quittance: updates.mode_envoi_quittance,
               }))
             );
+            if (proprietaire?.id) {
+              await refreshLocatairesOnly(proprietaire.id);
+            }
           }}
         />
       )}
