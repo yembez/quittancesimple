@@ -486,7 +486,7 @@ const AdminAnalytics: React.FC = () => {
         return;
       }
 
-      const res = await fetch(`${String(supabaseUrl).replace(/\\/$/, '')}/functions/v1/admin-support-login`, {
+      const res = await fetch(`${String(supabaseUrl).replace(/\/$/, '')}/functions/v1/admin-support-login`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${supabaseKey}`,
