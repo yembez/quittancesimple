@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import {
   analyzeLeads,
@@ -43,6 +43,44 @@ type AutomationProprietaireFields = {
   created_at: string | null;
   date_inscription: string | null;
   stripe_customer_id: string | null;
+  telephone?: string | null;
+};
+
+type AutomationSystematicRow = {
+  id: string;
+  status: string;
+  periode: string;
+  date_preavis: string;
+  date_envoi_auto: string;
+  diagnostics?: { missing_locataire_email?: boolean; missing_owner_phone?: boolean };
+  locataire: {
+    id: string;
+    nom: string | null;
+    prenom: string | null;
+    email: string | null;
+    telephone: string | null;
+    adresse_logement: string | null;
+    mode_envoi_quittance: string | null;
+  } | null;
+  proprietaire: AutomationProprietaireFields | null;
+};
+
+type AutomationClassicRow = {
+  diagnostics?: { missing_locataire_email?: boolean; missing_owner_phone?: boolean };
+  locataire: {
+    id: string;
+    nom: string | null;
+    prenom: string | null;
+    email: string | null;
+    telephone: string | null;
+    adresse_logement: string | null;
+    mode_envoi_quittance: string | null;
+    date_rappel: number | null;
+    heure_rappel: number | null;
+    minute_rappel: number | null;
+    libelle_rappel_mensuel: string;
+  };
+  proprietaire: AutomationProprietaireFields | null;
 };
 
 function formatAutomationCompteLines(p: AutomationProprietaireFields | null): {
@@ -78,6 +116,93 @@ function formatAutomationCompteLines(p: AutomationProprietaireFields | null): {
     }
   }
   return { plan, cree, stripe, joursDepuisInscription, hintSansEssai };
+}
+
+/** Jours calendaires restants jusqu'à date_fin_essai (négatif = essai déjà terminé). */
+function computeTrialDaysRemaining(date_fin_essai: string | null | undefined): number | null {
+  if (!date_fin_essai) return null;
+  const end = new Date(date_fin_essai);
+  return Math.floor((end.getTime() - Date.now()) / 86400000);
+}
+
+type TrialSegmentKey = 'plus_20' | 'moins_20' | 'expire' | 'sans_date';
+
+function trialSegmentFromDateFinEssai(date_fin_essai: string | null | undefined): TrialSegmentKey {
+  if (!date_fin_essai) return 'sans_date';
+  const days = computeTrialDaysRemaining(date_fin_essai);
+  if (days === null) return 'sans_date';
+  if (days < 0) return 'expire';
+  if (days >= 20) return 'plus_20';
+  return 'moins_20';
+}
+
+type AutomationBailleurEntry = {
+  emailLower: string;
+  emailDisplay: string;
+  date_fin_essai: string | null;
+};
+
+function mergeAutomationBailleurs(
+  systematic: AutomationSystematicRow[],
+  classic: AutomationClassicRow[],
+  relanceOnly: boolean,
+): Map<string, AutomationBailleurEntry> {
+  const m = new Map<string, AutomationBailleurEntry>();
+
+  const put = (email: string | null | undefined, dfe: string | null) => {
+    const raw = String(email ?? '').trim();
+    if (!raw) return;
+    const el = raw.toLowerCase();
+    const prev = m.get(el);
+    if (!prev) {
+      m.set(el, { emailLower: el, emailDisplay: raw, date_fin_essai: dfe });
+    } else if (!prev.date_fin_essai && dfe) {
+      m.set(el, { ...prev, date_fin_essai: dfe });
+    }
+  };
+
+  for (const r of systematic) {
+    if (relanceOnly && r.diagnostics?.missing_locataire_email !== true) continue;
+    put(r.proprietaire?.email ?? null, r.proprietaire?.date_fin_essai ?? null);
+  }
+  for (const r of classic) {
+    if (
+      relanceOnly &&
+      r.diagnostics?.missing_owner_phone !== true &&
+      r.diagnostics?.missing_locataire_email !== true
+    ) {
+      continue;
+    }
+    put(r.proprietaire?.email ?? null, r.proprietaire?.date_fin_essai ?? null);
+  }
+  return m;
+}
+
+function segmentAutomationBailleurs(entries: Iterable<AutomationBailleurEntry>) {
+  const buckets: Record<TrialSegmentKey, AutomationBailleurEntry[]> = {
+    plus_20: [],
+    moins_20: [],
+    expire: [],
+    sans_date: [],
+  };
+  for (const entry of entries) {
+    const seg = trialSegmentFromDateFinEssai(entry.date_fin_essai);
+    buckets[seg].push(entry);
+  }
+  return {
+    buckets,
+    counts: {
+      plus_20: buckets.plus_20.length,
+      moins_20: buckets.moins_20.length,
+      expire: buckets.expire.length,
+      sans_date: buckets.sans_date.length,
+      total:
+        buckets.plus_20.length +
+        buckets.moins_20.length +
+        buckets.expire.length +
+        buckets.sans_date.length,
+    },
+  };
 }
 
 const AdminAnalytics: React.FC = () => {
@@ -205,43 +330,6 @@ const AdminAnalytics: React.FC = () => {
   const [freeAccountLeads, setFreeAccountLeads] = useState<TrialLeadReportRow[] | null>(null);
   const [freeStats, setFreeStats] = useState<{ count: number; active: number; expired: number } | null>(null);
 
-  type AutomationSystematicRow = {
-    id: string;
-    status: string;
-    periode: string;
-    date_preavis: string;
-    date_envoi_auto: string;
-    diagnostics?: { missing_locataire_email?: boolean; missing_owner_phone?: boolean };
-    locataire: {
-      id: string;
-      nom: string | null;
-      prenom: string | null;
-      email: string | null;
-      telephone: string | null;
-      adresse_logement: string | null;
-      mode_envoi_quittance: string | null;
-    } | null;
-    proprietaire: AutomationProprietaireFields | null;
-  };
-
-  type AutomationClassicRow = {
-    diagnostics?: { missing_locataire_email?: boolean; missing_owner_phone?: boolean };
-    locataire: {
-      id: string;
-      nom: string | null;
-      prenom: string | null;
-      email: string | null;
-      telephone: string | null;
-      adresse_logement: string | null;
-      mode_envoi_quittance: string | null;
-      date_rappel: number | null;
-      heure_rappel: number | null;
-      minute_rappel: number | null;
-      libelle_rappel_mensuel: string;
-    };
-    proprietaire: AutomationProprietaireFields | null;
-  };
-
   const [automationLoading, setAutomationLoading] = useState(false);
   const [automationError, setAutomationError] = useState('');
   const [automationStats, setAutomationStats] = useState<{
@@ -323,6 +411,40 @@ const AdminAnalytics: React.FC = () => {
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const automationSegmentationAll = useMemo(() => {
+    if (!automationSystematic || !automationClassic) return null;
+    const m = mergeAutomationBailleurs(automationSystematic, automationClassic, false);
+    return segmentAutomationBailleurs(m.values());
+  }, [automationSystematic, automationClassic]);
+
+  const automationSegmentationRelance = useMemo(() => {
+    if (!automationSystematic || !automationClassic) return null;
+    const m = mergeAutomationBailleurs(automationSystematic, automationClassic, true);
+    return segmentAutomationBailleurs(m.values());
+  }, [automationSystematic, automationClassic]);
+
+  const downloadAutomationSegmentCsv = (
+    filenamePrefix: string,
+    segment: TrialSegmentKey,
+    bucket: AutomationBailleurEntry[],
+  ) => {
+    const label: Record<TrialSegmentKey, string> = {
+      plus_20: '20j_et_plus',
+      moins_20: 'moins_20j_actif',
+      expire: 'essai_depasse',
+      sans_date: 'sans_date_fin_essai',
+    };
+    downloadAutomationCsv(
+      `${filenamePrefix}-${label[segment]}-${new Date().toISOString().slice(0, 10)}.csv`,
+      bucket.map((b) => ({
+        bailleur_email: b.emailDisplay,
+        segment_campagne: label[segment],
+        jours_restants_essai: computeTrialDaysRemaining(b.date_fin_essai) ?? '',
+        date_fin_essai: b.date_fin_essai ?? '',
+      })),
+    );
   };
 
   const handleAdminLogin = (e: React.FormEvent) => {
@@ -1607,6 +1729,197 @@ const AdminAnalytics: React.FC = () => {
                 )}
                 {automationSystematic && automationClassic && (
                   <>
+                    {automationSegmentationAll && automationSegmentationRelance && (
+                      <div className="mb-4 rounded-lg border border-[#e5e7eb] bg-[#f9fafb] p-3 text-xs space-y-3">
+                        <p className="font-semibold text-[#111827]">Segmentation essai (bailleurs uniques)</p>
+                        <p className="text-[#6b7280] leading-relaxed">
+                          Calcul à partir de <code className="bg-gray-100 px-1 rounded">date_fin_essai</code> :{' '}
+                          <strong>e-mail 1</strong> — au moins 20 jours restants ; <strong>e-mail 2</strong> — moins de 20
+                          jours mais essai encore actif (0–19 j.) ; <strong>e-mail 3</strong> — date de fin dépassée. Les
+                          comptes sans date en base sont indiqués à part (pas de fenêtre d’essai tracée).
+                        </p>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div className="space-y-2 border border-[#e5e7eb] rounded-md bg-white p-2">
+                            <p className="font-medium text-[#374151]">Tous les bailleurs avec automatisation</p>
+                            <p className="text-[#4b5563]">
+                              Total : <strong>{automationSegmentationAll.counts.total}</strong>
+                            </p>
+                            <ul className="space-y-1.5 text-[#4b5563]">
+                              <li className="flex flex-wrap items-center justify-between gap-2">
+                                <span>≥ 20 j. restants (e-mail 1)</span>
+                                <span className="flex items-center gap-2 shrink-0">
+                                  <strong>{automationSegmentationAll.counts.plus_20}</strong>
+                                  <button
+                                    type="button"
+                                    disabled={automationSegmentationAll.buckets.plus_20.length === 0}
+                                    onClick={() =>
+                                      downloadAutomationSegmentCsv(
+                                        'automation-tous',
+                                        'plus_20',
+                                        automationSegmentationAll.buckets.plus_20,
+                                      )
+                                    }
+                                    className="text-[#2563eb] hover:underline disabled:opacity-40 disabled:no-underline"
+                                  >
+                                    CSV
+                                  </button>
+                                </span>
+                              </li>
+                              <li className="flex flex-wrap items-center justify-between gap-2">
+                                <span>&lt; 20 j., essai actif (e-mail 2)</span>
+                                <span className="flex items-center gap-2 shrink-0">
+                                  <strong>{automationSegmentationAll.counts.moins_20}</strong>
+                                  <button
+                                    type="button"
+                                    disabled={automationSegmentationAll.buckets.moins_20.length === 0}
+                                    onClick={() =>
+                                      downloadAutomationSegmentCsv(
+                                        'automation-tous',
+                                        'moins_20',
+                                        automationSegmentationAll.buckets.moins_20,
+                                      )
+                                    }
+                                    className="text-[#2563eb] hover:underline disabled:opacity-40 disabled:no-underline"
+                                  >
+                                    CSV
+                                  </button>
+                                </span>
+                              </li>
+                              <li className="flex flex-wrap items-center justify-between gap-2">
+                                <span>Essai dépassé (e-mail 3)</span>
+                                <span className="flex items-center gap-2 shrink-0">
+                                  <strong>{automationSegmentationAll.counts.expire}</strong>
+                                  <button
+                                    type="button"
+                                    disabled={automationSegmentationAll.buckets.expire.length === 0}
+                                    onClick={() =>
+                                      downloadAutomationSegmentCsv(
+                                        'automation-tous',
+                                        'expire',
+                                        automationSegmentationAll.buckets.expire,
+                                      )
+                                    }
+                                    className="text-[#2563eb] hover:underline disabled:opacity-40 disabled:no-underline"
+                                  >
+                                    CSV
+                                  </button>
+                                </span>
+                              </li>
+                              <li className="flex flex-wrap items-center justify-between gap-2">
+                                <span className="text-[#92400e]">Sans date_fin_essai</span>
+                                <span className="flex items-center gap-2 shrink-0">
+                                  <strong>{automationSegmentationAll.counts.sans_date}</strong>
+                                  <button
+                                    type="button"
+                                    disabled={automationSegmentationAll.buckets.sans_date.length === 0}
+                                    onClick={() =>
+                                      downloadAutomationSegmentCsv(
+                                        'automation-tous',
+                                        'sans_date',
+                                        automationSegmentationAll.buckets.sans_date,
+                                      )
+                                    }
+                                    className="text-[#2563eb] hover:underline disabled:opacity-40 disabled:no-underline"
+                                  >
+                                    CSV
+                                  </button>
+                                </span>
+                              </li>
+                            </ul>
+                          </div>
+                          <div className="space-y-2 border border-[#e5e7eb] rounded-md bg-white p-2">
+                            <p className="font-medium text-[#374151]">
+                              À relancer — infos manquantes (tel « en 1 clic » et/ou e-mail locataire)
+                            </p>
+                            <p className="text-[#4b5563]">
+                              Total : <strong>{automationSegmentationRelance.counts.total}</strong>
+                            </p>
+                            <ul className="space-y-1.5 text-[#4b5563]">
+                              <li className="flex flex-wrap items-center justify-between gap-2">
+                                <span>≥ 20 j. restants (e-mail 1)</span>
+                                <span className="flex items-center gap-2 shrink-0">
+                                  <strong>{automationSegmentationRelance.counts.plus_20}</strong>
+                                  <button
+                                    type="button"
+                                    disabled={automationSegmentationRelance.buckets.plus_20.length === 0}
+                                    onClick={() =>
+                                      downloadAutomationSegmentCsv(
+                                        'automation-relance',
+                                        'plus_20',
+                                        automationSegmentationRelance.buckets.plus_20,
+                                      )
+                                    }
+                                    className="text-[#2563eb] hover:underline disabled:opacity-40 disabled:no-underline"
+                                  >
+                                    CSV
+                                  </button>
+                                </span>
+                              </li>
+                              <li className="flex flex-wrap items-center justify-between gap-2">
+                                <span>&lt; 20 j., essai actif (e-mail 2)</span>
+                                <span className="flex items-center gap-2 shrink-0">
+                                  <strong>{automationSegmentationRelance.counts.moins_20}</strong>
+                                  <button
+                                    type="button"
+                                    disabled={automationSegmentationRelance.buckets.moins_20.length === 0}
+                                    onClick={() =>
+                                      downloadAutomationSegmentCsv(
+                                        'automation-relance',
+                                        'moins_20',
+                                        automationSegmentationRelance.buckets.moins_20,
+                                      )
+                                    }
+                                    className="text-[#2563eb] hover:underline disabled:opacity-40 disabled:no-underline"
+                                  >
+                                    CSV
+                                  </button>
+                                </span>
+                              </li>
+                              <li className="flex flex-wrap items-center justify-between gap-2">
+                                <span>Essai dépassé (e-mail 3)</span>
+                                <span className="flex items-center gap-2 shrink-0">
+                                  <strong>{automationSegmentationRelance.counts.expire}</strong>
+                                  <button
+                                    type="button"
+                                    disabled={automationSegmentationRelance.buckets.expire.length === 0}
+                                    onClick={() =>
+                                      downloadAutomationSegmentCsv(
+                                        'automation-relance',
+                                        'expire',
+                                        automationSegmentationRelance.buckets.expire,
+                                      )
+                                    }
+                                    className="text-[#2563eb] hover:underline disabled:opacity-40 disabled:no-underline"
+                                  >
+                                    CSV
+                                  </button>
+                                </span>
+                              </li>
+                              <li className="flex flex-wrap items-center justify-between gap-2">
+                                <span className="text-[#92400e]">Sans date_fin_essai</span>
+                                <span className="flex items-center gap-2 shrink-0">
+                                  <strong>{automationSegmentationRelance.counts.sans_date}</strong>
+                                  <button
+                                    type="button"
+                                    disabled={automationSegmentationRelance.buckets.sans_date.length === 0}
+                                    onClick={() =>
+                                      downloadAutomationSegmentCsv(
+                                        'automation-relance',
+                                        'sans_date',
+                                        automationSegmentationRelance.buckets.sans_date,
+                                      )
+                                    }
+                                    className="text-[#2563eb] hover:underline disabled:opacity-40 disabled:no-underline"
+                                  >
+                                    CSV
+                                  </button>
+                                </span>
+                              </li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     <div className="flex flex-wrap gap-2 mb-3 border-b border-[#e5e7eb] pb-2">
                       <button
                         type="button"
