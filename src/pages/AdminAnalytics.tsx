@@ -487,11 +487,22 @@ const AdminAnalytics: React.FC = () => {
         },
       });
       if (error) {
-        setSupportError(error.message || 'Erreur génération lien');
+        const anyErr = error as any;
+        const status = anyErr?.context?.status ?? anyErr?.status ?? null;
+        const body = anyErr?.context?.body ?? anyErr?.context?.response ?? null;
+        const debug =
+          body != null
+            ? typeof body === 'string'
+              ? body
+              : JSON.stringify(body)
+            : '';
+        setSupportError(
+          `Erreur génération lien${status ? ` (HTTP ${status})` : ''}: ${error.message || 'non-2xx'}${debug ? `\n\nDétail:\n${debug}` : ''}`
+        );
         return;
       }
       if (data?.error) {
-        setSupportError(data.error);
+        setSupportError(`${String(data.error)}${data?.detail ? `\n\nDétail:\n${String(data.detail)}` : ''}`);
         return;
       }
       setSupportLink(String(data?.actionLink ?? ''));
