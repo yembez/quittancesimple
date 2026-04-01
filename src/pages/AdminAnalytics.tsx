@@ -479,37 +479,49 @@ const AdminAnalytics: React.FC = () => {
     setSupportLink('');
     setSupportMeta(null);
     try {
-      const { data, error } = await supabase.functions.invoke('admin-support-login', {
-        body: {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      if (!supabaseUrl || !supabaseKey) {
+        setSupportError('Configuration front manquante (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY).');
+        return;
+      }
+
+      const res = await fetch(`${String(supabaseUrl).replace(/\\/$/, '')}/functions/v1/admin-support-login`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           adminPassword: ADMIN_PASSWORD,
           email,
           reason: supportReason.trim(),
-        },
+        }),
       });
-      if (error) {
-        const anyErr = error as any;
-        const status = anyErr?.context?.status ?? anyErr?.status ?? null;
-        const body = anyErr?.context?.body ?? anyErr?.context?.response ?? null;
-        const debug =
-          body != null
-            ? typeof body === 'string'
-              ? body
-              : JSON.stringify(body)
-            : '';
-        setSupportError(
-          `Erreur génération lien${status ? ` (HTTP ${status})` : ''}: ${error.message || 'non-2xx'}${debug ? `\n\nDétail:\n${debug}` : ''}`
-        );
+
+      const text = await res.text().catch(() => '');
+      const parsed = (() => {
+        try { return text ? JSON.parse(text) : null; } catch { return null; }
+      })();
+      const payload: any = parsed && typeof parsed === 'object' ? parsed : null;
+
+      if (!res.ok) {
+        const msg = payload?.error ? String(payload.error) : (text || 'Edge Function returned a non-2xx status code');
+        const detail = payload?.detail ? `\n\nDétail:\n${String(payload.detail)}` : (text && !payload?.error ? `\n\nDétail:\n${text}` : '');
+        setSupportError(`Erreur génération lien (HTTP ${res.status}): ${msg}${detail}`);
         return;
       }
-      if (data?.error) {
-        setSupportError(`${String(data.error)}${data?.detail ? `\n\nDétail:\n${String(data.detail)}` : ''}`);
+
+      if (payload?.error) {
+        setSupportError(`${String(payload.error)}${payload?.detail ? `\n\nDétail:\n${String(payload.detail)}` : ''}`);
         return;
       }
-      setSupportLink(String(data?.actionLink ?? ''));
+
+      setSupportLink(String(payload?.actionLink ?? ''));
       setSupportMeta({
-        planType: String(data?.planType ?? ''),
-        redirectPath: String(data?.redirectPath ?? ''),
-        linkType: String(data?.linkType ?? ''),
+        planType: String(payload?.planType ?? ''),
+        redirectPath: String(payload?.redirectPath ?? ''),
+        linkType: String(payload?.linkType ?? ''),
       });
     } catch (e) {
       setSupportError(e instanceof Error ? e.message : String(e));
