@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -16,6 +16,7 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   proprietaireId: string;
+  proprietaireTelephone?: string | null;
   locataires: Locataire[];
   onSuccess: (updates: {
     date_rappel: number;
@@ -29,6 +30,7 @@ const AutomationConfigModal = ({
   isOpen,
   onClose,
   proprietaireId,
+  proprietaireTelephone,
   locataires,
   onSuccess,
 }: Props) => {
@@ -44,6 +46,19 @@ const AutomationConfigModal = ({
   if (!isOpen) return null;
 
   const handleActivate = async () => {
+    // Règles demandées :
+    // - toujours exiger l'e-mail locataire
+    // - si mode "Validation 1 clic" (= rappel_classique), exiger le téléphone bailleur
+    const missingLocataireEmail = locataires.some((l) => !(l as any)?.email || !String((l as any).email).trim());
+    if (missingLocataireEmail) {
+      alert("Veuillez renseigner l'e-mail du locataire avant d'activer l'automatisation.");
+      return;
+    }
+    if (mode === 'rappel_classique' && !String(proprietaireTelephone ?? '').trim()) {
+      alert("Veuillez renseigner votre numéro de téléphone (bailleur) pour le mode « Validation 1 clic ».");
+      return;
+    }
+
     setSaving(true);
     try {
       const payload = {
@@ -69,9 +84,13 @@ const AutomationConfigModal = ({
 
       onSuccess(payload);
       onClose();
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('AutomationConfigModal save error:', err);
-      alert('Erreur lors de l’enregistrement.');
+      const msg =
+        err && typeof err === 'object' && 'message' in err
+          ? String((err as { message: string }).message)
+          : 'Erreur inconnue';
+      alert(`Erreur lors de l'enregistrement.\n\n${msg}`);
     } finally {
       setSaving(false);
     }

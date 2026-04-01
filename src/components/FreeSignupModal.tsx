@@ -187,6 +187,9 @@ const FreeSignupModal: React.FC<FreeSignupModalProps> = ({ isOpen, onClose, pref
             date_rappel: 1,
             heure_rappel: 9,
             minute_rappel: 0,
+            // IMPORTANT: ne pas activer l'automatisation automatiquement.
+            // On force null pour éviter le DEFAULT côté DB (souvent 'rappel_classique').
+            mode_envoi_quittance: null,
             periodicite: 'mensuel',
             statut: 'paye',
             actif: true

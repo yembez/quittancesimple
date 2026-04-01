@@ -12,6 +12,7 @@ export interface Proprietaire {
   abonnement_actif?: boolean;
   date_fin_essai?: string;
   plan_type?: string;
+  user_id?: string;
 }
 
 interface EspaceBailleurContextValue {

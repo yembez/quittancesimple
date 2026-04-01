@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { Home, FileText, Download, Settings, Edit2, CreditCard, UserPlus, Building2, Lock, CheckCircle, Info, TrendingUp, Euro, Sparkles, Zap } from 'lucide-react';
+import { Home, FileText, Download, Settings, Edit2, CreditCard, UserPlus, Building2, Lock, CheckCircle, Info, TrendingUp, Euro, Sparkles, Zap, Activity } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useEspaceBailleur } from '../contexts/EspaceBailleurContext';
 import QuittancePreview from '../components/QuittancePreview';
@@ -25,9 +25,12 @@ interface Proprietaire {
   prenom?: string;
   adresse: string;
   telephone?: string;
+  // Certains écrans utilisent plan_type (historique) et/ou plan_actuel (legacy)
+  plan_type?: string;
   plan_actuel?: string;
   abonnement_actif: boolean;
   date_fin_essai?: string;
+  user_id?: string;
 }
 
 interface Locataire {
@@ -383,14 +386,18 @@ const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
       }
 
       // Charger la connexion bancaire si elle existe
-     const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) {
+        setLoading(false);
+        return;
+      }
 
-const { data: bankConnData } = await supabase
-  .from('bank_connections')
-  .select('*')
-  .eq('user_id', session.user.id)   // <-- FIX ICI
-  .in('status', ['active', 'connected'])
-  .maybeSingle();
+      const { data: bankConnData } = await supabase
+        .from('bank_connections')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .in('status', ['active', 'connected'])
+        .maybeSingle();
 
 
       if (bankConnData) {
@@ -1239,12 +1246,23 @@ const handleResendAccessLink = async () => {
     const dr = Number(l.date_rappel);
     const hr = Number(l.heure_rappel);
     const mr = Number(l.minute_rappel);
+    const locataireEmailOk = !!String(l.email ?? '').trim();
+    const mode = l.mode_envoi_quittance ?? null;
+    const ownerPhoneOk = !!String(proprietaire?.telephone ?? '').trim();
+
+    // Règles demandées :
+    // - toujours exiger l'e-mail du locataire
+    // - si mode "en un clic" (= rappel_classique), exiger le téléphone bailleur
+    const prerequisitesOk =
+      locataireEmailOk && (mode !== 'rappel_classique' || ownerPhoneOk);
+
     return (
+      prerequisitesOk &&
       Number.isFinite(dr) &&
       dr > 0 &&
       Number.isFinite(hr) &&
       Number.isFinite(mr) &&
-      !!l.mode_envoi_quittance
+      !!mode
     );
   };
 
@@ -1697,19 +1715,19 @@ const handleResendAccessLink = async () => {
 
                   {locataires.length > 0 ? (
                     <LocatairesTable
-                    locataires={locataires}
-                    planType={planType as 'automatique' | 'connectee_plus'}
-                    onEditLocataire={(locataire) => setEditingLocataire(locataire)}
-                    onEditRappel={(locataire) => setEditingRappel(locataire)}
-                    onSendQuittance={handleSendQuittanceClick}
-                    onSendReminder={handleSendReminderClick}
-                    onDeleteLocataire={handleDeleteLocataire}
-                    onConfigureDetection={handleConfigureDetection}
-                    rentRules={rentRules}
-                    bankConnection={bankConnection}
+                    locataires={locataires as any}
+                    planType={planType as any}
+                    onEditLocataire={(locataire: any) => setEditingLocataire(locataire)}
+                    onEditRappel={(locataire: any) => setEditingRappel(locataire)}
+                    onSendQuittance={handleSendQuittanceClick as any}
+                    onSendReminder={handleSendReminderClick as any}
+                    onDeleteLocataire={handleDeleteLocataire as any}
+                    onConfigureDetection={handleConfigureDetection as any}
+                    rentRules={rentRules as any}
+                    bankConnection={bankConnection as any}
                     isSubscriptionActive={proprietaire?.abonnement_actif || false}
-                    quittances={quittances}
-                    relances={relances}
+                    quittances={quittances as any}
+                    relances={relances as any}
                   />
                   ) : (
                     <div className="px-4 sm:px-5 py-8 text-center">
@@ -1752,7 +1770,7 @@ const handleResendAccessLink = async () => {
           locataire={editingLocataire}
           onClose={() => setEditingLocataire(null)}
           onSave={async (updated) => {
-            setLocataires(locataires.map(l => l.id === updated.id ? updated : l));
+            setLocataires(locataires.map((l) => (l.id === (updated as any).id ? (updated as any) : l)) as any);
             setEditingLocataire(null);
           }}
         />
@@ -1775,6 +1793,7 @@ const handleResendAccessLink = async () => {
           isOpen={showAutomationConfigModal}
           onClose={() => setShowAutomationConfigModal(false)}
           proprietaireId={proprietaire.id}
+          proprietaireTelephone={proprietaire.telephone ?? null}
           locataires={locataires}
           onSuccess={async (updates) => {
             setLocataires((prev) =>
