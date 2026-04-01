@@ -68,19 +68,33 @@ Deno.serve(async (req: Request) => {
     const redirectTo = `${SITE_URL}${redirectPath}`;
     const ua = req.headers.get("user-agent") ?? "";
 
-    // Générer un magic link (ou invite si l’utilisateur Auth n’existe pas).
-    const { data: existingUser, error: getUserErr } = await supabase.auth.admin.getUserByEmail(email);
-    if (getUserErr) {
-      return json({ error: "Erreur lecture Auth user", detail: getUserErr.message }, 500);
+    // Générer un lien d'accès.
+    // NOTE: `getUserByEmail` n'est pas disponible dans toutes les versions/runtime de supabase-js.
+    // On utilise un type robuste: "magiclink" (si supporté) avec fallback "invite".
+    let linkType: "magiclink" | "invite" = "magiclink";
+
+    let linkData: any = null;
+    let linkError: any = null;
+    try {
+      const res = await supabase.auth.admin.generateLink({ type: linkType, email, options: { redirectTo } } as any);
+      linkData = (res as any)?.data ?? null;
+      linkError = (res as any)?.error ?? null;
+    } catch (e) {
+      linkError = { message: e instanceof Error ? e.message : String(e) };
     }
 
-    const linkType: "invite" | "magiclink" = existingUser?.user ? "magiclink" : "invite";
-
-    const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
-      type: linkType,
-      email,
-      options: { redirectTo },
-    });
+    // Fallback: si le runtime ne supporte pas magiclink, on essaye invite.
+    if (linkError) {
+      console.warn("admin-support-login: generateLink magiclink failed, fallback invite", linkError?.message);
+      linkType = "invite";
+      try {
+        const res2 = await supabase.auth.admin.generateLink({ type: linkType, email, options: { redirectTo } } as any);
+        linkData = (res2 as any)?.data ?? null;
+        linkError = (res2 as any)?.error ?? null;
+      } catch (e) {
+        linkError = { message: e instanceof Error ? e.message : String(e) };
+      }
+    }
 
     const actionLink = linkData?.properties?.action_link;
     if (linkError || !actionLink) {

@@ -10,6 +10,7 @@ const corsHeaders = {
 type TrialLeadRow = {
   id: string;
   email: string;
+  telephone?: string | null;
   nom: string | null;
   prenom: string | null;
   date_inscription: string | null;
@@ -70,7 +71,7 @@ Deno.serve(async (req: Request) => {
   const { data: rows, error: trialError } = await supabase
     .from("proprietaires")
     .select(
-      "id, email, nom, prenom, created_at, date_inscription, date_fin_essai, nombre_quittances, lead_statut, password_set, welcome_email_sent_at, campaign_j2_sent_at, campaign_j5_sent_at, campaign_j8_sent_at",
+      "id, email, telephone, nom, prenom, created_at, date_inscription, date_fin_essai, nombre_quittances, lead_statut, password_set, welcome_email_sent_at, campaign_j2_sent_at, campaign_j5_sent_at, campaign_j8_sent_at",
     )
     .in("lead_statut", ["QA_1st_interested", "free_account"])
     .not("email", "ilike", "2speek%")
@@ -104,6 +105,33 @@ Deno.serve(async (req: Request) => {
 
   const leadIds = allLeads.map((l) => l.id);
   const leadEmailsLower = allLeads.map((l) => (l.email || "").trim().toLowerCase()).filter(Boolean);
+
+  // 1bis) Locataires par lead : compter ceux sans email (erreur "fausse activation").
+  const { data: locRows, error: locErr } = await supabase
+    .from("locataires")
+    .select("id, proprietaire_id, email, actif")
+    .in("proprietaire_id", leadIds);
+
+  if (locErr) {
+    return new Response(
+      JSON.stringify({ error: "Erreur lecture locataires", detail: locErr.message }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
+
+  const locStatsByLead = new Map<string, { total: number; active: number; missing_email_active: number }>();
+  for (const r of locRows || []) {
+    const pid = (r as any).proprietaire_id as string;
+    const actif = Boolean((r as any).actif);
+    const email = String((r as any).email ?? "").trim();
+    if (!locStatsByLead.has(pid)) locStatsByLead.set(pid, { total: 0, active: 0, missing_email_active: 0 });
+    const s = locStatsByLead.get(pid)!;
+    s.total += 1;
+    if (actif) {
+      s.active += 1;
+      if (!email) s.missing_email_active += 1;
+    }
+  }
 
   // 2) Origine « quittance gratuite » via free_quittance_snapshots
   const { data: snapshots } = await supabase
@@ -155,6 +183,8 @@ Deno.serve(async (req: Request) => {
     const origine = snapshotEmails.has(emailLower) ? "quittance_gratuite" : "vierge";
 
     const trialEmails = remindersByLead.get(l.id) || [];
+    const locStats = locStatsByLead.get(l.id) ?? { total: 0, active: 0, missing_email_active: 0 };
+    const ownerPhoneOk = !!String((l as any).telephone ?? "").trim();
 
       return {
         id: l.id,
@@ -173,6 +203,10 @@ Deno.serve(async (req: Request) => {
         campaign_j8_sent_at: l.campaign_j8_sent_at,
         origine,
         trial_emails: trialEmails,
+        owner_phone_ok: ownerPhoneOk,
+        locataires_total: locStats.total,
+        locataires_actifs: locStats.active,
+        locataires_actifs_sans_email: locStats.missing_email_active,
       };
     });
 
