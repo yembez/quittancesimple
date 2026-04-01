@@ -177,11 +177,13 @@ Deno.serve(async (req: Request) => {
         .update({ status: "sent_manual", action_token_send_manual: null })
         .eq("id", row.id);
 
+      const loginHint = String(prop.email ?? "").trim() || undefined;
       return new Response(
         JSON.stringify({
           success: true,
           locataireName: locataireName || String(loc.nom),
           periode: row.periode,
+          ...(loginHint ? { loginHint } : {}),
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );

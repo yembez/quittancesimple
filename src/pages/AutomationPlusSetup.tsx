@@ -208,7 +208,8 @@ const AutomationPlusSetup = () => {
         date_rappel: 1,
         periodicite: 'mensuel',
         statut: 'en_attente',
-        actif: true
+        actif: true,
+        mode_envoi_quittance: null,
       }));
 
       const { error: insertError } = await supabase
@@ -313,7 +314,8 @@ const AutomationPlusSetup = () => {
         charges_mensuelles: parseFloat(loc.charges_mensuelles) || 0,
         date_rappel: 1,
         periodicite: 'mensuel',
-        actif: true
+        actif: true,
+        mode_envoi_quittance: null,
       }));
 
       const { error: locError } = await supabase

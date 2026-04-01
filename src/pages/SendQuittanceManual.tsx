@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import LoginModal from '../components/LoginModal';
 
 type PageAction = 'send_manual' | 'cancel' | null;
 
@@ -24,6 +25,10 @@ const SendQuittanceManual = () => {
   const [periode, setPeriode] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [cancelSuccess, setCancelSuccess] = useState(false);
+  const [loginHint, setLoginHint] = useState<string>('');
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+
+  const prefilledLoginEmail = loginHint.trim() || undefined;
 
   useEffect(() => {
     if (action === null) {
@@ -84,6 +89,8 @@ const SendQuittanceManual = () => {
           if (data.success) {
             setLocataireName(data.locataireName || 'votre locataire');
             setPeriode(data.periode || '');
+            const hint = typeof data.loginHint === 'string' ? data.loginHint.trim() : '';
+            setLoginHint(hint);
             setStatus('success');
           } else {
             setStatus('error');
@@ -104,61 +111,96 @@ const SendQuittanceManual = () => {
     };
   }, [action, token, idParam]);
 
-  return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6" data-page="send-quittance-manual">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-        {(status === 'loading' || status === 'idle') && (
+  const confirmationBody =
+    status === 'success' ? (
+      <>
+        <CheckCircle className="w-14 h-14 text-green-600 mx-auto mb-4" />
+        {cancelSuccess ? (
           <>
-            <h1 className="text-lg font-semibold text-gray-900 mb-4">Quittance Simple</h1>
-            <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-            <p className="text-gray-700">
-              {action === 'cancel' ? 'Annulation en cours…' : 'Envoi de la quittance en cours…'}
+            <h1 className="text-xl font-semibold text-gray-900 mb-2">Envoi automatique annulé</h1>
+            <p className="text-gray-700 mb-6">
+              L'envoi automatique a été annulé. Un email de confirmation vous a été envoyé avec un lien pour envoyer la quittance en manuel quand vous le souhaitez.
+            </p>
+          </>
+        ) : (
+          <>
+            <h1 className="text-xl font-semibold text-gray-900 mb-2">Quittance envoyée</h1>
+            <p className="text-gray-700 mb-6">
+              Votre quittance a bien été envoyée à <strong>{locataireName}</strong>
+              {periode ? ` pour la période ${periode}` : ''}. Une copie vous a été adressée.
             </p>
           </>
         )}
+      </>
+    ) : status === 'error' ? (
+      <>
+        <AlertCircle className="w-14 h-14 text-amber-600 mx-auto mb-4" />
+        <h1 className="text-xl font-semibold text-gray-900 mb-2">Erreur</h1>
+        <p className="text-gray-700 mb-6">{errorMessage}</p>
+      </>
+    ) : null;
 
-        {status === 'success' && (
-          <>
-            <CheckCircle className="w-14 h-14 text-green-600 mx-auto mb-4" />
-            {cancelSuccess ? (
-              <>
-                <h1 className="text-xl font-semibold text-gray-900 mb-2">Envoi automatique annulé</h1>
-                <p className="text-gray-700 mb-6">
-                  L'envoi automatique a été annulé. Un email de confirmation vous a été envoyé avec un lien pour envoyer la quittance en manuel quand vous le souhaitez.
-                </p>
-              </>
-            ) : (
-              <>
-                <h1 className="text-xl font-semibold text-gray-900 mb-2">Quittance envoyée</h1>
-                <p className="text-gray-700 mb-6">
-                  Votre quittance a bien été envoyée à <strong>{locataireName}</strong>
-                  {periode ? ` pour la période ${periode}` : ''}. Une copie vous a été adressée.
-                </p>
-              </>
-            )}
-            <Link
-              to="/dashboard"
-              className="inline-block px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition"
-            >
-              Retour au tableau de bord
-            </Link>
-          </>
-        )}
-
-        {status === 'error' && (
-          <>
-            <AlertCircle className="w-14 h-14 text-amber-600 mx-auto mb-4" />
-            <h1 className="text-xl font-semibold text-gray-900 mb-2">Erreur</h1>
-            <p className="text-gray-700 mb-6">{errorMessage}</p>
-            <Link
-              to="/dashboard"
-              className="inline-block px-5 py-2.5 bg-gray-800 text-white font-medium rounded-lg hover:bg-gray-700 transition"
-            >
-              Retour au tableau de bord
-            </Link>
-          </>
-        )}
+  const confirmationActions =
+    status === 'success' || status === 'error' ? (
+      <div className="flex flex-col sm:flex-row gap-3 justify-center items-stretch">
+        <button
+          type="button"
+          onClick={() => setLoginModalOpen(true)}
+          className="inline-block px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition text-center"
+        >
+          Me connecter à mon espace
+        </button>
+        <button
+          type="button"
+          onClick={() => window.close()}
+          className="inline-block px-5 py-2.5 border border-gray-300 text-gray-800 font-medium rounded-lg hover:bg-gray-50 transition text-center"
+        >
+          Fermer cette fenêtre
+        </button>
       </div>
+    ) : null;
+
+  const fermerNote =
+    status === 'success' || status === 'error' ? (
+      <p className="text-xs text-gray-500 mt-3">
+        Pour retrouver votre espace bailleur en étant connecté, utilisez « Me connecter à mon espace ». Vous pouvez aussi
+        fermer cet onglet.
+      </p>
+    ) : null;
+
+  return (
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-6" data-page="send-quittance-manual">
+      {(status === 'loading' || status === 'idle') && (
+        <div className="max-w-md w-full bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+          <h1 className="text-lg font-semibold text-gray-900 mb-4">Quittance Simple</h1>
+          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+          <p className="text-gray-700">
+            {action === 'cancel' ? 'Annulation en cours…' : 'Envoi de la quittance en cours…'}
+          </p>
+        </div>
+      )}
+
+      {(status === 'success' || status === 'error') && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+          <div
+            className="max-w-md w-full bg-white rounded-xl shadow-2xl border border-gray-200 p-8 text-center max-h-[90vh] overflow-y-auto"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="send-quittance-manual-title"
+          >
+            <div id="send-quittance-manual-title">{confirmationBody}</div>
+            {confirmationActions}
+            {fermerNote}
+          </div>
+        </div>
+      )}
+
+      <LoginModal
+        isOpen={loginModalOpen}
+        onClose={() => setLoginModalOpen(false)}
+        mode="login"
+        initialEmail={prefilledLoginEmail}
+      />
     </div>
   );
 };

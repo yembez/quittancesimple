@@ -77,8 +77,8 @@ Deno.serve(async (req: Request) => {
     const locataireNom = [loc.prenom, loc.nom].filter(Boolean).join(" ").trim() || String(loc.nom || "votre locataire");
     const periode = String(row.periode);
 
-    const cancelUrl = `${SITE_URL}/send-quittance-manual?action=cancel&id=${encodeURIComponent(scheduledId)}`;
     const propEmail = String(prop.email || "").trim();
+    const cancelUrl = `${SITE_URL}/send-quittance-manual?action=cancel&id=${encodeURIComponent(scheduledId)}`;
     const relanceUrl = `${SITE_URL}/dashboard?openRelance=${encodeURIComponent(row.locataire_id)}${propEmail ? `&loginHint=${encodeURIComponent(propEmail)}` : ""}`;
     const token = row.action_token_send_manual;
     const sendManualUrl = token

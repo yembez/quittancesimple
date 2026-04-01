@@ -94,11 +94,17 @@ const Dashboard = () => {
   const [editingLocataire, setEditingLocataire] = useState<Locataire | null>(null);
   const [editingRappel, setEditingRappel] = useState<Locataire | null>(null);
   const [showReminderPreview, setShowReminderPreview] = useState(false);
+  const [showRelanceSuccessModal, setShowRelanceSuccessModal] = useState(false);
+  const [relanceSuccessSystematicNote, setRelanceSuccessSystematicNote] = useState(false);
   const [selectedLocataireForReminder, setSelectedLocataireForReminder] = useState<Locataire | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [showAddLocataire, setShowAddLocataire] = useState(false);
   const [automationDetailOpen, setAutomationDetailOpen] = useState<1 | 2 | null>(null);
   const [showAutomationConfigModal, setShowAutomationConfigModal] = useState(false);
+  /** Mode choisi sur le dashboard avant d'ouvrir la modale (première activation). Aucun présélectionné. */
+  const [selectedAutomationMode, setSelectedAutomationMode] = useState<
+    'rappel_classique' | 'systematic_preavis_5j' | null
+  >(null);
   const [bankConnection, setBankConnection] = useState<any>(null);
   const [latestTransactions, setLatestTransactions] = useState<any[]>([]);
 
@@ -247,6 +253,7 @@ const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
         periodicite: 'mensuel',
         statut: 'en_attente',
         actif: true,
+        mode_envoi_quittance: null,
       });
 
       if (insertErr) {
@@ -620,6 +627,7 @@ setRecentTransactions(txData || []);
       });
 
       // Si quittance systématique en attente pour ce locataire + période courante : marquer reminder_sent et envoyer email confirmation
+      let systematicUpdated = false;
       try {
         const confirmRes = await fetch(`${supabaseUrl}/functions/v1/send-systematic-relance-confirmation`, {
           method: 'POST',
@@ -628,13 +636,14 @@ setRecentTransactions(txData || []);
         });
         const confirmData = await confirmRes.json();
         if (confirmData.updated) {
-          // Email de confirmation envoyé par la fonction
+          systematicUpdated = true;
         }
       } catch (_) {
         // Ne pas bloquer l'UX si la confirmation systématique échoue
       }
 
-      alert('✅ Relance envoyée avec succès !');
+      setRelanceSuccessSystematicNote(systematicUpdated);
+      setShowRelanceSuccessModal(true);
       setShowReminderPreview(false);
       setSelectedLocataireForReminder(null);
     } catch (error) {
@@ -929,7 +938,8 @@ setRecentTransactions(txData || []);
         minute_rappel: parseInt(addLocataireForm.minute_rappel),
         periodicite: 'mensuel',
         statut: 'en_attente',
-        actif: true
+        actif: true,
+        mode_envoi_quittance: null,
       });
 
       if (error) throw error;
@@ -1392,20 +1402,27 @@ const handleResendAccessLink = async () => {
                     </>
                   ) : (
                     <>
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-2 mb-3">
                         <Zap className="w-5 h-5 text-[#E65F3F]" aria-hidden />
                         <h2 className="text-lg font-bold text-[#212a3e]">
                           Activer l'automatisation des quittances
                         </h2>
                       </div>
-                      <p className="text-[14px] text-[#5e6478] mb-2">
-                        Au choix :
-                      </p>
-                      <ul className="list-none space-y-2 mb-4 text-[14px] text-[#5e6478]">
-                        <li className="flex flex-wrap items-baseline gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#E65F3F] flex-shrink-0 mt-1.5 self-start" aria-hidden />
-                          <span>
-                            <strong>100% Automatique</strong> (on vous envoie un rappel 5 jours avant l'envoi)
+
+                      <p className="text-sm font-medium text-[#334155] mb-2">Type d'automatisation</p>
+                      <div className="space-y-3 mb-4">
+                        <label className="flex items-start gap-3 cursor-pointer group">
+                          <input
+                            type="checkbox"
+                            checked={selectedAutomationMode === 'systematic_preavis_5j'}
+                            onChange={() => {
+                              setSelectedAutomationMode('systematic_preavis_5j');
+                            }}
+                            className="mt-1 w-4 h-4 rounded border-[#cbd5e1] text-[#E65F3F] focus:ring-[#E65F3F]"
+                          />
+                          <span className="text-[14px] text-[#334155]">
+                            <span className="font-semibold">100 % automatique</span>
+                            <span className="text-[#5e6478]"> — rappel 5 jours avant envoi auto</span>
                             <span
                               className="relative inline-block ml-1 align-baseline"
                               onMouseEnter={() => setAutomationDetailOpen(1)}
@@ -1414,7 +1431,7 @@ const handleResendAccessLink = async () => {
                               <span
                                 role="button"
                                 tabIndex={0}
-                                className="text-[#E65F3F] hover:text-[#d95530] underline font-medium cursor-help"
+                                className="text-[#E65F3F] hover:text-[#d95530] underline font-medium cursor-help text-[13px]"
                                 onFocus={() => setAutomationDetailOpen(1)}
                                 onBlur={() => setAutomationDetailOpen(null)}
                               >
@@ -1422,20 +1439,26 @@ const handleResendAccessLink = async () => {
                               </span>
                               {automationDetailOpen === 1 && (
                                 <div className="absolute left-0 top-full mt-1 z-20 min-w-[260px] max-w-[360px] p-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg text-[13px] text-[#334155] leading-relaxed shadow-lg">
-                                  Vous recevez un email 5 jours avant l'envoi réel.<br />Sans action de votre part sous 5 jours, la quittance part automatiquement.<br />Pour garder le contrôle, il y a 3 boutons dans le mail : « Annuler », « Relancer le locataire », ou « Envoyer la quittance manuellement ».
+                                  Vous recevez un e-mail 5 jours avant l'envoi réel. Sans action de votre part sous 5
+                                  jours, la quittance part automatiquement. Pour garder le contrôle : boutons «
+                                  Annuler », « Relancer le locataire », ou « Envoyer la quittance manuellement ».
                                 </div>
                               )}
                             </span>
                           </span>
-                        </li>
-                        <li>
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#E65F3F] flex-shrink-0" aria-hidden />
-                          Ou bien :
-                        </li>
-                        <li className="flex flex-wrap items-baseline gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#E65F3F] flex-shrink-0 mt-1.5 self-start" aria-hidden />
-                          <span>
-                            <strong>En un clic</strong> dans le SMS ou l'e-mail de rappel
+                        </label>
+                        <label className="flex items-start gap-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedAutomationMode === 'rappel_classique'}
+                            onChange={() => {
+                              setSelectedAutomationMode('rappel_classique');
+                            }}
+                            className="mt-1 w-4 h-4 rounded border-[#cbd5e1] text-[#E65F3F] focus:ring-[#E65F3F]"
+                          />
+                          <span className="text-[14px] text-[#334155]">
+                            <span className="font-semibold">Validation en un clic</span>
+                            <span className="text-[#5e6478]"> — SMS + e-mail de rappel, puis validation</span>
                             <span
                               className="relative inline-block ml-1 align-baseline"
                               onMouseEnter={() => setAutomationDetailOpen(2)}
@@ -1444,7 +1467,7 @@ const handleResendAccessLink = async () => {
                               <span
                                 role="button"
                                 tabIndex={0}
-                                className="text-[#E65F3F] hover:text-[#d95530] underline font-medium cursor-help"
+                                className="text-[#E65F3F] hover:text-[#d95530] underline font-medium cursor-help text-[13px]"
                                 onFocus={() => setAutomationDetailOpen(2)}
                                 onBlur={() => setAutomationDetailOpen(null)}
                               >
@@ -1452,22 +1475,40 @@ const handleResendAccessLink = async () => {
                               </span>
                               {automationDetailOpen === 2 && (
                                 <div className="absolute left-0 top-full mt-1 z-20 min-w-[260px] max-w-[360px] p-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg text-[13px] text-[#334155] leading-relaxed shadow-lg">
-                                  Pour plus de contrôle : Vous recevez un rappel (SMS/email) à la date programmée, puis vous envoyez la quittance en un clic dans le SMS ou le mail.
+                                  Vous recevez un rappel (SMS / e-mail) à la date programmée, puis vous envoyez la
+                                  quittance en un clic.
                                 </div>
                               )}
                             </span>
                           </span>
-                        </li>
-                      </ul>
+                        </label>
+                      </div>
+                      <p className="text-[13px] text-[#64748b] mb-4">
+                        Vous pourrez choisir le jour et l&apos;heure du rappel dans l&apos;étape suivante.
+                      </p>
                       <div className="mb-1">
                         {proprietaire?.abonnement_actif ? (
-                          <button
-                            type="button"
-                            onClick={() => setShowAutomationConfigModal(true)}
-                            className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 rounded-xl bg-[#E65F3F] hover:bg-[#d95530] text-white font-semibold text-[15px] transition-colors shadow-sm"
-                          >
-                            Paramétrer l'automatisation
-                          </button>
+                          <div className="space-y-2">
+                            <button
+                              type="button"
+                              disabled={selectedAutomationMode === null}
+                              onClick={() => {
+                                if (selectedAutomationMode === null) {
+                                  alert("Veuillez d'abord cocher un type d'automatisation ci-dessus.");
+                                  return;
+                                }
+                                setShowAutomationConfigModal(true);
+                              }}
+                              className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 rounded-xl bg-[#E65F3F] hover:bg-[#d95530] text-white font-semibold text-[15px] transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#E65F3F]"
+                            >
+                              Paramétrer l'automatisation
+                            </button>
+                            {selectedAutomationMode === null && (
+                              <p className="text-[12px] text-[#64748b]">
+                                Cochez un mode ci-dessus pour continuer.
+                              </p>
+                            )}
+                          </div>
                         ) : (
                           <button
                             type="button"
@@ -1793,8 +1834,23 @@ const handleResendAccessLink = async () => {
           isOpen={showAutomationConfigModal}
           onClose={() => setShowAutomationConfigModal(false)}
           proprietaireId={proprietaire.id}
-          proprietaireTelephone={proprietaire.telephone ?? null}
+          proprietaire={{
+            id: proprietaire.id,
+            adresse: proprietaire.adresse,
+            telephone: proprietaire.telephone ?? null,
+            nom: proprietaire.nom,
+            prenom: proprietaire.prenom,
+          }}
+          hideModeSelection={!hasAutomationConfig}
+          defaultMode={
+            hasAutomationConfig && firstConfiguredLocataire
+              ? firstConfiguredLocataire.mode_envoi_quittance === 'systematic_preavis_5j'
+                ? 'systematic_preavis_5j'
+                : 'rappel_classique'
+              : selectedAutomationMode ?? 'rappel_classique'
+          }
           locataires={locataires}
+          onProprietaireUpdated={() => refetchProprietaire()}
           onSuccess={async (updates) => {
             setLocataires((prev) =>
               prev.map((l) => ({
@@ -1839,6 +1895,41 @@ const handleResendAccessLink = async () => {
           adresseLogement={selectedLocataireForReminder.adresse_logement}
           isSending={isSending}
         />
+      )}
+
+      {showRelanceSuccessModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4">
+          <div
+            className="bg-white rounded-xl shadow-xl max-w-md w-full p-8 text-center border border-gray-200"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="relance-success-title"
+          >
+            <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            </div>
+            <h2 id="relance-success-title" className="text-xl font-semibold text-gray-900 mb-2">
+              Relance envoyée
+            </h2>
+            <p className="text-gray-700 text-sm mb-6">
+              La relance a bien été envoyée au locataire.
+              {relanceSuccessSystematicNote ? (
+                <>
+                  {' '}
+                  L’envoi automatique de la quittance à J+5 est annulé pour ce mois ; un e-mail récapitulatif vous a été
+                  envoyé.
+                </>
+              ) : null}
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowRelanceSuccessModal(false)}
+              className="w-full px-5 py-2.5 bg-[#1e3a5f] hover:bg-[#1a2f4d] text-white font-medium rounded-lg transition-colors"
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
       )}
 
       {configuringDetection && bankConnection && (

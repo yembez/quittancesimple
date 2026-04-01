@@ -218,7 +218,8 @@ const PackActivationFlow: React.FC<PackActivationFlowProps> = ({
               telephone: (locataireData.telephone || '').trim() || null,
               adresse_logement: locataireData.adresse_logement.trim(),
               loyer_mensuel: loyer,
-              charges_mensuelles: charges
+              charges_mensuelles: charges,
+              mode_envoi_quittance: null,
             });
             if (locError) console.warn('Création locataire reportée:', locError.message);
           }
@@ -246,7 +247,8 @@ const PackActivationFlow: React.FC<PackActivationFlowProps> = ({
           telephone: (locataireData.telephone || '').trim() || null,
           adresse_logement: locataireData.adresse_logement.trim(),
           loyer_mensuel: loyer,
-          charges_mensuelles: charges
+          charges_mensuelles: charges,
+          mode_envoi_quittance: null,
         });
         if (locError) console.warn('Création locataire reportée (possible depuis l’espace après connexion):', locError.message);
       }

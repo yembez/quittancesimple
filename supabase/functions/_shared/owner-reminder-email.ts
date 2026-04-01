@@ -3,6 +3,14 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 
 const SITE_URL = "https://www.quittancesimple.fr";
 
+/** Si `mois` contient déjà une année (ex. « Janvier 2026 » depuis auto-send), ne pas répéter l'année. */
+function formatMoisAnneeDisplay(mois: string | undefined, anneeStr: string): string {
+  const m = (mois ?? "").trim();
+  if (!m) return anneeStr;
+  if (/\b(19|20)\d{2}\b/.test(m)) return m;
+  return `${m} ${anneeStr}`.trim();
+}
+
 /** Comme signature-utils / autres fonctions : env puis Vault (get_secret). */
 async function resolveResendApiKey(): Promise<string | null> {
   const fromEnv = (Deno.env.get("RESEND_API_KEY") ?? "").trim();
@@ -57,6 +65,8 @@ export async function sendOwnerReminderEmail(
   const anneeStr =
     params.annee != null ? String(params.annee) : new Date().getFullYear().toString();
 
+  const periodeLabel = formatMoisAnneeDisplay(params.mois, anneeStr);
+
   const lienLoyerRecu = `${baseUrl}/quick-confirm?action=send&proprietaireId=${encodeURIComponent(
     params.proprietaireId ?? ""
   )}&locataireId=${encodeURIComponent(params.locataireId ?? "")}&mois=${moisEnc}&annee=${encodeURIComponent(
@@ -71,7 +81,7 @@ export async function sendOwnerReminderEmail(
 
   const bodyHtml = `
       <p>Bonjour ${params.proprietaireName ?? "Propriétaire"},</p>
-      <p>Rappel pour <strong>${params.locataireName ?? "votre locataire"}</strong> – ${params.mois ?? ""} ${anneeStr} (${params.montantTotal ?? 0} €).</p>
+      <p>Rappel pour <strong>${params.locataireName ?? "votre locataire"}</strong> – ${periodeLabel} (${params.montantTotal ?? 0} €).</p>
       <p>Avez-vous bien reçu le loyer ?</p>
       <p style="margin-top: 20px;"><strong>Choisissez une action :</strong></p>
       <p style="margin-top: 12px; text-align: center;">
@@ -98,7 +108,7 @@ export async function sendOwnerReminderEmail(
     body: JSON.stringify({
       from: "Quittance Simple <noreply@quittancesimple.fr>",
       to: [toEmail],
-      subject: `Rappel : Loyer ${params.locataireName ?? "locataire"} – ${params.mois ?? ""} ${anneeStr}`,
+      subject: `Rappel : Loyer ${params.locataireName ?? "locataire"} – ${periodeLabel}`,
       html,
     }),
   });
