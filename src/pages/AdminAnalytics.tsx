@@ -211,6 +211,7 @@ const AdminAnalytics: React.FC = () => {
     periode: string;
     date_preavis: string;
     date_envoi_auto: string;
+    diagnostics?: { missing_locataire_email?: boolean; missing_owner_phone?: boolean };
     locataire: {
       id: string;
       nom: string | null;
@@ -224,6 +225,7 @@ const AdminAnalytics: React.FC = () => {
   };
 
   type AutomationClassicRow = {
+    diagnostics?: { missing_locataire_email?: boolean; missing_owner_phone?: boolean };
     locataire: {
       id: string;
       nom: string | null;
@@ -1679,6 +1681,8 @@ const AdminAnalytics: React.FC = () => {
                                 <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Stripe</th>
                                 <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Fin essai</th>
                                 <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Locataire</th>
+                                <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Email locataire</th>
+                                <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Tel bailleur</th>
                                 <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Période</th>
                                 <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Statut</th>
                                 <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Préavis</th>
@@ -1713,6 +1717,12 @@ const AdminAnalytics: React.FC = () => {
                                   </td>
                                   <td className="px-2 py-1 text-[#4b5563] max-w-[140px] truncate" title={[r.locataire?.prenom, r.locataire?.nom].filter(Boolean).join(' ')}>
                                     {[r.locataire?.prenom, r.locataire?.nom].filter(Boolean).join(' ') || '—'}
+                                  </td>
+                                  <td className={`px-2 py-1 whitespace-nowrap ${r.diagnostics?.missing_locataire_email ? 'text-red-700 font-semibold' : 'text-[#4b5563]'}`}>
+                                    {r.locataire?.email ? r.locataire.email : 'Manquant'}
+                                  </td>
+                                  <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
+                                    {r.proprietaire?.telephone ? (r.proprietaire as any).telephone : '—'}
                                   </td>
                                   <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">{r.periode}</td>
                                   <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">{r.status}</td>
@@ -1779,6 +1789,7 @@ const AdminAnalytics: React.FC = () => {
                                 <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Plan</th>
                                 <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Inscrit</th>
                                 <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Stripe</th>
+                                <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Tel bailleur</th>
                                 <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Locataire</th>
                                 <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Email locataire</th>
                                 <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Rappel mensuel</th>
@@ -1800,11 +1811,14 @@ const AdminAnalytics: React.FC = () => {
                                     {c.cree}
                                   </td>
                                   <td className="px-2 py-1 text-[#4b5563] align-top whitespace-nowrap">{c.stripe}</td>
+                                  <td className={`px-2 py-1 whitespace-nowrap ${r.diagnostics?.missing_owner_phone ? 'text-red-700 font-semibold' : 'text-[#4b5563]'}`}>
+                                    {r.proprietaire?.telephone ? (r.proprietaire as any).telephone : 'Manquant'}
+                                  </td>
                                   <td className="px-2 py-1 text-[#4b5563] max-w-[180px] truncate" title={r.locataire.adresse_logement ?? ''}>
                                     {[r.locataire.prenom, r.locataire.nom].filter(Boolean).join(' ') || '—'}
                                   </td>
-                                  <td className="px-2 py-1 text-[#4b5563] max-w-[200px] truncate" title={r.locataire.email ?? ''}>
-                                    {r.locataire.email ?? '—'}
+                                  <td className={`px-2 py-1 max-w-[200px] truncate ${r.diagnostics?.missing_locataire_email ? 'text-red-700 font-semibold' : 'text-[#4b5563]'}`} title={r.locataire.email ?? ''}>
+                                    {r.locataire.email ? r.locataire.email : 'Manquant'}
                                   </td>
                                   <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
                                     {r.locataire.libelle_rappel_mensuel}

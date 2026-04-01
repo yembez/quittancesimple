@@ -23,6 +23,7 @@ type LocLite = {
 type PropLite = {
   id: string;
   email: string | null;
+  telephone?: string | null;
   nom: string | null;
   prenom: string | null;
   lead_statut: string | null;
@@ -145,17 +146,27 @@ Deno.serve(async (req: Request) => {
     const { data: props } = await supabase
       .from("proprietaires")
       .select(
-        "id, email, nom, prenom, lead_statut, date_fin_essai, abonnement_actif, plan_type, plan_actuel, created_at, date_inscription, stripe_customer_id",
+        "id, email, telephone, nom, prenom, lead_statut, date_fin_essai, abonnement_actif, plan_type, plan_actuel, created_at, date_inscription, stripe_customer_id",
       )
       .in("id", propIds);
     for (const p of props || []) propMap.set((p as PropLite).id, p as PropLite);
   }
 
-  const systematicEnriched = systematic.map((row) => ({
-    ...row,
-    locataire: locMap.get(row.locataire_id) ?? null,
-    proprietaire: propMap.get(row.proprietaire_id) ?? null,
-  }));
+  const systematicEnriched = systematic.map((row) => {
+    const loc = locMap.get(row.locataire_id) ?? null;
+    const prop = propMap.get(row.proprietaire_id) ?? null;
+    const missingLocataireEmail = !String((loc as any)?.email ?? "").trim();
+    return {
+      ...row,
+      locataire: loc,
+      proprietaire: prop,
+      diagnostics: {
+        missing_locataire_email: missingLocataireEmail,
+        // mode systématique => pas de SMS "en 1 clic" ici
+        missing_owner_phone: false,
+      },
+    };
+  });
 
   const systematicFiltered = systematicEnriched
     .filter((r) => r.proprietaire && !isExcludedTestBailleurEmail(r.proprietaire.email))
@@ -195,7 +206,7 @@ Deno.serve(async (req: Request) => {
     const { data: props2 } = await supabase
       .from("proprietaires")
       .select(
-        "id, email, nom, prenom, lead_statut, date_fin_essai, abonnement_actif, plan_type, plan_actuel, created_at, date_inscription, stripe_customer_id",
+        "id, email, telephone, nom, prenom, lead_statut, date_fin_essai, abonnement_actif, plan_type, plan_actuel, created_at, date_inscription, stripe_customer_id",
       )
       .in("id", classicPropIds);
     for (const p of props2 || []) classicPropMap.set((p as PropLite).id, p as PropLite);
@@ -221,6 +232,11 @@ Deno.serve(async (req: Request) => {
         libelle_rappel_mensuel: libelleRappel,
       },
       proprietaire: pr ?? null,
+      diagnostics: {
+        missing_locataire_email: !String((l as any)?.email ?? "").trim(),
+        // mode "en 1 clic" (rappel_classique) => téléphone bailleur requis
+        missing_owner_phone: !String((pr as any)?.telephone ?? "").trim(),
+      },
     };
   });
 

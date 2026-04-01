@@ -17,6 +17,7 @@ type TrialLeadRow = {
   date_inscription: string | null;
   created_at: string | null;
   date_fin_essai: string | null;
+  abonnement_actif?: boolean | null;
   nombre_quittances: number;
   lead_statut: string | null;
   password_set: boolean | null;
@@ -72,9 +73,12 @@ Deno.serve(async (req: Request) => {
   const { data: rows, error: trialError } = await supabase
     .from("proprietaires")
     .select(
-      "id, user_id, email, telephone, nom, prenom, created_at, date_inscription, date_fin_essai, nombre_quittances, lead_statut, password_set, welcome_email_sent_at, campaign_j2_sent_at, campaign_j5_sent_at, campaign_j8_sent_at",
+      "id, user_id, abonnement_actif, email, telephone, nom, prenom, created_at, date_inscription, date_fin_essai, nombre_quittances, lead_statut, password_set, welcome_email_sent_at, campaign_j2_sent_at, campaign_j5_sent_at, campaign_j8_sent_at",
     )
-    .in("lead_statut", ["QA_1st_interested", "free_account"])
+    // Ne pas se baser sur lead_statut : il peut être écrasé (ex. nouvelle quittance gratuite).
+    // On veut tous les comptes "créés" (user_id) et utiles à contacter.
+    .not("user_id", "is", null)
+    .eq("abonnement_actif", false)
     .not("email", "ilike", "2speek%")
     .not("email", "ilike", "%@maildrop.cc")
     .neq("email", "bailleur@maildrop.cc")
@@ -101,8 +105,10 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  const trialRows = allLeads.filter((l) => l.lead_statut === "QA_1st_interested");
-  const freeRows = allLeads.filter((l) => l.lead_statut === "free_account");
+  // "Essai pack" = date_fin_essai renseignée.
+  const trialRows = allLeads.filter((l) => !!l.date_fin_essai);
+  // "Compte gratuit" = pas de date d'essai (mais compte Auth existe + pas d'abonnement actif).
+  const freeRows = allLeads.filter((l) => !l.date_fin_essai);
 
   const leadIds = allLeads.map((l) => l.id);
   const leadEmailsLower = allLeads.map((l) => (l.email || "").trim().toLowerCase()).filter(Boolean);
