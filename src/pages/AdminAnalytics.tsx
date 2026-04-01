@@ -1633,7 +1633,27 @@ const AdminAnalytics: React.FC = () => {
                     </div>
                     {automationTab === 'systematic' && (
                       <div className="space-y-2">
-                        <div className="flex justify-end">
+                        <div className="flex justify-end gap-3">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const emails = Array.from(
+                                new Set(
+                                  automationSystematic
+                                    .filter((r) => r.diagnostics?.missing_locataire_email === true)
+                                    .map((r) => String(r.proprietaire?.email ?? '').trim().toLowerCase())
+                                    .filter(Boolean)
+                                )
+                              );
+                              downloadAutomationCsv(
+                                `automation-systematic-a-relancer-${new Date().toISOString().slice(0, 10)}.csv`,
+                                emails.map((e) => ({ bailleur_email: e, raison: 'email_locataire_manquant' }))
+                              );
+                            }}
+                            className="text-xs text-[#b45309] hover:underline"
+                          >
+                            Export À relancer
+                          </button>
                           <button
                             type="button"
                             onClick={() =>
@@ -1745,7 +1765,31 @@ const AdminAnalytics: React.FC = () => {
                     )}
                     {automationTab === 'classic' && (
                       <div className="space-y-2">
-                        <div className="flex justify-end">
+                        <div className="flex justify-end gap-3">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const emails = Array.from(
+                                new Set(
+                                  automationClassic
+                                    .filter(
+                                      (r) =>
+                                        r.diagnostics?.missing_owner_phone === true ||
+                                        r.diagnostics?.missing_locataire_email === true
+                                    )
+                                    .map((r) => String(r.proprietaire?.email ?? '').trim().toLowerCase())
+                                    .filter(Boolean)
+                                )
+                              );
+                              downloadAutomationCsv(
+                                `automation-rappel-classique-a-relancer-${new Date().toISOString().slice(0, 10)}.csv`,
+                                emails.map((e) => ({ bailleur_email: e, raison: 'tel_bailleur_ou_email_locataire_manquant' }))
+                              );
+                            }}
+                            className="text-xs text-[#b45309] hover:underline"
+                          >
+                            Export À relancer
+                          </button>
                           <button
                             type="button"
                             onClick={() =>
