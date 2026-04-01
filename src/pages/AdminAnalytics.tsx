@@ -191,6 +191,8 @@ const AdminAnalytics: React.FC = () => {
     origine: 'quittance_gratuite' | 'vierge';
     trial_emails: TrialEmailLog[];
     owner_phone_ok?: boolean;
+    owner_telephone?: string | null;
+    user_id?: string | null;
     locataires_total?: number;
     locataires_actifs?: number;
     locataires_actifs_sans_email?: number;
@@ -1453,7 +1455,8 @@ const AdminAnalytics: React.FC = () => {
                             <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Nom</th>
                             <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Créé le</th>
                             <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Jours restants</th>
-                            <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Tel bailleur</th>
+                            <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Tel bailleur (BDD)</th>
+                            <th className="px-2 py-1 text-left font-medium text-[#6b7280]">user_id</th>
                             <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Locataires</th>
                             <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Loc. sans email</th>
                             <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Origine</th>
@@ -1502,7 +1505,10 @@ const AdminAnalytics: React.FC = () => {
                                 </td>
                                 <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">{days}</td>
                                 <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
-                                  {lead.owner_phone_ok === true ? 'OK' : 'Manquant'}
+                                  {String(lead.owner_telephone ?? '').trim() ? String(lead.owner_telephone) : '—'}
+                                </td>
+                                <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
+                                  {lead.user_id ? String(lead.user_id) : '—'}
                                 </td>
                                 <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
                                   {typeof lead.locataires_actifs === 'number' ? `${lead.locataires_actifs} actif(s)` : '—'}
@@ -1878,7 +1884,8 @@ const AdminAnalytics: React.FC = () => {
                             <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Nom</th>
                             <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Créé le</th>
                             <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Jours restants</th>
-                            <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Tel bailleur</th>
+                            <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Tel bailleur (BDD)</th>
+                            <th className="px-2 py-1 text-left font-medium text-[#6b7280]">user_id</th>
                             <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Locataires</th>
                             <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Loc. sans email</th>
                             <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Origine</th>
@@ -1927,7 +1934,10 @@ const AdminAnalytics: React.FC = () => {
                                 </td>
                                 <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">{days}</td>
                                 <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
-                                  {lead.owner_phone_ok === true ? 'OK' : 'Manquant'}
+                                  {String(lead.owner_telephone ?? '').trim() ? String(lead.owner_telephone) : '—'}
+                                </td>
+                                <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
+                                  {lead.user_id ? String(lead.user_id) : '—'}
                                 </td>
                                 <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
                                   {typeof lead.locataires_actifs === 'number' ? `${lead.locataires_actifs} actif(s)` : '—'}

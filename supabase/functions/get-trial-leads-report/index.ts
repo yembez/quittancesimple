@@ -11,6 +11,7 @@ type TrialLeadRow = {
   id: string;
   email: string;
   telephone?: string | null;
+  user_id?: string | null;
   nom: string | null;
   prenom: string | null;
   date_inscription: string | null;
@@ -71,7 +72,7 @@ Deno.serve(async (req: Request) => {
   const { data: rows, error: trialError } = await supabase
     .from("proprietaires")
     .select(
-      "id, email, telephone, nom, prenom, created_at, date_inscription, date_fin_essai, nombre_quittances, lead_statut, password_set, welcome_email_sent_at, campaign_j2_sent_at, campaign_j5_sent_at, campaign_j8_sent_at",
+      "id, user_id, email, telephone, nom, prenom, created_at, date_inscription, date_fin_essai, nombre_quittances, lead_statut, password_set, welcome_email_sent_at, campaign_j2_sent_at, campaign_j5_sent_at, campaign_j8_sent_at",
     )
     .in("lead_statut", ["QA_1st_interested", "free_account"])
     .not("email", "ilike", "2speek%")
@@ -188,6 +189,7 @@ Deno.serve(async (req: Request) => {
 
       return {
         id: l.id,
+        user_id: (l as any).user_id ?? null,
         email: l.email,
         nom: l.nom,
         prenom: l.prenom,
@@ -204,6 +206,7 @@ Deno.serve(async (req: Request) => {
         origine,
         trial_emails: trialEmails,
         owner_phone_ok: ownerPhoneOk,
+        owner_telephone: (l as any).telephone ?? null,
         locataires_total: locStats.total,
         locataires_actifs: locStats.active,
         locataires_actifs_sans_email: locStats.missing_email_active,
