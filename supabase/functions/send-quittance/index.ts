@@ -486,7 +486,7 @@ Deno.serve(async (req) => {
     let currentQuittancesCount = 0;
     const existingProprietaire = await supabase
       .from('proprietaires')
-      .select('nombre_quittances')
+      .select('nombre_quittances, user_id, lead_statut')
       .eq('email', data.baillorEmail)
       .maybeSingle();
 
@@ -494,13 +494,30 @@ Deno.serve(async (req) => {
       currentQuittancesCount = existingProprietaire.data.nombre_quittances || 0;
     }
 
+    /** Ne pas réécraser un statut funnel / compte par une nouvelle quittance gratuite. */
+    const leadStatutNoDowngrade = new Set([
+      'QA_1st_interested',
+      'QA_payment_incomplete',
+      'QA_paid_subscriber',
+      'QA_paying_customer',
+      'trial_expired',
+      'cancelled',
+      'free_account',
+    ]);
+    const ex = existingProprietaire.data;
+    const preserveLeadStatut =
+      ex?.user_id != null ||
+      (typeof ex?.lead_statut === 'string' && leadStatutNoDowngrade.has(ex.lead_statut));
+
     const proprietaireData: any = {
       email: data.baillorEmail,
       adresse: data.baillorAddress,
       nombre_quittances: currentQuittancesCount + 1,
       source: 'website',
-      lead_statut: 'free_quittance_pdf'
     };
+    if (!preserveLeadStatut) {
+      proprietaireData.lead_statut = 'free_quittance_pdf';
+    }
 
     if (data.baillorName && data.baillorName.trim()) {
       const nameParts = data.baillorName.trim().split(/\s+/);

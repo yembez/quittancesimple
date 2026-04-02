@@ -104,16 +104,23 @@ Deno.serve(async (req: Request) => {
     .or("mailing_desabonne.is.null,mailing_desabonne.eq.false")
     .order("created_at", { ascending: true });
 
-  // J+2 : mêmes critères que J+5/J+8 (uniquement leads "quittance gratuite" non inscrits)
+  // J+2 / J+5 / J+8 : leads « quittance gratuite » sans compte Auth lié (pas de user_id)
   if (segment === "free_leads") {
     query = query
       .eq("lead_statut", "free_quittance_pdf")
       .gte("nombre_quittances", 1)
-      .is("campaign_j2_sent_at", null);
+      .is("campaign_j2_sent_at", null)
+      .is("user_id", null);
   } else if (segment === "leads_j5") {
-    query = query.eq("lead_statut", "free_quittance_pdf").is("campaign_j5_sent_at", null);
+    query = query
+      .eq("lead_statut", "free_quittance_pdf")
+      .is("campaign_j5_sent_at", null)
+      .is("user_id", null);
   } else if (segment === "leads_j8") {
-    query = query.eq("lead_statut", "free_quittance_pdf").is("campaign_j8_sent_at", null);
+    query = query
+      .eq("lead_statut", "free_quittance_pdf")
+      .is("campaign_j8_sent_at", null)
+      .is("user_id", null);
   }
 
   // On sur-échantillonne avant filtrage local (désabonnés/table séparée + emails tests)

@@ -73,7 +73,7 @@ Deno.serve(async (req: Request) => {
       .or("mailing_desabonne.is.null,mailing_desabonne.eq.false");
 
     if (segment === "leads") {
-      query = query.eq("lead_statut", "free_quittance_pdf");
+      query = query.eq("lead_statut", "free_quittance_pdf").is("user_id", null);
     } else if (segment === "trial") {
       query = query.eq("lead_statut", "QA_1st_interested");
     } else if (segment === "paid") {

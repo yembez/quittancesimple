@@ -11,7 +11,7 @@ interface LeadRow {
 
 const AdminLeads: React.FC = () => {
   const [leads, setLeads] = useState<LeadRow[]>([]);
-  const [totalCount, setTotalCount] = useState<number>(0); // tous les leads free_quittance_pdf (ex. 291)
+  const [totalCount, setTotalCount] = useState<number>(0); // free_quittance_pdf + sans user_id
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
 
@@ -23,6 +23,7 @@ const AdminLeads: React.FC = () => {
         .from('proprietaires')
         .select('id, email, prenom, nom, lead_statut, created_at')
         .eq('lead_statut', 'free_quittance_pdf')
+        .is('user_id', null)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -74,7 +75,7 @@ const AdminLeads: React.FC = () => {
               Leads quittance gratuite
             </h1>
             <p className="text-sm text-[#6b7280] mt-1">
-              Total : <strong>{totalCount}</strong> leads (free_quittance_pdf). Dont <strong>{leads.length}</strong> adresses valides pour la campagne (hors @maildrop.cc et 2speek).
+              Total : <strong>{totalCount}</strong> leads (quittance gratuite, sans compte). Dont <strong>{leads.length}</strong> adresses valides pour la campagne (hors @maildrop.cc et 2speek).
             </p>
           </div>
           <button

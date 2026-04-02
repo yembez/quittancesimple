@@ -49,6 +49,14 @@ interface BulkPayload {
   closingHtml?: string;
   /** Option A : texte par blocs (slots) pour campagnes. */
   slots?: Record<string, unknown>;
+  /**
+   * Si `bodyHtml` contient un document HTML complet (`<!doctype html>` / `<html>`),
+   * l'envoyer tel quel (après remplacement des placeholders) sans l'envelopper
+   * dans `buildEmailHtml` / `buildCampaignEmailHtml`.
+   */
+  rawHtml?: boolean;
+  /** URL d'image injectée dans les templates type {{photo_vincent_url}}. */
+  photoVincentUrl?: string;
   /** Nombre max d'e-mails à envoyer dans cette exécution (défaut 100). */
   limit?: number;
   /** Décalage dans la liste (pour envoi sur plusieurs jours). */
@@ -59,6 +67,11 @@ interface BulkPayload {
   segment?: string;
   /** Envoi test : envoie uniquement à ces adresses (pas de liste BDD). Max 5. */
   testEmails?: string[];
+  /**
+   * Envoi test avancé (prévisualisation) : fournit des destinataires complets
+   * (prénom + jours restants, etc.). Prioritaire sur `testEmails`.
+   */
+  testRecipients?: Array<{ email: string; prenom?: string; jours_restants?: number; days_remaining?: number }>;
 }
 
 Deno.serve(async (req: Request) => {
@@ -116,7 +129,7 @@ Deno.serve(async (req: Request) => {
   }
 
   delete bodyJson._mailingSecret;
-  const payload = bodyJson as BulkPayload;
+  const payload = bodyJson as unknown as BulkPayload;
 
   const resendKey = Deno.env.get("RESEND_API_KEY");
   if (!resendKey) {
@@ -148,10 +161,30 @@ Deno.serve(async (req: Request) => {
           .filter((e) => e && e.includes("@"))
       : null;
 
-  let list: { id?: number; email: string; prenom?: string }[];
+  let list: { id?: number; email: string; prenom?: string; jours_restants?: number }[];
   let runOffset = 0;
 
-  if (testEmails && testEmails.length > 0) {
+  const rawTestRecipients = payload.testRecipients;
+  const testRecipients =
+    Array.isArray(rawTestRecipients) && rawTestRecipients.length > 0
+      ? rawTestRecipients
+          .slice(0, MAX_TEST_EMAILS)
+          .map((r) => ({
+            email: typeof r?.email === "string" ? r.email.trim() : "",
+            prenom: typeof r?.prenom === "string" ? r.prenom.trim() : "",
+            jours_restants:
+              typeof r?.jours_restants === "number"
+                ? r.jours_restants
+                : typeof (r as { days_remaining?: unknown })?.days_remaining === "number"
+                  ? Number((r as { days_remaining: number }).days_remaining)
+                  : undefined,
+          }))
+          .filter((r) => r.email && r.email.includes("@"))
+      : null;
+
+  if (testRecipients && testRecipients.length > 0) {
+    list = testRecipients.map((r) => ({ email: r.email, prenom: r.prenom || "Prénom", jours_restants: r.jours_restants }));
+  } else if (testEmails && testEmails.length > 0) {
     list = testEmails.map((email) => ({ email, prenom: "Prénom" }));
   } else {
     const limit = Math.min(Math.max(1, payload.limit ?? DEFAULT_LIMIT_PER_RUN), 200);
@@ -205,13 +238,17 @@ Deno.serve(async (req: Request) => {
       .order("created_at", { ascending: true });
 
     if (segment === "free_leads") {
-      query = query.gte("nombre_quittances", 1).is("campaign_j2_sent_at", null);
+      query = query
+        .eq("lead_statut", "free_quittance_pdf")
+        .gte("nombre_quittances", 1)
+        .is("campaign_j2_sent_at", null)
+        .is("user_id", null);
     } else if (segment === "leads" || segment.startsWith("leads_")) {
-      query = query.eq("lead_statut", "free_quittance_pdf");
+      query = query.eq("lead_statut", "free_quittance_pdf").is("user_id", null);
     }
 
     if (isFreeLeads) {
-      // Rien de plus : déjà filtré par nombre_quittances >= 1 et campaign_j2_sent_at IS NULL
+      // Déjà filtré : free_quittance_pdf, nombre_quittances, J+2 non envoyé, sans compte
     } else if (daysOffset !== null && campaignField) {
       const targetStart = new Date(todayUtc);
       targetStart.setUTCDate(targetStart.getUTCDate() - daysOffset);
@@ -265,10 +302,15 @@ Deno.serve(async (req: Request) => {
   for (let i = 0; i < list.length; i++) {
     const r = list[i];
     const prenom = (r.prenom || "").trim() || "";
+    const joursRestants =
+      typeof r.jours_restants === "number" && Number.isFinite(r.jours_restants) ? Math.max(0, Math.round(r.jours_restants)) : null;
     let bodyPersonalized = bodyHtml
       .replace(/\{\{\s*prenom\s*\}\}/gi, prenom)
       .replace(/\[\s*Prénom\s*\]/gi, prenom)
-      .replace(/\{\{\s*email\s*\}\}/gi, encodeURIComponent(r.email.trim()));
+      .replace(/\{\{\s*email\s*\}\}/gi, encodeURIComponent(r.email.trim()))
+      .replace(/\{\{\s*jours_restants\s*\}\}/gi, joursRestants === null ? "" : String(joursRestants))
+      .replace(/\{\{\s*days_remaining\s*\}\}/gi, joursRestants === null ? "" : String(joursRestants))
+      .replace(/\[\s*X\s*\]/gi, joursRestants === null ? "" : String(joursRestants));
     if (!prenom) {
       bodyPersonalized = bodyPersonalized.replace(/\bBonjour\s+,/gi, "Bonjour,");
     }
@@ -301,26 +343,39 @@ Deno.serve(async (req: Request) => {
 
     const SITE_URL = "https://www.quittancesimple.fr";
     const unsubscribeUrl = `${SITE_URL}/unsubscribe?email=${encodeURIComponent(r.email.trim())}`;
+    const photoVincentUrl =
+      (payload.photoVincentUrl && String(payload.photoVincentUrl).trim()) || "https://www.quittancesimple.fr/images/automation/marc_2.png";
 
     const isCampaign = ["free_leads", "leads_j2", "leads_j2_catchup", "leads_j5", "leads_j8"].includes(payload.segment || "");
-    const html = isCampaign
-      ? buildCampaignEmailHtml({
-          prenom: prenom || "Prénom",
-          lienActivation: ctaUrlForEmail || ctaUrlPersonalized || "",
-          lienDesabonnement: unsubscribeUrl,
-          bodyHtml: bodyPersonalized,
-          ctaText: payload.ctaText,
-          closingHtml: payload.closingHtml,
-          slots: (payload.slots && typeof payload.slots === "object") ? payload.slots : undefined,
-        })
-      : buildEmailHtml({
-          title: "",
-          bodyHtml: bodyPersonalized,
-          ctaText: payload.ctaText,
-          ctaUrl: ctaUrlForEmail,
-          closingHtml: payload.closingHtml,
-          unsubscribeUrl,
-        });
+    const shouldSendRaw =
+      payload.rawHtml === true ||
+      /^\s*<!doctype\s+html/i.test(bodyPersonalized) ||
+      (/<html[\s>]/i.test(bodyPersonalized) && /<\/html>/i.test(bodyPersonalized));
+
+    const html = shouldSendRaw
+      ? bodyPersonalized
+          .replace(/\{\{\s*lien_activation\s*\}\}/gi, ctaUrlForEmail || ctaUrlPersonalized || "")
+          .replace(/\{\{\s*lien_desabonnement\s*\}\}/gi, unsubscribeUrl)
+          .replace(/\{\{\s*photo_vincent_url\s*\}\}/gi, photoVincentUrl)
+      : isCampaign
+        ? buildCampaignEmailHtml({
+            prenom: prenom || "Prénom",
+            lienActivation: ctaUrlForEmail || ctaUrlPersonalized || "",
+            lienDesabonnement: unsubscribeUrl,
+            bodyHtml: bodyPersonalized,
+            ctaText: payload.ctaText,
+            closingHtml: payload.closingHtml,
+            slots: (payload.slots && typeof payload.slots === "object") ? payload.slots : undefined,
+            photoVincentUrl,
+          })
+        : buildEmailHtml({
+            title: "",
+            bodyHtml: bodyPersonalized,
+            ctaText: payload.ctaText,
+            ctaUrl: ctaUrlForEmail,
+            closingHtml: payload.closingHtml,
+            unsubscribeUrl,
+          });
 
     try {
     const res = await fetch("https://api.resend.com/emails", {
@@ -380,11 +435,11 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  const nextOffset = testEmails ? undefined : runOffset + list.length;
+  const nextOffset = (testEmails || testRecipients) ? undefined : runOffset + list.length;
 
   return new Response(
     JSON.stringify({
-      testMode: !!testEmails,
+      testMode: !!testEmails || !!testRecipients,
       sent,
       failed: failed.length,
       failedDetails: failed.length > 0 ? failed : undefined,
@@ -393,6 +448,10 @@ Deno.serve(async (req: Request) => {
         ? (failed.length === 0
             ? `${sent} e-mail(s) de test envoyé(s). Vérifiez votre boîte.`
             : `${sent} envoyé(s), ${failed.length} en erreur.`)
+        : testRecipients
+          ? (failed.length === 0
+              ? `${sent} e-mail(s) de test (destinataires) envoyé(s). Vérifiez votre boîte.`
+              : `${sent} envoyé(s), ${failed.length} en erreur.`)
         : failed.length === 0
           ? `${sent} e-mail(s) envoyé(s). Pour la suite : rappeler avec offset=${nextOffset}.`
           : `${sent} envoyé(s), ${failed.length} en erreur. Prochaine fois : offset=${nextOffset}.`,

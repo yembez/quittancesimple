@@ -466,7 +466,9 @@ const AdminAnalytics: React.FC = () => {
     try {
       const { data, error: err } = await supabase
         .from('proprietaires')
-        .select('id, email, nom, prenom, created_at, nombre_quittances, device_type, campaign_j2_sent_at, campaign_j5_sent_at, campaign_j8_sent_at, campaign_j2_fix_sent_at')
+        .select(
+          'id, email, nom, prenom, created_at, nombre_quittances, device_type, lead_statut, user_id, campaign_j2_sent_at, campaign_j5_sent_at, campaign_j8_sent_at, campaign_j2_fix_sent_at',
+        )
         .order('created_at', { ascending: false });
 
       if (err) {
@@ -679,19 +681,25 @@ const AdminAnalytics: React.FC = () => {
     exportSegmentToCSV(result.segments.hot, 'hot');
   };
 
-  const freeLeadsWithQuittances = result
-    ? result.validLeads.filter((l) => l.nombre_quittances >= 1)
+  /** Même cible que les Edge Functions J+2/J+5/J+8 : quittance gratuite, sans compte Auth. */
+  const freeLeadsCampaignEligible = result
+    ? result.validLeads.filter(
+        (l) =>
+          l.nombre_quittances >= 1 &&
+          l.lead_statut === 'free_quittance_pdf' &&
+          (l.user_id == null || l.user_id === ''),
+      )
     : [];
-  const sentJ2Leads = freeLeadsWithQuittances.filter((l) => !!l.campaign_j2_sent_at);
-  const sentJ5Leads = freeLeadsWithQuittances.filter((l) => !!l.campaign_j5_sent_at);
-  const sentJ8Leads = freeLeadsWithQuittances.filter((l) => !!l.campaign_j8_sent_at);
-  const pendingJ2 = freeLeadsWithQuittances.filter((l) => !l.campaign_j2_sent_at).length;
+  const sentJ2Leads = freeLeadsCampaignEligible.filter((l) => !!l.campaign_j2_sent_at);
+  const sentJ5Leads = freeLeadsCampaignEligible.filter((l) => !!l.campaign_j5_sent_at);
+  const sentJ8Leads = freeLeadsCampaignEligible.filter((l) => !!l.campaign_j8_sent_at);
+  const pendingJ2 = freeLeadsCampaignEligible.filter((l) => !l.campaign_j2_sent_at).length;
   const sentJ2 = sentJ2Leads.length;
-  const sentJ2Fix = sentJ2Leads.filter((l: any) => !!l.campaign_j2_fix_sent_at).length;
+  const sentJ2Fix = sentJ2Leads.filter((l) => !!l.campaign_j2_fix_sent_at).length;
   const pendingJ2Fix = Math.max(0, sentJ2 - sentJ2Fix);
-  const pendingJ5 = freeLeadsWithQuittances.filter((l) => !l.campaign_j5_sent_at).length;
+  const pendingJ5 = freeLeadsCampaignEligible.filter((l) => !l.campaign_j5_sent_at).length;
   const sentJ5 = sentJ5Leads.length;
-  const pendingJ8 = freeLeadsWithQuittances.filter((l) => !l.campaign_j8_sent_at).length;
+  const pendingJ8 = freeLeadsCampaignEligible.filter((l) => !l.campaign_j8_sent_at).length;
   const sentJ8 = sentJ8Leads.length;
 
   const exportSentCampaignCSV = (leads: LeadSegment[], campaignLabel: string, dateField: 'campaign_j2_sent_at' | 'campaign_j5_sent_at' | 'campaign_j8_sent_at') => {
@@ -1264,6 +1272,9 @@ const AdminAnalytics: React.FC = () => {
                 <h2 className="text-lg font-semibold text-[#111827]">Campagnes email (Free Leads)</h2>
                 <p className="text-sm text-[#6b7280] mt-1">
                   Premier email = J+2. Déclenchez l&apos;envoi depuis ici (limite 100/envoi, relancer pour la suite).
+                  Les compteurs « en attente » ciblent{' '}
+                  <span className="text-[#374151]">lead_statut = free_quittance_pdf</span> et{' '}
+                  <span className="text-[#374151]">sans compte</span> (comme l&apos;envoi réel).
                 </p>
               </div>
               <div className="p-4 grid grid-cols-1 md:grid-cols-4 gap-4">
