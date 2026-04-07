@@ -15,6 +15,8 @@ export interface Proprietaire {
   plan_actuel?: string;
   lead_statut?: string;
   features_enabled?: Record<string, boolean> | null;
+  created_at?: string;
+  stripe_subscription_id?: string | null;
   user_id?: string;
 }
 
@@ -85,7 +87,7 @@ export function EspaceBailleurProvider({
       const { data, error: propError } = await supabase
         .from('proprietaires')
         .select(
-          'id, email, nom, prenom, adresse, telephone, abonnement_actif, date_fin_essai, plan_type, plan_actuel, lead_statut, features_enabled',
+          'id, email, nom, prenom, adresse, telephone, abonnement_actif, date_fin_essai, plan_type, plan_actuel, lead_statut, features_enabled, created_at, stripe_subscription_id',
         )
         .eq('email', user.email)
         .maybeSingle();

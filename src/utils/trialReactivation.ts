@@ -1,27 +1,62 @@
+function isPaidLead(lead_statut?: string | null): boolean {
+  const s = lead_statut || '';
+  return s === 'QA_paid_subscriber' || s === 'QA_paying_customer';
+}
+
+function hasStripeSubscription(stripe_subscription_id?: string | null): boolean {
+  return !!(stripe_subscription_id && String(stripe_subscription_id).trim().length > 0);
+}
+
+/** Âge du compte en jours (à partir de created_at). */
+function accountAgeDays(created_at?: string | null): number | null {
+  if (!created_at) return null;
+  const created = new Date(created_at);
+  if (Number.isNaN(created.getTime())) return null;
+  const ms = Date.now() - created.getTime();
+  return ms / (1000 * 60 * 60 * 24);
+}
+
 /**
- * Bailleurs dont l’essai (30 j) est terminé : Pack auto ou compte gratuit avec date_fin_essai,
- * sans statut « client payant » Stripe enregistré côté lead.
+ * Bailleurs à orienter vers la réactivation :
+ * - essai terminé (date_fin_essai passée), ou
+ * - compte pack auto / premium créé il y a plus de 30 jours sans abonnement Stripe (cas legacy sans date_fin_essai),
+ * et pas client payant (lead + souscription Stripe).
  */
 export function needsTrialReactivationPage(p: {
   abonnement_actif?: boolean | null;
   date_fin_essai?: string | null;
   plan_type?: string | null;
   lead_statut?: string | null;
+  created_at?: string | null;
+  stripe_subscription_id?: string | null;
 } | null): boolean {
   if (!p) return false;
-  if (p.lead_statut === 'QA_paid_subscriber' || p.lead_statut === 'QA_paying_customer') {
-    return false;
-  }
-  if (!p.date_fin_essai) return false;
-
-  const end = new Date(p.date_fin_essai);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  end.setHours(0, 0, 0, 0);
-  if (end >= today) return false;
+  if (isPaidLead(p.lead_statut)) return false;
+  if (hasStripeSubscription(p.stripe_subscription_id)) return false;
 
   const plan = (p.plan_type || 'auto').toLowerCase();
-  if (plan === 'free' || plan === 'auto' || plan === 'premium') return true;
+  if (plan !== 'free' && plan !== 'auto' && plan !== 'premium') return false;
+
+  if (p.date_fin_essai) {
+    const end = new Date(p.date_fin_essai);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+    if (end >= today) return false;
+    return true;
+  }
+
+  // Pas de date_fin_essai : anciens comptes auto/premium (>30 j) sans essai daté en BDD
+  const age = accountAgeDays(p.created_at);
+  if (age !== null && age > 30 && (plan === 'auto' || plan === 'premium')) {
+    return true;
+  }
+
+  // 3) Gratuit + lead trial_expired + ancien compte
+  if (plan === 'free' && age !== null && age > 30 && p.lead_statut === 'trial_expired') {
+    return true;
+  }
+
   return false;
 }
 
