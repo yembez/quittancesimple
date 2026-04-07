@@ -61,8 +61,8 @@ const PaymentCheckout = () => {
         try {
           const { data: proprietaire, error } = await supabase
             .from('proprietaires')
-            .select('id, email, nombre_locataires')
-            .eq('email', emailParam)
+            .select('id, email, nom, prenom, adresse, telephone, nombre_locataires')
+            .ilike('email', emailParam.trim())
             .maybeSingle();
 
           if (error || !proprietaire) {
@@ -81,9 +81,15 @@ const PaymentCheckout = () => {
             console.error('Erreur chargement locataires:', locError);
           }
 
-          // Créer les données de setup à partir des données existantes
+          // Même forme que `automationSetupData` (localStorage) : le rendu attend `proprietaire.*`
           const setupDataFromDb = {
-            email: proprietaire.email,
+            proprietaire: {
+              nom: (proprietaire as { nom?: string | null }).nom ?? '',
+              prenom: (proprietaire as { prenom?: string | null }).prenom ?? '',
+              email: proprietaire.email ?? '',
+              adresse: (proprietaire as { adresse?: string | null }).adresse ?? '',
+              telephone: (proprietaire as { telephone?: string | null }).telephone ?? '',
+            },
             locataires: locataires || [],
           };
 

@@ -447,6 +447,61 @@ const AdminAnalytics: React.FC = () => {
     );
   };
 
+  const exportClassicExpiredTrials = () => {
+    if (!automationClassic) return;
+    const seen = new Set<string>();
+    const rows = automationClassic
+      .map((r) => r.proprietaire)
+      .filter(Boolean)
+      .map((p) => {
+        const email = String(p?.email ?? "").trim();
+        const emailLower = email.toLowerCase();
+        const days = computeTrialDaysRemaining(p?.date_fin_essai ?? null);
+        const c = formatAutomationCompteLines(p as any);
+        const overdueReason =
+          typeof days === "number" && days < 0
+            ? "essai_depasse"
+            : !String((p as any)?.date_fin_essai ?? "").trim() && typeof c.joursDepuisInscription === "number" && c.joursDepuisInscription > 30
+              ? "sans_fin_essai_inscrit_depuis_plus_30j"
+              : null;
+        return { p, email, emailLower, days, c, overdueReason };
+      })
+      .filter(({ emailLower, overdueReason }) => {
+        if (!emailLower) return false;
+        if (seen.has(emailLower)) return false;
+        seen.add(emailLower);
+        return overdueReason !== null;
+      })
+      .map(({ p, email, days, c, overdueReason }) => {
+        const abonnementActif = (p as any)?.abonnement_actif === true;
+        const acces = abonnementActif
+          ? "Pack actif (ou essai encore considéré actif en BDD)"
+          : "Pack inactif (accès payant désactivé) — config rappel peut exister";
+        return {
+          bailleur_email: email,
+          bailleur_nom: [String((p as any)?.prenom ?? "").trim(), String((p as any)?.nom ?? "").trim()]
+            .filter(Boolean)
+            .join(" "),
+          raison_inclusion: overdueReason,
+          lead_statut: String((p as any)?.lead_statut ?? ""),
+          plan_type: String((p as any)?.plan_type ?? ""),
+          plan_actuel: String((p as any)?.plan_actuel ?? ""),
+          abonnement_actif: abonnementActif ? "oui" : "non",
+          stripe_lie: (p as any)?.stripe_customer_id ? "oui" : "non",
+          date_fin_essai: (p as any)?.date_fin_essai ?? "",
+          jours_restants_essai: String(days ?? ""),
+          jours_depuis_inscription: c.joursDepuisInscription ?? "",
+          note_sans_fin_essai: (p as any)?.date_fin_essai ? "" : c.hintSansEssai ?? "",
+          acces_aujourd_hui: acces,
+        };
+      });
+
+    downloadAutomationCsv(
+      `automation-rappel-classique-essais-depasses-ou-sans-fin-plus-30j-${new Date().toISOString().slice(0, 10)}.csv`,
+      rows,
+    );
+  };
+
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
@@ -2092,6 +2147,14 @@ const AdminAnalytics: React.FC = () => {
                         <div className="flex justify-end gap-3">
                           <button
                             type="button"
+                            onClick={exportClassicExpiredTrials}
+                            className="text-xs text-[#991b1b] hover:underline"
+                            title="Export bailleurs uniques : essai dépassé OU sans date_fin_essai mais inscrit depuis > 30 jours"
+                          >
+                            Export essais dépassés / sans fin &gt;30j
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => {
                               const emails = Array.from(
                                 new Set(
@@ -2149,6 +2212,86 @@ const AdminAnalytics: React.FC = () => {
                             Export CSV
                           </button>
                         </div>
+                        {(() => {
+                          const seen = new Set<string>();
+                          const overdue = (automationClassic || [])
+                            .map((r) => r.proprietaire)
+                            .filter(Boolean)
+                            .map((p) => {
+                              const email = String((p as any)?.email ?? '').trim();
+                              const emailLower = email.toLowerCase();
+                              const days = computeTrialDaysRemaining((p as any)?.date_fin_essai ?? null);
+                              const c = formatAutomationCompteLines(p as any);
+                              const overdueReason =
+                                typeof days === 'number' && days < 0
+                                  ? 'Essai dépassé'
+                                  : !String((p as any)?.date_fin_essai ?? '').trim() &&
+                                      typeof c.joursDepuisInscription === 'number' &&
+                                      c.joursDepuisInscription > 30
+                                    ? 'Sans fin d’essai (>30j)'
+                                    : null;
+                              return { p, email, emailLower, days, c, overdueReason };
+                            })
+                            .filter((x) => {
+                              if (!x.emailLower) return false;
+                              if (seen.has(x.emailLower)) return false;
+                              seen.add(x.emailLower);
+                              return x.overdueReason !== null;
+                            });
+
+                          if (overdue.length === 0) return null;
+
+                          return (
+                            <div className="rounded-lg border border-[#fee2e2] bg-[#fff1f2] p-3">
+                              <p className="text-xs text-[#7f1d1d]">
+                                <strong>{overdue.length}</strong> bailleur(s) uniques en “Rappel classique” avec{' '}
+                                <strong>essai dépassé</strong> ou <strong>sans fin d’essai</strong> mais inscrit(s) depuis{' '}
+                                <strong>plus de 30 jours</strong>.
+                              </p>
+                              <div className="mt-2 overflow-x-auto max-h-[240px] overflow-y-auto">
+                                <table className="min-w-full text-xs border-t border-b border-[#fecaca]">
+                                  <thead className="bg-[#ffe4e6] sticky top-0">
+                                    <tr>
+                                      <th className="px-2 py-1 text-left font-medium text-[#7f1d1d]">Bailleur</th>
+                                      <th className="px-2 py-1 text-left font-medium text-[#7f1d1d]">Raison</th>
+                                      <th className="px-2 py-1 text-left font-medium text-[#7f1d1d]">Fin essai</th>
+                                      <th className="px-2 py-1 text-left font-medium text-[#7f1d1d]">Jours restants</th>
+                                      <th className="px-2 py-1 text-left font-medium text-[#7f1d1d]">Abonnement actif</th>
+                                      <th className="px-2 py-1 text-left font-medium text-[#7f1d1d]">Plan</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {overdue.map((x) => {
+                                      const p: any = x.p;
+                                      const abonnementActif = p?.abonnement_actif === true;
+                                      const plan = [p?.plan_type, p?.plan_actuel].filter(Boolean).join(' · ') || '—';
+                                      return (
+                                        <tr key={x.emailLower} className="border-t border-[#fecaca]">
+                                          <td className="px-2 py-1 text-[#111827] truncate max-w-[220px]" title={x.email}>
+                                            {x.email}
+                                          </td>
+                                          <td className="px-2 py-1 text-[#7f1d1d] whitespace-nowrap">{x.overdueReason}</td>
+                                          <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
+                                            {p?.date_fin_essai ? new Date(p.date_fin_essai).toLocaleDateString('fr-FR') : '—'}
+                                          </td>
+                                          <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
+                                            {typeof x.days === 'number' ? `${x.days}j` : '—'}
+                                          </td>
+                                          <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
+                                            {abonnementActif ? 'oui' : 'non'}
+                                          </td>
+                                          <td className="px-2 py-1 text-[#4b5563] truncate max-w-[220px]" title={plan}>
+                                            {plan}
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          );
+                        })()}
                         <div className="overflow-x-auto max-h-[480px] overflow-y-auto">
                           <table className="min-w-full text-xs border-t border-b border-[#e5e7eb]">
                             <thead className="bg-[#f9fafb] sticky top-0">
