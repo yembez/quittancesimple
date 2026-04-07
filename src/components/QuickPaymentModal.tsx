@@ -13,6 +13,14 @@ interface QuickPaymentModalProps {
   selectedPlan: 'auto' | 'plus';
   billingCycle?: 'monthly' | 'yearly';
   prefilledEmail?: string;
+  /** Affichage intégré (sans overlay) pour `/payment-checkout` post-essai. */
+  embedded?: boolean;
+  /** En mode embedded, on masque le sélecteur de palier et on verrouille sur le palier des données bailleur. */
+  lockTenantTierToActiveCount?: boolean;
+  /** Titre personnalisé (sinon titre historique). */
+  titleOverride?: string;
+  /** Masque la note “Compte créé après paiement” (cas post-essai). */
+  hideAccountCreatedNote?: boolean;
 }
 
 const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
@@ -21,6 +29,10 @@ const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
   selectedPlan,
   billingCycle: initialBillingCycle = 'yearly',
   prefilledEmail,
+  embedded = false,
+  lockTenantTierToActiveCount = false,
+  titleOverride,
+  hideAccountCreatedNote = false,
 }) => {
   const [email, setEmail] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -226,6 +238,17 @@ const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
 
     loadActiveTenants();
   }, [isOpen, prefilledEmail]);
+
+  // En mode "checkout post-essai": on verrouille le palier sur le nombre de locataires actifs détecté.
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!lockTenantTierToActiveCount) return;
+    if (activeTenantsCount == null) return;
+    if (activeTenantsCount <= 0) return;
+    const autoTier = getTierFromTenantCount(activeTenantsCount);
+    setTenantTier(autoTier);
+    localStorage.setItem('tenant_tier', autoTier);
+  }, [isOpen, lockTenantTierToActiveCount, activeTenantsCount]);
 
   useEffect(() => {
     if (prefilledEmail) {
@@ -520,34 +543,48 @@ const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={handleClose}
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        />
+      <div
+        className={
+          embedded
+            ? 'w-full'
+            : 'fixed inset-0 z-50 flex items-end sm:items-center justify-center'
+        }
+      >
+        {!embedded && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={handleClose}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          />
+        )}
 
         <motion.div
-          initial={{ y: '100%', opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: '100%', opacity: 0 }}
+          initial={embedded ? { opacity: 0 } : { y: '100%', opacity: 0 }}
+          animate={embedded ? { opacity: 1 } : { y: 0, opacity: 1 }}
+          exit={embedded ? { opacity: 0 } : { y: '100%', opacity: 0 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="relative w-full max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] sm:max-h-[85vh] overflow-y-auto"
+          className={
+            embedded
+              ? 'relative w-full bg-white rounded-2xl border border-gray-200 shadow-xl overflow-hidden'
+              : 'relative w-full max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] sm:max-h-[85vh] overflow-y-auto'
+          }
         >
-          <button
-            onClick={handleClose}
-            className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors z-10"
-          >
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
+          {!embedded && (
+            <button
+              onClick={handleClose}
+              className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors z-10"
+            >
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
+          )}
 
           <div className="p-6 pb-8">
            
 
             <h2 className="text-2xl font-bold text-center text-[#1a1f20] mb-4">
-              Offre de lancement
+              {titleOverride || 'Offre de lancement'}
             </h2>
 
             <div className="bg-[#fefdf9] rounded-2xl p-4 mb-4 border border-gray-200">
@@ -606,73 +643,79 @@ const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
                 </div>
               </div>
 
-              <div className="mb-3">
-                <label className="text-xs font-medium text-[#545454] mb-2 block">
-                  Nombre de locataires
-                  {isLoadingTenants && (
-                    <span className="ml-2 text-xs text-[#545454]">(chargement...)</span>
-                  )}
-                </label>
-                <div className="flex gap-2">
-                  {(['1-2', '3-5', '5+'] as const).map((tier) => {
-                    const tierLimits = getTierLimits(tier);
-                    const isIncompatible = activeTenantsCount !== null && activeTenantsCount > tierLimits.max;
-                    // Afficher "6+" au lieu de "5+" pour le tier supérieur
-                    const displayLabel = tier === '5+' ? '6+' : tier;
-                    
-                    return (
-                      <button
-                        key={tier}
-                        type="button"
-                        onClick={() => handleTenantTierChange(tier)}
-                        className={`flex-1 py-2 text-xs font-semibold rounded-lg border-2 transition-all ${
-                          tenantTier === tier
-                            ? isIncompatible
-                              ? 'border-red-500 bg-red-50 text-red-700'
-                              : 'border-[#ed7862] bg-[#ed7862] text-white'
-                            : isIncompatible
-                              ? 'border-red-200 text-red-600 hover:border-red-300'
-                              : 'border-gray-200 text-[#545454] hover:border-[#ed7862]'
-                        }`}
-                        title={isIncompatible ? `Incompatible avec ${activeTenantsCount} locataire${activeTenantsCount > 1 ? 's' : ''}` : ''}
-                      >
-                        {displayLabel}
-                      </button>
-                    );
-                  })}
-                </div>
-                
-                {/* Messages de validation */}
-                {tierValidation && (
-                  <div className={`mt-3 p-3 rounded-lg border ${
-                    tierValidation.type === 'error'
-                      ? 'bg-red-50 border-red-200'
-                      : 'bg-amber-50 border-amber-200'
-                  }`}>
-                    <p className={`text-xs font-medium ${
-                      tierValidation.type === 'error'
-                        ? 'text-red-800'
-                        : 'text-amber-800'
-                    }`}>
-                      {tierValidation.type === 'error' && '⚠️ '}
-                      {tierValidation.type === 'warning' && 'ℹ️ '}
-                      {tierValidation.message}
-                    </p>
-                    {tierValidation.type === 'error' && (
-                      <a
-                        href="/dashboard"
-                        className="mt-2 inline-block text-xs font-semibold text-red-700 hover:text-red-800 underline"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          window.location.href = '/dashboard';
-                        }}
-                      >
-                        Accéder à mon espace bailleur pour gérer mes locataires
-                      </a>
+              {!lockTenantTierToActiveCount && (
+                <div className="mb-3">
+                  <label className="text-xs font-medium text-[#545454] mb-2 block">
+                    Nombre de locataires
+                    {isLoadingTenants && (
+                      <span className="ml-2 text-xs text-[#545454]">(chargement...)</span>
                     )}
+                  </label>
+                  <div className="flex gap-2">
+                    {(['1-2', '3-5', '5+'] as const).map((tier) => {
+                      const tierLimits = getTierLimits(tier);
+                      const isIncompatible = activeTenantsCount !== null && activeTenantsCount > tierLimits.max;
+                      const displayLabel = tier === '5+' ? '6+' : tier;
+
+                      return (
+                        <button
+                          key={tier}
+                          type="button"
+                          onClick={() => handleTenantTierChange(tier)}
+                          className={`flex-1 py-2 text-xs font-semibold rounded-lg border-2 transition-all ${
+                            tenantTier === tier
+                              ? isIncompatible
+                                ? 'border-red-500 bg-red-50 text-red-700'
+                                : 'border-[#ed7862] bg-[#ed7862] text-white'
+                              : isIncompatible
+                                ? 'border-red-200 text-red-600 hover:border-red-300'
+                                : 'border-gray-200 text-[#545454] hover:border-[#ed7862]'
+                          }`}
+                          title={
+                            isIncompatible
+                              ? `Incompatible avec ${activeTenantsCount} locataire${activeTenantsCount > 1 ? 's' : ''}`
+                              : ''
+                          }
+                        >
+                          {displayLabel}
+                        </button>
+                      );
+                    })}
                   </div>
-                )}
-              </div>
+
+                  {tierValidation && (
+                    <div
+                      className={`mt-3 p-3 rounded-lg border ${
+                        tierValidation.type === 'error'
+                          ? 'bg-red-50 border-red-200'
+                          : 'bg-amber-50 border-amber-200'
+                      }`}
+                    >
+                      <p
+                        className={`text-xs font-medium ${
+                          tierValidation.type === 'error' ? 'text-red-800' : 'text-amber-800'
+                        }`}
+                      >
+                        {tierValidation.type === 'error' && '⚠️ '}
+                        {tierValidation.type === 'warning' && 'ℹ️ '}
+                        {tierValidation.message}
+                      </p>
+                      {tierValidation.type === 'error' && (
+                        <a
+                          href="/dashboard"
+                          className="mt-2 inline-block text-xs font-semibold text-red-700 hover:text-red-800 underline"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            window.location.href = '/dashboard';
+                          }}
+                        >
+                          Accéder à mon espace bailleur pour gérer mes locataires
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="mt-3 space-y-1.5">
                 <div className="flex items-center text-xs text-[#545454]">
                   <Check className="w-3.5 h-3.5 text-[#7CAA89] mr-2" />
@@ -759,9 +802,11 @@ const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
             </div>
 
             <div className="mt-6 space-y-2">
-              <p className="text-xs text-center text-[#7CAA89] font-semibold">
-                ✨ Compte créé après paiement
-              </p>
+              {!hideAccountCreatedNote && (
+                <p className="text-xs text-center text-[#7CAA89] font-semibold">
+                  ✨ Compte créé après paiement
+                </p>
+              )}
             
               <p className="text-xs text-center text-[#545454]">
                 Paiement sécurisé par Stripe - Sans engagement
