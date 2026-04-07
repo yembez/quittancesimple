@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Home, FileText, Download, Crown, Edit2, Info, UserPlus } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { needsTrialReactivationPage } from '../utils/trialReactivation';
 import QuittancePreview from '../components/QuittancePreview';
 import EditProprietaireModal from '../components/EditProprietaireModal';
 import EditLocataireModal from '../components/EditLocataireModal';
@@ -91,6 +92,18 @@ const FreeDashboard = () => {
 
       if (propData.plan_type !== 'free') {
         navigate('/dashboard');
+        return;
+      }
+
+      if (needsTrialReactivationPage(propData as Parameters<typeof needsTrialReactivationPage>[0])) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          navigate('/essai-termine');
+        } else {
+          navigate(
+            `/payment-checkout?email=${encodeURIComponent(propData.email)}&reactivate=true`,
+          );
+        }
         return;
       }
 

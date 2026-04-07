@@ -86,7 +86,8 @@ Deno.serve(async (req: Request) => {
           prenom,
           email,
           adresse,
-          telephone
+          telephone,
+          features_enabled
         )
       `)
       .lte('date_envoi_auto', nowIso)
@@ -99,6 +100,11 @@ Deno.serve(async (req: Request) => {
         const prop = row.proprietaires as Record<string, unknown> | null;
         if (!loc || !prop) {
           console.error(`❌ J+5: missing locataire or proprietaire for row ${row.id}`);
+          continue;
+        }
+        const fe = prop.features_enabled as { auto_send?: boolean } | null | undefined;
+        if (fe && fe.auto_send === false) {
+          console.log(`⏭️ J+5: skip row ${row.id} (features_enabled.auto_send=false)`);
           continue;
         }
         const locataireName = [loc.prenom, loc.nom].filter(Boolean).join(' ').trim() || String(loc.nom || '');
@@ -156,7 +162,8 @@ Deno.serve(async (req: Request) => {
         nom,
         prenom,
         telephone,
-        email
+        email,
+        features_enabled
       )
     `;
     let locataires: Array<Record<string, unknown>> | null = null;
@@ -217,6 +224,14 @@ Deno.serve(async (req: Request) => {
 
         const rawProprietaire = locataire.proprietaires;
         const proprietaire = Array.isArray(rawProprietaire) ? rawProprietaire[0] : rawProprietaire;
+        const propFe = (proprietaire as Record<string, unknown> | undefined)?.features_enabled as
+          | { reminders?: boolean; auto_send?: boolean }
+          | null
+          | undefined;
+        if (propFe && propFe.reminders === false) {
+          console.log(`⏭️ Skip rappels locataire ${locataire.id} (features_enabled.reminders=false)`);
+          continue;
+        }
 
         const month = parisTime.getMonth();
         const year = parisTime.getFullYear();

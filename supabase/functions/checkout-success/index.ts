@@ -177,6 +177,8 @@ Deno.serve(async (req) => {
           stripe_customer_id: session.customer as string,
           stripe_subscription_id: (session.subscription as any)?.id || null,
           lead_statut: 'QA_paying_customer',
+          date_fin_essai: null,
+          features_enabled: { auto_send: true, reminders: true, bank_sync: false },
           updated_at: new Date().toISOString(),
         })
         .eq('id', existingProprietaire.id);
@@ -211,6 +213,7 @@ Deno.serve(async (req) => {
           stripe_customer_id: session.customer as string,
           stripe_subscription_id: (session.subscription as any)?.id || null,
           lead_statut: 'QA_paying_customer',
+          features_enabled: { auto_send: true, reminders: true, bank_sync: false },
           source: 'quick_payment',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),

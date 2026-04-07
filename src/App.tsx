@@ -59,6 +59,7 @@ import Unsubscribe from './pages/Unsubscribe';
 import BailWeb from './pages/BailWeb';
 import BailMeubleWeb from './pages/BailMeubleWeb';
 import Overview from './pages/Overview';
+import TrialExpiredPage from './pages/TrialExpiredPage';
 import AnnonceGenerator from './pages/AnnonceGenerator';
 import SignatureSignPage from './pages/SignatureSignPage';
 import BailSignatureValidationPage from './pages/BailSignatureValidationPage';
@@ -228,6 +229,7 @@ function App() {
           <Route path="/irl/resultat" element={<IRLResultat />} />
           <Route path="/tableau-de-bord" element={<Navigate to="/overview" replace />} />
           <Route element={EspaceBailleurLayoutElement}>
+            <Route path="/essai-termine" element={<TrialExpiredPage />} />
             <Route path="/revision-irl" element={<RevisionIRL />} />
             <Route path="/overview" element={<Overview />} />
             <Route path="/dashboard" element={<Dashboard />} />

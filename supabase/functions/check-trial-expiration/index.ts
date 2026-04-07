@@ -250,6 +250,11 @@ Deno.serve(async (req: Request) => {
             .update({
               abonnement_actif: false,
               lead_statut: 'trial_expired',
+              features_enabled: {
+                auto_send: false,
+                reminders: false,
+                bank_sync: false,
+              },
             })
             .eq('id', proprietaire.id);
 

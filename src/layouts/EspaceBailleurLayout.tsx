@@ -1,19 +1,49 @@
-import React from 'react';
-import { Outlet } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import DashboardSidebar from '../components/DashboardSidebar';
 import { EspaceBailleurProvider, useEspaceBailleur } from '../contexts/EspaceBailleurContext';
 import { AlertCircle } from 'lucide-react';
+import { needsTrialReactivationPage } from '../utils/trialReactivation';
+
+const TRIAL_EXPIRED_ALLOWED_PATH_PREFIXES = [
+  '/essai-termine',
+  '/payment-checkout',
+  '/payment-success',
+  '/payment-cancelled',
+  '/quick-payment-confirm',
+];
+
+function TrialExpiredRedirect() {
+  const { proprietaire, loading } = useEspaceBailleur();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (loading || !proprietaire) return;
+    const path = location.pathname;
+    if (TRIAL_EXPIRED_ALLOWED_PATH_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`))) {
+      return;
+    }
+    if (needsTrialReactivationPage(proprietaire)) {
+      navigate('/essai-termine', { replace: true });
+    }
+  }, [loading, proprietaire, location.pathname, navigate]);
+
+  return null;
+}
 
 function EspaceBailleurContent() {
+  const location = useLocation();
   const { proprietaire, loading, error, refetchProprietaire, activeDashboardTab, setActiveDashboardTab } = useEspaceBailleur();
+  const hideSidebar = location.pathname === '/essai-termine';
 
   // Chargement initial uniquement : garder la sidebar avec le dernier proprietaire connu pendant un refetch
   const isInitialLoad = loading && !proprietaire;
   if (isInitialLoad) {
     return (
       <div className="min-h-screen bg-gray-50 flex">
-        <DashboardSidebar proprietaire={null} />
-        <div className="flex-1 flex items-center justify-center lg:pl-64">
+        {!hideSidebar && <DashboardSidebar proprietaire={null} />}
+        <div className={`flex-1 flex items-center justify-center ${hideSidebar ? '' : 'lg:pl-64'}`}>
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#1e3a5f]" />
             <p className="mt-4 text-gray-600">Chargement...</p>
@@ -26,8 +56,8 @@ function EspaceBailleurContent() {
   if (error && !proprietaire) {
     return (
       <div className="min-h-screen bg-gray-50 flex">
-        <DashboardSidebar proprietaire={null} />
-        <div className="flex-1 flex items-center justify-center lg:pl-64">
+        {!hideSidebar && <DashboardSidebar proprietaire={null} />}
+        <div className={`flex-1 flex items-center justify-center ${hideSidebar ? '' : 'lg:pl-64'}`}>
           <div className="text-center max-w-md">
             <AlertCircle className="w-16 h-16 text-red-300 mx-auto mb-4" />
             <p className="text-gray-900 mb-2 text-lg font-semibold">Erreur de chargement</p>
@@ -46,12 +76,15 @@ function EspaceBailleurContent() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <DashboardSidebar
-        proprietaire={proprietaire}
-        onDashboardTabChange={setActiveDashboardTab}
-        activeDashboardTab={activeDashboardTab}
-      />
-      <div className="flex-1 flex flex-col min-h-screen lg:pl-64">
+      <TrialExpiredRedirect />
+      {!hideSidebar && (
+        <DashboardSidebar
+          proprietaire={proprietaire}
+          onDashboardTabChange={setActiveDashboardTab}
+          activeDashboardTab={activeDashboardTab}
+        />
+      )}
+      <div className={`flex-1 flex flex-col min-h-screen ${hideSidebar ? '' : 'lg:pl-64'}`}>
         <Outlet />
       </div>
     </div>
