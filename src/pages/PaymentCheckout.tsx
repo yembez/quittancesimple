@@ -64,7 +64,13 @@ const PaymentCheckout = () => {
     // Cas navigation interne (fin de setup) : on garde la compat avec localStorage
     const data = localStorage.getItem('automationSetupData');
     if (!data) {
-      // On peut quand même ouvrir le checkout si l'utilisateur a un email en localStorage
+      // Retour depuis Stripe (annulation) ou lien direct : ?email= suffit pour ouvrir le QuickPayment
+      if (emailParam?.trim()) {
+        setSetupData({
+          proprietaire: { email: emailParam.trim(), nom: '', prenom: '', adresse: '', telephone: '' },
+        });
+        return;
+      }
       if (
         localStorage.getItem('proprietaireEmail') ||
         localStorage.getItem('captured_email')

@@ -43,6 +43,27 @@ const PACK_AUTO_PRICE_ID_BY_TIER_AND_CYCLE: Record<
   },
 };
 
+function normalizeBillingCycle(raw: unknown): 'monthly' | 'yearly' {
+  const s = String(raw ?? '').toLowerCase().trim();
+  if (s === 'monthly' || s === 'yearly') return s;
+  return 'yearly';
+}
+
+function normalizeTenantTier(raw: unknown): '1-2' | '3-5' | '5+' {
+  const s = String(raw ?? '1-2').trim();
+  if (s === '1-2' || s === '3-5' || s === '5+') return s;
+  // Tolère d’éventuelles variantes côté client / proxies
+  if (s === '6+' || s === '6' || s.startsWith('6')) return '5+';
+  return '1-2';
+}
+
+function resolveHardcodedPackPriceId(
+  cycle: 'monthly' | 'yearly',
+  tier: '1-2' | '3-5' | '5+',
+): string {
+  return PACK_AUTO_PRICE_ID_BY_TIER_AND_CYCLE[cycle][tier] || '';
+}
+
 const generateSecurePassword = (): string => {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
   const specialChars = '!@#$%';
@@ -76,7 +97,9 @@ Deno.serve(async (req: Request) => {
     });
 
     const body: RequestBody = await req.json();
-    const { email, plan, billingCycle, tenantTier = '1-2', stripePriceId: clientPriceId, expressCheckout } = body;
+    const { email, plan, stripePriceId: clientPriceId, expressCheckout } = body;
+    const billingCycle = normalizeBillingCycle(body.billingCycle);
+    const tenantTier = normalizeTenantTier(body.tenantTier);
 
     if (!email || !email.includes('@')) {
       return new Response(
@@ -108,13 +131,21 @@ Deno.serve(async (req: Request) => {
       stripePriceId = getStripePriceIdFromEnv(tenantTier, billingCycle);
     }
     if (!stripePriceId) {
-      stripePriceId =
-        PACK_AUTO_PRICE_ID_BY_TIER_AND_CYCLE[billingCycle]?.[tenantTier] || '';
+      stripePriceId = resolveHardcodedPackPriceId(billingCycle, tenantTier);
     }
 
     if (!stripePriceId) {
+      console.error('[quick-checkout] Price ID introuvable', {
+        billingCycle,
+        tenantTier,
+        clientPriceId: clientPriceId ?? null,
+        rawBody: { billingCycle: body.billingCycle, tenantTier: body.tenantTier },
+      });
       return new Response(
-        JSON.stringify({ error: 'Configuration Stripe manquante pour ce tier. Définissez VITE_STRIPE_PRICE_* dans .env ou les secrets Supabase.' }),
+        JSON.stringify({
+          error:
+            'Configuration Stripe manquante pour ce tier. Vérifiez le déploiement de la fonction quick-checkout (mapping price) ou définissez STRIPE_PRICE_AUTO_TIER* dans les secrets Supabase.',
+        }),
         {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -127,9 +158,11 @@ Deno.serve(async (req: Request) => {
 
     const generatedPassword = generateSecurePassword();
 
-    const successUrl = `${req.headers.get('origin') || 'https://quittance-simple.fr'}/quick-payment-confirm?session_id={CHECKOUT_SESSION_ID}&email=${encodeURIComponent(email)}`;
+    const origin = req.headers.get('origin') || 'https://quittance-simple.fr';
+    const successUrl = `${origin}/quick-payment-confirm?session_id={CHECKOUT_SESSION_ID}&email=${encodeURIComponent(email)}`;
 
-    const cancelUrl = `${req.headers.get('origin') || 'https://quittance-simple.fr'}/pricing`;
+    // Annulation Stripe : revenir sur l’écran checkout (QuickPayment embarqué), pas sur /pricing
+    const cancelUrl = `${origin}/payment-checkout?email=${encodeURIComponent(email)}&checkout=cancelled`;
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],

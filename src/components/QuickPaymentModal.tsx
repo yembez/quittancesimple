@@ -321,10 +321,8 @@ const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
       return;
     }
 
-    if (!stripePromise) {
-      setError('Configuration Stripe manquante');
-      return;
-    }
+    // Paiement par redirection Stripe Checkout : pas besoin de @stripe/stripe-js ni de clé publique.
+    // (Apple Pay / Google Pay utilise encore stripePromise dans handleExpressPayment.)
 
     // Vérifier la validation du tier avant de procéder au paiement
     const validation = getTierValidation();
