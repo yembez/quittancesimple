@@ -333,21 +333,19 @@ const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
       return;
     }
 
-    if (!stripePriceId) {
-      setError('Configuration des tarifs manquante. Vérifiez les variables VITE_STRIPE_PRICE_* dans .env');
-      return;
-    }
+    // stripePriceId peut être vide (déploiement sans VITE_STRIPE_PRICE_*).
+    // La Edge Function `quick-checkout` sait résoudre le priceId via secrets ou mapping fallback.
 
     setIsProcessing(true);
     setError('');
 
-    const payload = {
+    const payload: any = {
       email,
       plan: selectedPlan,
       billingCycle,
       tenantTier,
-      stripePriceId,
     };
+    if (stripePriceId) payload.stripePriceId = stripePriceId;
     const debugInfo = {
       stripePriceId,
       tenantTier,
@@ -728,6 +726,18 @@ const QuickPaymentModal: React.FC<QuickPaymentModalProps> = ({
                  <div className="flex items-center text-xs text-[#545454]">
                   <Check className="w-3.5 h-3.5 text-[#7CAA89] mr-2" />
                   Export revenus annuels / CA déclaration
+                </div>
+                <div className="flex items-center text-xs text-[#545454]">
+                  <Check className="w-3.5 h-3.5 text-[#7CAA89] mr-2" />
+                  Annonces immobilières par IA
+                </div>
+                <div className="flex items-center text-xs text-[#545454]">
+                  <Check className="w-3.5 h-3.5 text-[#7CAA89] mr-2" />
+                  Signature électronique de bail
+                </div>
+                <div className="flex items-center text-xs text-[#545454]">
+                  <Check className="w-3.5 h-3.5 text-[#7CAA89] mr-2" />
+                  Bail Facile
                 </div>
                 <div className="flex items-center text-xs text-[#545454]">
                   <Check className="w-3.5 h-3.5 text-[#7CAA89] mr-2" />

@@ -26,6 +26,23 @@ const ALLOWED_PACK_AUTO_PRICE_IDS = new Set([
   'price_1Sqj3DB1aSt8zL1nyy6Hf5N7',   // 6+ annuel
 ]);
 
+// Mapping “hard fallback” (évite la dépendance aux secrets env).
+const PACK_AUTO_PRICE_ID_BY_TIER_AND_CYCLE: Record<
+  'monthly' | 'yearly',
+  Record<'1-2' | '3-5' | '5+', string>
+> = {
+  monthly: {
+    '1-2': 'price_1T2a6NB1aSt8zL1nyNy1v2gT',
+    '3-5': 'price_1T2a8DB1aSt8zL1n1T0H7NPy',
+    '5+': 'price_1T2a8sB1aSt8zL1nbkpWQdp6',
+  },
+  yearly: {
+    '1-2': 'price_1T0sYUB1aSt8zL1nm3DDI9F3',
+    '3-5': 'price_1T2e1uB1aSt8zL1nlIrT3UdR',
+    '5+': 'price_1Sqj3DB1aSt8zL1nyy6Hf5N7',
+  },
+};
+
 const generateSecurePassword = (): string => {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
   const specialChars = '!@#$%';
@@ -71,7 +88,8 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Prix : priorité au stripePriceId envoyé par le client (depuis .env VITE_STRIPE_*), puis fallback env Supabase
+    // Prix : priorité au stripePriceId envoyé par le client (depuis .env VITE_STRIPE_*),
+    // puis fallback env Supabase, puis fallback hardcodé (mapping).
     let stripePriceId = '';
     if (clientPriceId && ALLOWED_PACK_AUTO_PRICE_IDS.has(clientPriceId)) {
       stripePriceId = clientPriceId;
@@ -88,6 +106,10 @@ Deno.serve(async (req: Request) => {
         return Deno.env.get('STRIPE_PRICE_AUTO_TIER3') || '';
       };
       stripePriceId = getStripePriceIdFromEnv(tenantTier, billingCycle);
+    }
+    if (!stripePriceId) {
+      stripePriceId =
+        PACK_AUTO_PRICE_ID_BY_TIER_AND_CYCLE[billingCycle]?.[tenantTier] || '';
     }
 
     if (!stripePriceId) {
