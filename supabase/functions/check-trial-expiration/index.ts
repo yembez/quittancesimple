@@ -16,6 +16,8 @@ interface Proprietaire {
   date_fin_essai: string;
   abonnement_actif: boolean;
   lead_statut: string;
+  created_at?: string;
+  plan_type?: string;
 }
 
 Deno.serve(async (req: Request) => {
@@ -47,15 +49,22 @@ Deno.serve(async (req: Request) => {
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const todayIso = today.toISOString();
+    const cutoff = new Date(today);
+    cutoff.setDate(cutoff.getDate() - 30);
+    const cutoffIso = cutoff.toISOString();
 
-    // Récupérer les propriétaires dont l'essai est expiré ou expire aujourd'hui
+    // Récupérer les propriétaires à basculer en stand-by :
+    // - essai expiré (date_fin_essai <= today), OU
+    // - compte > 30 jours sans date_fin_essai (legacy) : created_at <= today-30j
     const { data: expiredProprietaires, error: propError } = await supabase
       .from('proprietaires')
-      .select('id, email, nom, prenom, date_fin_essai, abonnement_actif, lead_statut')
-      .not('date_fin_essai', 'is', null)
-      .lte('date_fin_essai', today.toISOString())
+      .select('id, email, nom, prenom, date_fin_essai, abonnement_actif, lead_statut, created_at, plan_type')
+      .or(
+        `and(date_fin_essai.not.is.null,date_fin_essai.lte.${todayIso}),and(date_fin_essai.is.null,created_at.lte.${cutoffIso})`,
+      )
       .eq('abonnement_actif', true)
-      .eq('lead_statut', 'QA_1st_interested');
+      .not('lead_statut', 'in', '("QA_paid_subscriber","QA_paying_customer")');
 
     if (propError) {
       throw propError;
@@ -102,6 +111,7 @@ Deno.serve(async (req: Request) => {
               date_fin_essai: null,
               abonnement_actif: true,
               lead_statut: 'QA_paid_subscriber',
+              features_enabled: { auto_send: true, reminders: true, bank_sync: false },
             })
             .eq('id', proprietaire.id);
 
@@ -124,15 +134,18 @@ Deno.serve(async (req: Request) => {
             });
           }
         } else {
-          // L'essai est expiré et pas de paiement, désactiver l'accès
-          const endDate = new Date(proprietaire.date_fin_essai);
-          const daysSinceExpiration = Math.floor((today.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24));
+          const hasTrialEnd = !!proprietaire.date_fin_essai;
 
-          // Si l'expiration est exactement aujourd'hui (jour 0), envoyer l'email d'expiration
-          if (daysSinceExpiration === 0) {
-            const checkoutUrl = `${siteUrl}/payment-checkout?reactivate=true&email=${encodeURIComponent(proprietaire.email)}`;
+          // Cas 1 : essai expiré avec date_fin_essai → email J0 + désactivation
+          if (hasTrialEnd) {
+            const endDate = new Date(proprietaire.date_fin_essai);
+            const daysSinceExpiration = Math.floor((today.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24));
 
-            const emailHtml = `
+            // Si l'expiration est exactement aujourd'hui (jour 0), envoyer l'email d'expiration
+            if (daysSinceExpiration === 0) {
+              const checkoutUrl = `${siteUrl}/payment-checkout?reactivate=true&email=${encodeURIComponent(proprietaire.email)}`;
+
+              const emailHtml = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -223,59 +236,93 @@ Deno.serve(async (req: Request) => {
 </html>
             `;
 
-            const emailResponse = await fetch('https://api.resend.com/emails', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${resendApiKey}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                from: 'Marc – Quittance Simple <contact@quittancesimple.fr>',
-                reply_to: 'Marc – Quittance Simple <contact@quittancesimple.fr>',
-                to: [proprietaire.email],
-                subject: 'Réactivez votre compte Quittance Simple',
-                html: emailHtml,
-              }),
-            });
+              const emailResponse = await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${resendApiKey}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  from: 'Marc – Quittance Simple <contact@quittancesimple.fr>',
+                  reply_to: 'Marc – Quittance Simple <contact@quittancesimple.fr>',
+                  to: [proprietaire.email],
+                  subject: 'Réactivez votre compte Quittance Simple',
+                  html: emailHtml,
+                }),
+              });
 
-            if (!emailResponse.ok) {
-              const errorText = await emailResponse.text();
-              console.error(`Failed to send expiration email to ${proprietaire.email}:`, errorText);
+              if (!emailResponse.ok) {
+                const errorText = await emailResponse.text();
+                console.error(`Failed to send expiration email to ${proprietaire.email}:`, errorText);
+              }
             }
-          }
 
-          // Désactiver l'accès
-          const { error: updateError } = await supabase
-            .from('proprietaires')
-            .update({
-              abonnement_actif: false,
-              lead_statut: 'trial_expired',
-              features_enabled: {
-                auto_send: false,
-                reminders: false,
-                bank_sync: false,
-              },
-            })
-            .eq('id', proprietaire.id);
+            // Désactiver l'accès + automation stand-by
+            const { error: updateError } = await supabase
+              .from('proprietaires')
+              .update({
+                abonnement_actif: false,
+                lead_statut: 'trial_expired',
+                features_enabled: {
+                  auto_send: false,
+                  reminders: false,
+                  bank_sync: false,
+                },
+              })
+              .eq('id', proprietaire.id);
 
-          if (updateError) {
-            console.error(`Error deactivating proprietaire ${proprietaire.id}:`, updateError);
-            results.push({
-              proprietaire_id: proprietaire.id,
-              email: proprietaire.email,
-              action: 'deactivated',
-              success: false,
-              error: updateError.message,
-            });
+            if (updateError) {
+              console.error(`Error deactivating proprietaire ${proprietaire.id}:`, updateError);
+              results.push({
+                proprietaire_id: proprietaire.id,
+                email: proprietaire.email,
+                action: 'deactivated',
+                success: false,
+                error: updateError.message,
+              });
+            } else {
+              console.log(`Proprietaire ${proprietaire.email} trial expired and access deactivated`);
+              results.push({
+                proprietaire_id: proprietaire.id,
+                email: proprietaire.email,
+                action: 'deactivated',
+                success: true,
+                days_since_expiration: daysSinceExpiration,
+              });
+            }
           } else {
-            console.log(`Proprietaire ${proprietaire.email} trial expired and access deactivated`);
-            results.push({
-              proprietaire_id: proprietaire.id,
-              email: proprietaire.email,
-              action: 'deactivated',
-              success: true,
-              days_since_expiration: daysSinceExpiration,
-            });
+            // Cas 2 : compte >30 jours sans date_fin_essai (legacy) → automation stand-by + blocage accès
+            const { error: updateError } = await supabase
+              .from('proprietaires')
+              .update({
+                abonnement_actif: false,
+                lead_statut: 'trial_expired',
+                features_enabled: {
+                  auto_send: false,
+                  reminders: false,
+                  bank_sync: false,
+                },
+              })
+              .eq('id', proprietaire.id);
+
+            if (updateError) {
+              console.error(`Error deactivating legacy proprietaire ${proprietaire.id}:`, updateError);
+              results.push({
+                proprietaire_id: proprietaire.id,
+                email: proprietaire.email,
+                action: 'standby_legacy',
+                success: false,
+                error: updateError.message,
+              });
+            } else {
+              console.log(`Proprietaire ${proprietaire.email} >30j without trial end — access deactivated`);
+              results.push({
+                proprietaire_id: proprietaire.id,
+                email: proprietaire.email,
+                action: 'standby_legacy',
+                success: true,
+              });
+            }
           }
         }
 

@@ -330,6 +330,33 @@ const AdminAnalytics: React.FC = () => {
   const [freeAccountLeads, setFreeAccountLeads] = useState<TrialLeadReportRow[] | null>(null);
   const [freeStats, setFreeStats] = useState<{ count: number; active: number; expired: number } | null>(null);
 
+  // Segmentation unifiée (source de vérité : user_id, date_fin_essai, stripe_subscription_id)
+  type AdminLeadSegState = 'paid_active' | 'trial_active' | 'trial_expired' | 'account_no_trial' | 'lead_only';
+  type AdminLeadSegRow = {
+    id: string;
+    email: string | null;
+    nom: string | null;
+    prenom: string | null;
+    created_at: string | null;
+    date_inscription: string | null;
+    date_fin_essai: string | null;
+    plan_type: string | null;
+    plan_actuel: string | null;
+    abonnement_actif: boolean | null;
+    lead_statut: string | null;
+    user_id: string | null;
+    stripe_subscription_id: string | null;
+    features_enabled: Record<string, boolean> | null;
+    state: AdminLeadSegState;
+    days_remaining: number | null;
+    days_since_signup: number | null;
+  };
+  const [leadSegRows, setLeadSegRows] = useState<AdminLeadSegRow[] | null>(null);
+  const [leadSegStats, setLeadSegStats] = useState<Record<AdminLeadSegState, number> | null>(null);
+  const [leadSegLoading, setLeadSegLoading] = useState(false);
+  const [leadSegError, setLeadSegError] = useState('');
+  const [leadSegFilter, setLeadSegFilter] = useState<AdminLeadSegState | 'all'>('all');
+
   const [automationLoading, setAutomationLoading] = useState(false);
   const [automationError, setAutomationError] = useState('');
   const [automationStats, setAutomationStats] = useState<{
@@ -652,6 +679,32 @@ const AdminAnalytics: React.FC = () => {
       setFreeStats(null);
     } finally {
       setTrialLoading(false);
+    }
+  }, []);
+
+  const fetchLeadSegmentation = useCallback(async () => {
+    setLeadSegLoading(true);
+    setLeadSegError('');
+    try {
+      const { data, error } = await supabase.functions.invoke('get-admin-leads-segmentation', {
+        body: { adminPassword: ADMIN_PASSWORD, limit: 3000, offset: 0 },
+      });
+      if (error) {
+        setLeadSegError(error.message || 'Erreur chargement segmentation');
+        setLeadSegRows(null);
+        setLeadSegStats(null);
+        return;
+      }
+      const payload = data as { rows?: AdminLeadSegRow[]; stats?: Record<string, number> } | null;
+      const rows = (payload?.rows ?? []) as AdminLeadSegRow[];
+      setLeadSegRows(rows);
+      setLeadSegStats((payload?.stats ?? null) as any);
+    } catch (e) {
+      setLeadSegError(e instanceof Error ? e.message : String(e));
+      setLeadSegRows(null);
+      setLeadSegStats(null);
+    } finally {
+      setLeadSegLoading(false);
     }
   }, []);
 
@@ -1740,6 +1793,114 @@ const AdminAnalytics: React.FC = () => {
                         utilise une requête SQL dédiée.
                       </p>
                     )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Segmentation unifiée comptes / leads (ne se base pas sur lead_statut) */}
+            <div className="bg-white rounded-xl shadow-sm border border-[#e5e7eb] overflow-hidden mt-6">
+              <div className="p-4 border-b border-[#e5e7eb] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-[#111827]">Segmentation comptes &amp; relances (source de vérité)</h2>
+                  <p className="text-sm text-[#6b7280] mt-1">
+                    Calculé via <code className="bg-gray-100 px-1 rounded text-xs">user_id</code>, <code className="bg-gray-100 px-1 rounded text-xs">date_fin_essai</code> et <code className="bg-gray-100 px-1 rounded text-xs">stripe_subscription_id</code>.
+                    <span className="ml-1">Ça évite la confusion quand <code className="bg-gray-100 px-1 rounded text-xs">lead_statut</code> est écrasé.</span>
+                  </p>
+                  {leadSegStats && (
+                    <p className="text-xs text-[#4b5563] mt-1">
+                      Payants : <strong>{leadSegStats.paid_active ?? 0}</strong> · Essai actif : <strong>{leadSegStats.trial_active ?? 0}</strong> · Essai expiré : <strong>{leadSegStats.trial_expired ?? 0}</strong> · Compte sans essai : <strong>{leadSegStats.account_no_trial ?? 0}</strong> · Lead sans compte : <strong>{leadSegStats.lead_only ?? 0}</strong>
+                    </p>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <select
+                    value={leadSegFilter}
+                    onChange={(e) => setLeadSegFilter(e.target.value as any)}
+                    className="px-2 py-1.5 text-xs rounded-lg border border-[#e5e7eb] bg-white"
+                  >
+                    <option value="all">Tous</option>
+                    <option value="paid_active">Payants</option>
+                    <option value="trial_active">Essai actif</option>
+                    <option value="trial_expired">Essai expiré</option>
+                    <option value="account_no_trial">Compte sans essai</option>
+                    <option value="lead_only">Lead sans compte</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={fetchLeadSegmentation}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#2563eb] text-white hover:bg-[#1d4ed8] transition-colors"
+                  >
+                    Rafraîchir
+                  </button>
+                </div>
+              </div>
+              <div className="p-4">
+                {leadSegError && <p className="text-sm text-red-600 mb-3">Erreur : {leadSegError}</p>}
+                {leadSegLoading && !leadSegRows && <p className="text-sm text-[#6b7280]">Chargement segmentation…</p>}
+                {leadSegRows && leadSegRows.length === 0 && !leadSegLoading && !leadSegError && (
+                  <p className="text-sm text-[#6b7280]">Aucune donnée.</p>
+                )}
+                {leadSegRows && leadSegRows.length > 0 && (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-xs border-t border-b border-[#e5e7eb]">
+                      <thead className="bg-[#f9fafb]">
+                        <tr>
+                          <th className="px-2 py-1 text-left font-medium text-[#6b7280]">État</th>
+                          <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Email</th>
+                          <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Plan</th>
+                          <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Jours essai</th>
+                          <th className="px-2 py-1 text-left font-medium text-[#6b7280]">J depuis inscription</th>
+                          <th className="px-2 py-1 text-left font-medium text-[#6b7280]">user_id</th>
+                          <th className="px-2 py-1 text-left font-medium text-[#6b7280]">Stripe sub</th>
+                          <th className="px-2 py-1 text-left font-medium text-[#6b7280]">lead_statut</th>
+                          <th className="px-2 py-1 text-left font-medium text-[#6b7280]">auto_send</th>
+                          <th className="px-2 py-1 text-left font-medium text-[#6b7280]">reminders</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {leadSegRows
+                          .filter((r) => (leadSegFilter === 'all' ? true : r.state === leadSegFilter))
+                          .slice(0, 200)
+                          .map((r) => (
+                            <tr key={r.id} className="border-t border-[#f3f4f6]">
+                              <td className="px-2 py-1 font-medium text-[#111827] whitespace-nowrap">
+                                {r.state === 'paid_active'
+                                  ? 'Payant'
+                                  : r.state === 'trial_active'
+                                    ? 'Essai'
+                                    : r.state === 'trial_expired'
+                                      ? 'Expiré'
+                                      : r.state === 'account_no_trial'
+                                        ? 'Compte'
+                                        : 'Lead'}
+                              </td>
+                              <td className="px-2 py-1 text-[#111827] truncate max-w-[180px]" title={String(r.email ?? '')}>{r.email ?? '—'}</td>
+                              <td className="px-2 py-1 text-[#4b5563] truncate max-w-[220px]" title={[r.plan_type, r.plan_actuel].filter(Boolean).join(' · ')}>
+                                {[r.plan_type, r.plan_actuel].filter(Boolean).join(' · ') || '—'}
+                              </td>
+                              <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
+                                {r.days_remaining == null ? '—' : `${r.days_remaining}j`}
+                              </td>
+                              <td className="px-2 py-1 text-[#4b5563] whitespace-nowrap">
+                                {r.days_since_signup == null ? '—' : `J+${r.days_since_signup}`}
+                              </td>
+                              <td className="px-2 py-1 text-[#6b7280] truncate max-w-[140px]" title={String(r.user_id ?? '')}>{r.user_id ? r.user_id.slice(0, 8) + '…' : '—'}</td>
+                              <td className="px-2 py-1 text-[#6b7280] whitespace-nowrap">{r.stripe_subscription_id ? 'oui' : 'non'}</td>
+                              <td className="px-2 py-1 text-[#6b7280] truncate max-w-[160px]" title={String(r.lead_statut ?? '')}>{r.lead_statut ?? '—'}</td>
+                              <td className="px-2 py-1 text-[#6b7280] whitespace-nowrap">
+                                {r.features_enabled && typeof (r.features_enabled as any).auto_send === 'boolean' ? String((r.features_enabled as any).auto_send) : '—'}
+                              </td>
+                              <td className="px-2 py-1 text-[#6b7280] whitespace-nowrap">
+                                {r.features_enabled && typeof (r.features_enabled as any).reminders === 'boolean' ? String((r.features_enabled as any).reminders) : '—'}
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                    <p className="mt-2 text-[11px] text-[#6b7280]">
+                      Affichage limité à 200 lignes. Filtre pour cibler les relances (essai actif/expiré/compte sans essai).
+                    </p>
                   </div>
                 )}
               </div>
