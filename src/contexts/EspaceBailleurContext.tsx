@@ -43,6 +43,8 @@ export function EspaceBailleurProvider({
   const [activeDashboardTab, setActiveDashboardTab] = useState('dashboard');
 
   const loadProprietaire = useCallback(async (isRefetch = false) => {
+    /** Si invité : on redirige vers l’accueil — ne pas exécuter `setLoading(false)` sinon le layout affiche le Outlet /dashboard un instant avant la navigation. */
+    let redirectingGuest = false;
     try {
       if (!isRefetch) setLoading(true);
       setError(null);
@@ -50,6 +52,7 @@ export function EspaceBailleurProvider({
       // Pas de session (user null ou toute erreur auth) → redirection vers accueil + modal connexion
       const noSession = !user || !!authError;
       if (noSession) {
+        redirectingGuest = true;
         let prefilledEmail: string | undefined;
         try {
           const hash = typeof window !== 'undefined' ? window.location.hash : '';
@@ -84,15 +87,15 @@ export function EspaceBailleurProvider({
         return;
       }
       if (authError) throw authError;
-      const emailKey = (user.email ?? '').trim();
+      // Source de vérité = la ligne liée au compte Auth (RLS : user_id = auth.uid()).
+      // Ne pas charger par e-mail seul : doublons d’e-mail (lead vs compte) donnaient une date_fin_essai
+      // incohérente avec ce que voit l’utilisateur → fausse redirection « essai terminé ».
       const { data, error: propError } = await supabase
         .from('proprietaires')
         .select(
-          'id, email, nom, prenom, adresse, telephone, abonnement_actif, date_fin_essai, plan_type, plan_actuel, lead_statut, features_enabled, created_at, stripe_subscription_id',
+          'id, email, nom, prenom, adresse, telephone, abonnement_actif, date_fin_essai, plan_type, plan_actuel, lead_statut, features_enabled, created_at, stripe_subscription_id, user_id',
         )
-        .ilike('email', emailKey)
-        .order('date_fin_essai', { ascending: false, nullsFirst: false })
-        .limit(1)
+        .eq('user_id', user.id)
         .maybeSingle();
       if (propError) throw propError;
       if (data) {
@@ -105,7 +108,9 @@ export function EspaceBailleurProvider({
       setError(msg);
       setProprietaire(null);
     } finally {
-      setLoading(false);
+      if (!redirectingGuest) {
+        setLoading(false);
+      }
     }
   }, [navigate]);
 

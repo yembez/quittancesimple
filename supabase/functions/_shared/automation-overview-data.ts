@@ -287,13 +287,41 @@ export function buildRecipientsTrialAutoIncompleteLt20(
     const prev = m.get(el);
     if (!prev) {
       m.set(el, entry);
-    } else {
-      m.set(el, {
-        ...prev,
-        date_fin_essai: pickLaterDateFinEssai(prev.date_fin_essai, entry.date_fin_essai),
-        mailing_desabonne: prev.mailing_desabonne === true || entry.mailing_desabonne === true ? true : prev.mailing_desabonne ?? entry.mailing_desabonne,
-      });
+      return;
     }
+
+    const prevU = !!(prev.user_id && String(prev.user_id).trim());
+    const entryU = !!(entry.user_id && String(entry.user_id).trim());
+    const desabo =
+      prev.mailing_desabonne === true || entry.mailing_desabonne === true
+        ? true
+        : prev.mailing_desabonne ?? entry.mailing_desabonne;
+
+    // Doublon e-mail : une ligne liée à Auth (user_id) et une sans (lead / fantôme).
+    // Ne jamais mélanger la date_fin_essai du fantôme avec l’id du compte réel (sinon mail « X jours » mais dashboard « essai terminé »).
+    if (prevU && !entryU) {
+      m.set(el, { ...prev, mailing_desabonne: desabo });
+      return;
+    }
+    if (!prevU && entryU) {
+      m.set(el, { ...entry, mailing_desabonne: desabo });
+      return;
+    }
+
+    const later = pickLaterDateFinEssai(prev.date_fin_essai, entry.date_fin_essai);
+    const fromEntry = later === entry.date_fin_essai && !!entry.date_fin_essai?.trim();
+    const base = fromEntry ? entry : prev;
+    m.set(el, {
+      ...base,
+      proprietaireId: base.proprietaireId,
+      emailDisplay: prev.emailDisplay,
+      date_fin_essai: later,
+      stripe_subscription_id: base.stripe_subscription_id,
+      user_id: base.user_id,
+      features_enabled: base.features_enabled,
+      prenom: (prev.prenom || entry.prenom || "").trim(),
+      mailing_desabonne: desabo,
+    });
   };
 
   for (const r of systematic) {

@@ -37,7 +37,7 @@ function EspaceBailleurContent() {
   const { proprietaire, loading, error, refetchProprietaire, activeDashboardTab, setActiveDashboardTab } = useEspaceBailleur();
   const hideSidebar = location.pathname === '/essai-termine';
 
-  // Chargement initial uniquement : garder la sidebar avec le dernier proprietaire connu pendant un refetch
+  // Chargement ou redirection invité en cours : ne jamais monter le Outlet (dashboard) sans bailleur chargé
   const isInitialLoad = loading && !proprietaire;
   if (isInitialLoad) {
     return (
@@ -48,6 +48,18 @@ function EspaceBailleurContent() {
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#1e3a5f]" />
             <p className="mt-4 text-gray-600">Chargement...</p>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Session absente ou en cours de renvoi vers la connexion : pas de contenu espace bailleur
+  if (!loading && !proprietaire && !error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#1e3a5f]" />
+          <p className="mt-4 text-gray-600 text-sm">Redirection vers la connexion…</p>
         </div>
       </div>
     );
