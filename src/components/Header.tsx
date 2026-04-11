@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, FileText, User, LogOut, CreditCard, FileCheck, Settings, Check, ArrowLeft, ChevronDown } from 'lucide-react';
 import LoginModal from './LoginModal';
 import PackActivationFlow from './PackActivationFlow';
+import { supabase } from '../lib/supabase';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -72,7 +73,12 @@ const Header = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      /* ignore */
+    }
     localStorage.removeItem('proprietaireEmail');
     setUserEmail(null);
     setIsUserMenuOpen(false);

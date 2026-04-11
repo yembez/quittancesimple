@@ -19,6 +19,7 @@ import {
   CreditCard,
   Package,
 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 const UserSpaceHeader = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -47,7 +48,12 @@ const UserSpaceHeader = () => {
     setIsBurgerOpen(false);
   }, [location.pathname, location.search]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      /* ignore */
+    }
     localStorage.removeItem('proprietaireEmail');
     setUserEmail(null);
     setIsUserMenuOpen(false);
