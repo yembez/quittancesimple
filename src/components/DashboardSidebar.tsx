@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, FileText, TrendingUp, Euro, User, Lock, CheckCircle, Folder, FileSignature, ChevronDown, ChevronRight, Eye, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { signOutFromApp } from '../lib/authSignOut';
 
 interface Proprietaire {
   id: string;
@@ -259,7 +260,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ proprietaire, activ
         </div>
         <button
           onClick={async () => {
-            await supabase.auth.signOut();
+            await signOutFromApp();
             navigate('/');
           }}
           className="w-full flex items-center space-x-2 px-3 py-2 text-sm text-white/90 hover:text-white hover:bg-white/10 rounded-md transition-colors font-medium"

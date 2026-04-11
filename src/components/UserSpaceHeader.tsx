@@ -19,7 +19,7 @@ import {
   CreditCard,
   Package,
 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { signOutFromApp } from '../lib/authSignOut';
 
 const UserSpaceHeader = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -50,7 +50,7 @@ const UserSpaceHeader = () => {
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      await signOutFromApp();
     } catch {
       /* ignore */
     }

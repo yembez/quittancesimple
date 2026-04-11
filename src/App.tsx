@@ -87,8 +87,6 @@ function ScrollToTop() {
   return null;
 }
 
-const EspaceBailleurLayoutElement = <EspaceBailleurLayout />;
-
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -228,7 +226,7 @@ function App() {
           <Route path="/calcul-revision-loyer" element={<CalculRevisionLoyer />} />
           <Route path="/irl/resultat" element={<IRLResultat />} />
           <Route path="/tableau-de-bord" element={<Navigate to="/overview" replace />} />
-          <Route element={EspaceBailleurLayoutElement}>
+          <Route element={<EspaceBailleurLayout />}>
             <Route path="/essai-termine" element={<TrialExpiredPage />} />
             <Route path="/revision-irl" element={<RevisionIRL />} />
             <Route path="/overview" element={<Overview />} />

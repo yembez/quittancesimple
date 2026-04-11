@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, FileText, User, LogOut, CreditCard, FileCheck, Settings, Check, ArrowLeft, ChevronDown } from 'lucide-react';
 import LoginModal from './LoginModal';
 import PackActivationFlow from './PackActivationFlow';
-import { supabase } from '../lib/supabase';
+import { signOutFromApp } from '../lib/authSignOut';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -59,6 +59,28 @@ const Header = () => {
     }
   }, [location.state, location.pathname, navigate]);
 
+  // Connexion forcée depuis l’URL (ex. redirection invité depuis /dashboard après window.location.replace)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('openLogin') !== '1') return;
+    const email = (params.get('loginEmail') || '').trim();
+    const signupMode = params.get('signupMode') === '1';
+    if (signupMode && email) {
+      setPackActivationPrefillEmail(email);
+      setIsPackActivationFlowOpen(true);
+    } else {
+      if (email) setLoginPrefilledEmail(email);
+      setLoginMode(signupMode ? 'signup' : 'login');
+      setIsLoginModalOpen(true);
+    }
+    params.delete('openLogin');
+    params.delete('loginEmail');
+    params.delete('returnUrl');
+    params.delete('signupMode');
+    const rest = params.toString();
+    navigate({ pathname: '/', search: rest ? `?${rest}` : '' }, { replace: true });
+  }, [location.search, navigate]);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
@@ -75,7 +97,7 @@ const Header = () => {
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      await signOutFromApp();
     } catch {
       /* ignore */
     }

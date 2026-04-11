@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { consumeSilentLogoutFlag } from '../lib/authSignOut';
 
 export interface Proprietaire {
   id: string;
@@ -31,12 +31,28 @@ interface EspaceBailleurContextValue {
 
 const EspaceBailleurContext = createContext<EspaceBailleurContextValue | null>(null);
 
+function isEspaceBailleurPath(pathname: string): boolean {
+  return (
+    pathname.startsWith('/dashboard') ||
+    pathname === '/overview' ||
+    pathname === '/documents' ||
+    pathname === '/historique' ||
+    pathname === '/revision-irl' ||
+    pathname === '/billing' ||
+    pathname === '/manage-subscription' ||
+    pathname === '/essai-termine' ||
+    pathname === '/bail' ||
+    pathname === '/bail-meuble' ||
+    pathname === '/etat-des-lieux' ||
+    pathname === '/annonce-generator'
+  );
+}
+
 export function EspaceBailleurProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const navigate = useNavigate();
   const [proprietaire, setProprietaire] = useState<Proprietaire | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +69,7 @@ export function EspaceBailleurProvider({
       const noSession = !user || !!authError;
       if (noSession) {
         redirectingGuest = true;
+        setProprietaire(null);
         let prefilledEmail: string | undefined;
         try {
           const hash = typeof window !== 'undefined' ? window.location.hash : '';
@@ -83,7 +100,13 @@ export function EspaceBailleurProvider({
         } catch (_) {
           // ignore
         }
-        navigate('/', { state: { openLogin: true, prefilledEmail, returnUrl: '/dashboard' }, replace: true });
+        // Navigation complète : évite tout flash du dashboard (layout singleton / course avec l’état React).
+        const qs = new URLSearchParams();
+        qs.set('openLogin', '1');
+        if (prefilledEmail) qs.set('loginEmail', prefilledEmail);
+        if (typeof window !== 'undefined') {
+          window.location.replace(`${window.location.origin}/?${qs.toString()}`);
+        }
         return;
       }
       if (authError) throw authError;
@@ -112,10 +135,32 @@ export function EspaceBailleurProvider({
         setLoading(false);
       }
     }
-  }, [navigate]);
+  }, []);
 
   useEffect(() => {
     loadProprietaire();
+  }, [loadProprietaire]);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setProprietaire(null);
+        setError(null);
+        setLoading(false);
+        if (typeof window === 'undefined') return;
+        if (consumeSilentLogoutFlag()) return;
+        if (isEspaceBailleurPath(window.location.pathname)) {
+          const qs = new URLSearchParams();
+          qs.set('openLogin', '1');
+          window.location.replace(`${window.location.origin}/?${qs.toString()}`);
+        }
+        return;
+      }
+      if (event === 'SIGNED_IN' && session) {
+        loadProprietaire(true);
+      }
+    });
+    return () => subscription.unsubscribe();
   }, [loadProprietaire]);
 
   const refetchProprietaire = useCallback(() => loadProprietaire(true), [loadProprietaire]);
