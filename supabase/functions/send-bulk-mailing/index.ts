@@ -1,7 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { buildEmailHtml } from "../_shared/email-template.ts";
+import { buildEmailHtml, type EmailTitle, MARC_SIGNATURE_IMAGE_URL } from "../_shared/email-template.ts";
 import { buildCampaignEmailHtml } from "../_shared/campaign-email-template.ts";
+import { buildRecipientsTrialAutoIncompleteLt20, loadAutomationOverviewData } from "../_shared/automation-overview-data.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -57,13 +58,18 @@ interface BulkPayload {
   rawHtml?: boolean;
   /** URL d'image injectée dans les templates type {{photo_vincent_url}}. */
   photoVincentUrl?: string;
+  /** En-tête du template `buildEmailHtml` : ex. « QS- Espace Bailleur » (défaut : vide). */
+  emailTitle?: EmailTitle;
   /** Nombre max d'e-mails à envoyer dans cette exécution (défaut 100). */
   limit?: number;
   /** Décalage dans la liste (pour envoi sur plusieurs jours). */
   offset?: number;
   /** Délai en ms entre chaque envoi (défaut 800). */
   delayMs?: number;
-  /** Segment: all | leads | free_leads | leads_j2 | leads_j2_catchup | leads_j5 | leads_j8 (défaut all). */
+  /**
+   * Segment: all | leads | free_leads | leads_j2 | … | trial_auto_incomplete_lt20
+   * (essai actif, moins de 20 j restants, auto configurée, e-mail locataire ou tél. bailleur manquant).
+   */
   segment?: string;
   /** Envoi test : envoie uniquement à ces adresses (pas de liste BDD). Max 5. */
   testEmails?: string[];
@@ -202,102 +208,122 @@ Deno.serve(async (req: Request) => {
 
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    const today = new Date();
-    const todayUtc = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
-
-    let daysOffset: number | null = null;
-    let isCatchupJ2 = false;
-    let isFreeLeads = false;
-    let campaignField: "campaign_j2_sent_at" | "campaign_j5_sent_at" | "campaign_j8_sent_at" | null = null;
-    if (segment === "free_leads") {
-      // Free leads = tous les valid emails qui ont généré au moins une quittance (nombre_quittances >= 1)
-      isFreeLeads = true;
-      campaignField = "campaign_j2_sent_at";
-    } else if (segment === "leads_j2") {
-      daysOffset = 2;
-      campaignField = "campaign_j2_sent_at";
-    } else if (segment === "leads_j2_catchup") {
-      // Envoi exceptionnel : tous les leads gratuits créés AVANT J-2 et qui n'ont jamais reçu J+2
-      daysOffset = 2;
-      campaignField = "campaign_j2_sent_at";
-      isCatchupJ2 = true;
-    } else if (segment === "leads_j5") {
-      daysOffset = 5;
-      campaignField = "campaign_j5_sent_at";
-    } else if (segment === "leads_j8") {
-      daysOffset = 8;
-      campaignField = "campaign_j8_sent_at";
-    }
-
-    let query = supabase
-      .from("proprietaires")
-      .select("id, email, nom, prenom, created_at, lead_statut, nombre_quittances, campaign_j2_sent_at, campaign_j5_sent_at, campaign_j8_sent_at")
-      .not("email", "is", null)
-      .not("email", "ilike", "%" + DOMAINE_TEST + "%")
-      .or("mailing_desabonne.is.null,mailing_desabonne.eq.false")
-      .order("created_at", { ascending: true });
-
-    if (segment === "free_leads") {
-      query = query
-        .eq("lead_statut", "free_quittance_pdf")
-        .gte("nombre_quittances", 1)
-        .is("campaign_j2_sent_at", null)
-        .is("user_id", null);
-    } else if (segment === "leads" || segment.startsWith("leads_")) {
-      query = query.eq("lead_statut", "free_quittance_pdf").is("user_id", null);
-    }
-
-    if (isFreeLeads) {
-      // Déjà filtré : free_quittance_pdf, nombre_quittances, J+2 non envoyé, sans compte
-    } else if (daysOffset !== null && campaignField) {
-      const targetStart = new Date(todayUtc);
-      targetStart.setUTCDate(targetStart.getUTCDate() - daysOffset);
-      const targetEnd = new Date(targetStart);
-      targetEnd.setUTCDate(targetEnd.getUTCDate() + 1);
-
-      if (isCatchupJ2 && segment === "leads_j2_catchup") {
-        // Cas rattrapage : tous les leads gratuits créés AVANT J-2 et qui n'ont pas encore reçu J+2
-        query = query
-          .lt("created_at", targetStart.toISOString())
-          .is(campaignField, null);
-      } else {
-        // Cas normal J+N du jour
-        query = query
-          .gte("created_at", targetStart.toISOString())
-          .lt("created_at", targetEnd.toISOString())
-          .is(campaignField, null);
-      }
-    }
-
-    const { data: rows, error: fetchError } = await query.range(runOffset, runOffset + limit - 1);
-
-    if (fetchError) {
-      return new Response(
-        JSON.stringify({ error: fetchError.message }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     const { data: desabonnesRows } = await supabase.from("mailing_desabonnes").select("email");
     const desabonnesSet = new Set(
-      (desabonnesRows || []).map((r: { email: string }) => r.email?.toLowerCase()).filter(Boolean)
+      (desabonnesRows || []).map((r: { email: string }) => r.email?.toLowerCase()).filter(Boolean),
     );
 
-    list = (rows || [])
-      .filter((r: { email?: string }) => {
-        const e = (r.email || "").trim().toLowerCase();
-        return isEmailValidePourMailing(r.email || "") && !desabonnesSet.has(e);
-      })
-      .map((r: { id?: number; email: string; prenom?: string; nom?: string }) => ({
+    if (segment === "trial_auto_incomplete_lt20") {
+      const loaded = await loadAutomationOverviewData(supabase);
+      if (!loaded.ok) {
+        return new Response(JSON.stringify({ error: loaded.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const all = buildRecipientsTrialAutoIncompleteLt20(loaded.systematic, loaded.rappelClassique);
+      const filtered = all.filter((r) => {
+        const e = r.email.trim().toLowerCase();
+        return isEmailValidePourMailing(r.email) && !desabonnesSet.has(e);
+      });
+      const page = filtered.slice(runOffset, runOffset + limit);
+      list = page.map((r) => ({
         id: r.id,
         email: r.email,
-        prenom: (r.prenom || "").trim() || "",
+        prenom: r.prenom || "",
+        jours_restants: r.jours_restants,
       }));
+    } else {
+      const today = new Date();
+      const todayUtc = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+
+      let daysOffset: number | null = null;
+      let isCatchupJ2 = false;
+      let isFreeLeads = false;
+      let campaignField: "campaign_j2_sent_at" | "campaign_j5_sent_at" | "campaign_j8_sent_at" | null = null;
+      if (segment === "free_leads") {
+        isFreeLeads = true;
+        campaignField = "campaign_j2_sent_at";
+      } else if (segment === "leads_j2") {
+        daysOffset = 2;
+        campaignField = "campaign_j2_sent_at";
+      } else if (segment === "leads_j2_catchup") {
+        daysOffset = 2;
+        campaignField = "campaign_j2_sent_at";
+        isCatchupJ2 = true;
+      } else if (segment === "leads_j5") {
+        daysOffset = 5;
+        campaignField = "campaign_j5_sent_at";
+      } else if (segment === "leads_j8") {
+        daysOffset = 8;
+        campaignField = "campaign_j8_sent_at";
+      }
+
+      let query = supabase
+        .from("proprietaires")
+        .select("id, email, nom, prenom, created_at, lead_statut, nombre_quittances, campaign_j2_sent_at, campaign_j5_sent_at, campaign_j8_sent_at")
+        .not("email", "is", null)
+        .not("email", "ilike", "%" + DOMAINE_TEST + "%")
+        .or("mailing_desabonne.is.null,mailing_desabonne.eq.false")
+        .order("created_at", { ascending: true });
+
+      if (segment === "free_leads") {
+        query = query
+          .eq("lead_statut", "free_quittance_pdf")
+          .gte("nombre_quittances", 1)
+          .is("campaign_j2_sent_at", null)
+          .is("user_id", null);
+      } else if (segment === "leads" || segment.startsWith("leads_")) {
+        query = query.eq("lead_statut", "free_quittance_pdf").is("user_id", null);
+      }
+
+      if (isFreeLeads) {
+        // déjà filtré
+      } else if (daysOffset !== null && campaignField) {
+        const targetStart = new Date(todayUtc);
+        targetStart.setUTCDate(targetStart.getUTCDate() - daysOffset);
+        const targetEnd = new Date(targetStart);
+        targetEnd.setUTCDate(targetEnd.getUTCDate() + 1);
+
+        if (isCatchupJ2 && segment === "leads_j2_catchup") {
+          query = query.lt("created_at", targetStart.toISOString()).is(campaignField, null);
+        } else {
+          query = query
+            .gte("created_at", targetStart.toISOString())
+            .lt("created_at", targetEnd.toISOString())
+            .is(campaignField, null);
+        }
+      }
+
+      const { data: rows, error: fetchError } = await query.range(runOffset, runOffset + limit - 1);
+
+      if (fetchError) {
+        return new Response(
+          JSON.stringify({ error: fetchError.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
+      list = (rows || [])
+        .filter((r: { email?: string }) => {
+          const e = (r.email || "").trim().toLowerCase();
+          return isEmailValidePourMailing(r.email || "") && !desabonnesSet.has(e);
+        })
+        .map((r: { id?: number | string; email: string; prenom?: string; nom?: string }) => ({
+          id: r.id,
+          email: r.email,
+          prenom: (r.prenom || "").trim() || "",
+        }));
+    }
   }
 
   let sent = 0;
   const sentIds: (string | number)[] = [];
   const failed: { email: string; error: string }[] = [];
+
+  const bulkSegment = payload.segment || "";
+  const effectiveEmailTitle = (payload.emailTitle ??
+    (bulkSegment === "trial_auto_incomplete_lt20" ? "QS- Espace Bailleur" : "")) as EmailTitle;
 
   for (let i = 0; i < list.length; i++) {
     const r = list[i];
@@ -323,8 +349,17 @@ Deno.serve(async (req: Request) => {
     }
 
     const ctaUrlRaw = payload.ctaUrl || "";
-    const ctaUrlPersonalized = ctaUrlRaw
+    let ctaUrlPersonalized = ctaUrlRaw
       .replace(/\{\{\s*email\s*\}\}/gi, encodeURIComponent(r.email.trim()));
+
+    if (
+      bulkSegment === "trial_auto_incomplete_lt20" &&
+      ctaUrlPersonalized &&
+      !/\bloginhint=/i.test(ctaUrlPersonalized)
+    ) {
+      const sep = ctaUrlPersonalized.includes("?") ? "&" : "?";
+      ctaUrlPersonalized = `${ctaUrlPersonalized}${sep}loginHint=${encodeURIComponent(r.email.trim())}`;
+    }
 
     const segment = payload.segment || "all";
     const campaignKeyForTracking =
@@ -344,7 +379,7 @@ Deno.serve(async (req: Request) => {
     const SITE_URL = "https://www.quittancesimple.fr";
     const unsubscribeUrl = `${SITE_URL}/unsubscribe?email=${encodeURIComponent(r.email.trim())}`;
     const photoVincentUrl =
-      (payload.photoVincentUrl && String(payload.photoVincentUrl).trim()) || "https://www.quittancesimple.fr/images/automation/marc_2.png";
+      (payload.photoVincentUrl && String(payload.photoVincentUrl).trim()) || MARC_SIGNATURE_IMAGE_URL;
 
     const isCampaign = ["free_leads", "leads_j2", "leads_j2_catchup", "leads_j5", "leads_j8"].includes(payload.segment || "");
     const shouldSendRaw =
@@ -369,7 +404,7 @@ Deno.serve(async (req: Request) => {
             photoVincentUrl,
           })
         : buildEmailHtml({
-            title: "",
+            title: effectiveEmailTitle,
             bodyHtml: bodyPersonalized,
             ctaText: payload.ctaText,
             ctaUrl: ctaUrlForEmail,

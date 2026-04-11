@@ -84,12 +84,15 @@ export function EspaceBailleurProvider({
         return;
       }
       if (authError) throw authError;
+      const emailKey = (user.email ?? '').trim();
       const { data, error: propError } = await supabase
         .from('proprietaires')
         .select(
           'id, email, nom, prenom, adresse, telephone, abonnement_actif, date_fin_essai, plan_type, plan_actuel, lead_statut, features_enabled, created_at, stripe_subscription_id',
         )
-        .eq('email', user.email)
+        .ilike('email', emailKey)
+        .order('date_fin_essai', { ascending: false, nullsFirst: false })
+        .limit(1)
         .maybeSingle();
       if (propError) throw propError;
       if (data) {

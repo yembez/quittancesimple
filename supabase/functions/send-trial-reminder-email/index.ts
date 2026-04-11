@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { buildEmailHtml } from "../_shared/email-template.ts";
+import { buildEmailHtml, buildMarcClosingHtml } from "../_shared/email-template.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -423,10 +423,14 @@ Vos données sont toujours là. Vous pouvez réactiver votre compte à tout mome
       break;
   }
 
-  const closing = `Si vous avez la moindre question, répondez simplement à ce mail. Je vous répondrai personnellement.<br><br>Bonne journée,<br><br><strong>Marc</strong><br>Co-fondateur – Quittance Simple`;
+  const closing = buildMarcClosingHtml({
+    variant: "compact",
+    preambleHtml:
+      "Si vous avez la moindre question, répondez simplement à ce mail. Je vous répondrai personnellement.<br><br>Bonne journée,",
+  });
 
   return buildEmailHtml({
-    title: 'QS- Espace Bailleur',
+    title: "QS- Espace Bailleur",
     bodyHtml,
     ctaText,
     ctaUrl,

@@ -43,6 +43,20 @@ function safeDate(s: string | null): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+/** Leads / comptes de test (aligné avec get-trial-leads-report et emailAnalyzer). */
+function isTestLeadEmail(email: string | null | undefined): boolean {
+  const e = String(email ?? "").trim().toLowerCase();
+  if (!e) return true;
+  if (e.endsWith("@maildrop.cc")) return true;
+  if (e.startsWith("2speek")) return true;
+  const at = e.lastIndexOf("@");
+  if (at > 0 && e.slice(at + 1) === "gmail.com") {
+    const local = e.slice(0, at);
+    if (local.startsWith("leachainais+") || local.startsWith("leachanais+")) return true;
+  }
+  return false;
+}
+
 function computeState(r: Row, now: Date): { state: SegState; days_remaining: number | null; days_since_signup: number | null } {
   const hasStripe = !!(r.stripe_subscription_id && String(r.stripe_subscription_id).trim());
   const today = toDay(now);
@@ -124,6 +138,10 @@ Deno.serve(async (req: Request) => {
       "id, email, nom, prenom, created_at, date_inscription, date_fin_essai, plan_type, plan_actuel, abonnement_actif, lead_statut, user_id, stripe_subscription_id, features_enabled",
     )
     .not("email", "is", null)
+    .not("email", "ilike", "%@maildrop.cc")
+    .not("email", "ilike", "2speek%")
+    .not("email", "ilike", "leachainais+%@gmail.com")
+    .not("email", "ilike", "leachanais+%@gmail.com")
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
 
@@ -135,7 +153,7 @@ Deno.serve(async (req: Request) => {
   }
 
   const now = new Date();
-  const rows = (data || []) as Row[];
+  const rows = ((data || []) as Row[]).filter((r) => !isTestLeadEmail(r.email));
   const enriched = rows.map((r) => {
     const seg = computeState(r, now);
     return {

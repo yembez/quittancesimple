@@ -95,7 +95,6 @@ export async function sendOwnerReminderEmail(
   const html = buildEmailHtml({
     title: "Quittance Simple",
     bodyHtml,
-    closingHtml: "À bientôt,<br><strong>L'équipe Quittance Simple</strong>",
     unsubscribeUrl: `${baseUrl}/unsubscribe?email=${encodeURIComponent(toEmail)}`,
   });
 

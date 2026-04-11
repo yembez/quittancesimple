@@ -1,5 +1,7 @@
 /**
- * Template HTML des e-mails de campagne (J+2, etc.) — structure et texte du modèle joint.
+ * Template historique des campagnes leads (J+2, J+5, J+8) en base `campaign_templates`.
+ * Les **nouvelles** campagnes produit / Espace Bailleur doivent utiliser `buildEmailHtml`
+ * (`email-template.ts`) + segment type `trial_auto_incomplete_lt20`, pas ce layout.
  * Placeholders : PRENOM, LIEN_ACTIVATION, LIEN_DESABONNEMENT, PHOTO_VINCENT_URL
  */
 

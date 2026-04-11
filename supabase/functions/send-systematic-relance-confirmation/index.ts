@@ -92,7 +92,6 @@ Deno.serve(async (req: Request) => {
       const html = buildEmailHtml({
         title: "Quittance Simple",
         bodyHtml,
-        closingHtml: "À bientôt,<br><strong>L'équipe Quittance Simple</strong>",
         unsubscribeUrl: `${SITE_URL}/unsubscribe?email=${encodeURIComponent(String(prop.email))}`,
       });
       await fetch("https://api.resend.com/emails", {

@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { buildEmailHtml } from "../_shared/email-template.ts";
+import { buildEmailHtml, QS_PUBLIC_SITE_URL } from "../_shared/email-template.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,10 +14,8 @@ interface WelcomeEmailRequest {
   prenom?: string;
 }
 
-const SITE_URL = "https://www.quittancesimple.fr";
+const SITE_URL = QS_PUBLIC_SITE_URL;
 const DASHBOARD_URL = `${SITE_URL}/dashboard`;
-/** Photo de signature servie par le site (affichage fiable dans tous les clients mail) */
-const VINCENT_SIGNATURE_IMAGE_URL = `${SITE_URL}/images/vincent-signature.png`;
 
 function buildWelcomeBodyHtml(): string {
   return `
@@ -98,24 +96,6 @@ Deno.serve(async (req: Request) => {
       ctaText: "Explorer mon Espace Bailleur",
       ctaUrl,
       unsubscribeUrl,
-      closingHtml: `
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse: collapse;">
-          <tr>
-            <td style="padding: 0; padding-right: 10px; vertical-align: middle;">
-              <img
-                src="${VINCENT_SIGNATURE_IMAGE_URL}"
-                width="40"
-                height="40"
-                alt="Marc"
-                style="display: block; width: 40px; height: 40px; border-radius: 9999px; object-fit: cover; object-position: center top;"
-              />
-            </td>
-            <td style="padding: 0; vertical-align: middle;">
-              À très vite dans votre Espace Bailleur,<br><strong>Marc de Quittance Simple</strong>
-            </td>
-          </tr>
-        </table>
-      `.trim(),
     });
 
     const response = await fetch("https://api.resend.com/emails", {

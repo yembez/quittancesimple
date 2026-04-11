@@ -7,6 +7,17 @@ function hasStripeSubscription(stripe_subscription_id?: string | null): boolean 
   return !!(stripe_subscription_id && String(stripe_subscription_id).trim().length > 0);
 }
 
+/**
+ * Jours restants d’essai (même formule que la campagne `trial_auto_incomplete_lt20` côté Edge :
+ * `computeTrialDaysRemainingAdmin` dans `automation-overview-data.ts`). À garder synchronisé.
+ */
+export function computeTrialDaysRemainingFloored(date_fin_essai: string | null | undefined): number | null {
+  if (!date_fin_essai || !String(date_fin_essai).trim()) return null;
+  const end = new Date(String(date_fin_essai).trim());
+  if (Number.isNaN(end.getTime())) return null;
+  return Math.floor((end.getTime() - Date.now()) / 86400000);
+}
+
 /** Âge du compte en jours (à partir de created_at). */
 function accountAgeDays(created_at?: string | null): number | null {
   if (!created_at) return null;
@@ -37,13 +48,14 @@ export function needsTrialReactivationPage(p: {
   const plan = (p.plan_type || 'auto').toLowerCase();
   if (plan !== 'free' && plan !== 'auto' && plan !== 'premium') return false;
 
-  if (p.date_fin_essai) {
-    const end = new Date(p.date_fin_essai);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    end.setHours(0, 0, 0, 0);
-    if (end >= today) return false;
-    return true;
+  if (p.date_fin_essai && String(p.date_fin_essai).trim()) {
+    const days = computeTrialDaysRemainingFloored(p.date_fin_essai);
+    if (days !== null) {
+      // Aligné campagne e-mail : essai encore valable tant que jours >= 0
+      if (days >= 0) return false;
+      return true;
+    }
+    // date_fin_essai illisible : on laisse les branches legacy ci-dessous
   }
 
   // Pas de date_fin_essai : anciens comptes auto/premium (>30 j) sans essai daté en BDD
