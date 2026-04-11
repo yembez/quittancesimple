@@ -5,6 +5,7 @@ import { Menu, X, FileText, User, LogOut, CreditCard, FileCheck, Settings, Check
 import LoginModal from './LoginModal';
 import PackActivationFlow from './PackActivationFlow';
 import { signOutFromApp } from '../lib/authSignOut';
+import { supabase } from '../lib/supabase';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -59,26 +60,64 @@ const Header = () => {
     }
   }, [location.state, location.pathname, navigate]);
 
-  // Connexion forcée depuis l’URL (ex. redirection invité depuis /dashboard après window.location.replace)
+  // Liens e-mail : /?openLogin=1&loginEmail=…&returnUrl=/dashboard — invité = modale ; déjà connecté = redirection directe
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (params.get('openLogin') !== '1') return;
-    const email = (params.get('loginEmail') || '').trim();
-    const signupMode = params.get('signupMode') === '1';
-    if (signupMode && email) {
-      setPackActivationPrefillEmail(email);
-      setIsPackActivationFlowOpen(true);
-    } else {
-      if (email) setLoginPrefilledEmail(email);
-      setLoginMode(signupMode ? 'signup' : 'login');
-      setIsLoginModalOpen(true);
-    }
-    params.delete('openLogin');
-    params.delete('loginEmail');
-    params.delete('returnUrl');
-    params.delete('signupMode');
-    const rest = params.toString();
-    navigate({ pathname: '/', search: rest ? `?${rest}` : '' }, { replace: true });
+
+    const returnUrlRaw = (params.get('returnUrl') || '').trim();
+    const safeReturn =
+      returnUrlRaw.startsWith('/') && !returnUrlRaw.startsWith('//') ? returnUrlRaw : '';
+
+    let cancelled = false;
+
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (cancelled) return;
+
+      if (session?.user && safeReturn) {
+        const postRelance = params.get('postLoginOpenRelance');
+        params.delete('openLogin');
+        params.delete('loginEmail');
+        params.delete('returnUrl');
+        params.delete('postLoginOpenRelance');
+        params.delete('signupMode');
+        if (postRelance) {
+          try {
+            sessionStorage.setItem('openRelanceLocataireId', postRelance);
+          } catch {
+            /* ignore */
+          }
+        }
+        const rest = params.toString();
+        const joiner = safeReturn.includes('?') ? '&' : '?';
+        const target = rest ? `${safeReturn}${joiner}${rest}` : safeReturn;
+        navigate(target, { replace: true });
+        return;
+      }
+
+      const email = (params.get('loginEmail') || '').trim();
+      const signupMode = params.get('signupMode') === '1';
+      if (signupMode && email) {
+        setPackActivationPrefillEmail(email);
+        setIsPackActivationFlowOpen(true);
+      } else {
+        if (email) setLoginPrefilledEmail(email);
+        setLoginMode(signupMode ? 'signup' : 'login');
+        setIsLoginModalOpen(true);
+      }
+      params.delete('openLogin');
+      params.delete('loginEmail');
+      params.delete('returnUrl');
+      params.delete('signupMode');
+      params.delete('postLoginOpenRelance');
+      const rest = params.toString();
+      navigate({ pathname: '/', search: rest ? `?${rest}` : '' }, { replace: true });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [location.search, navigate]);
 
   useEffect(() => {

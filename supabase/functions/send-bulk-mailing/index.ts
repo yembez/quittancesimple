@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { buildEmailHtml, type EmailTitle, MARC_SIGNATURE_IMAGE_URL } from "../_shared/email-template.ts";
+import { openLoginLandingInsteadOfDashboard } from "../_shared/email-landing-urls.ts";
 import { buildCampaignEmailHtml } from "../_shared/campaign-email-template.ts";
 import { buildRecipientsTrialAutoIncompleteLt20, loadAutomationOverviewData } from "../_shared/automation-overview-data.ts";
 
@@ -359,6 +360,12 @@ Deno.serve(async (req: Request) => {
     ) {
       const sep = ctaUrlPersonalized.includes("?") ? "&" : "?";
       ctaUrlPersonalized = `${ctaUrlPersonalized}${sep}loginHint=${encodeURIComponent(r.email.trim())}`;
+    }
+
+    if (ctaUrlPersonalized) {
+      ctaUrlPersonalized = openLoginLandingInsteadOfDashboard(ctaUrlPersonalized, {
+        fallbackLoginEmail: r.email.trim(),
+      });
     }
 
     const segment = payload.segment || "all";

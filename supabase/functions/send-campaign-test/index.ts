@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { buildCampaignEmailHtml } from "../_shared/campaign-email-template.ts";
+import { openLoginLandingInsteadOfDashboard } from "../_shared/email-landing-urls.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -116,7 +117,12 @@ Deno.serve(async (req: Request) => {
   const subjectPersonalized = (subject || "")
     .replace(/\{\{\s*prenom\s*\}\}/gi, prenom)
     .replace(/\[\s*Prénom\s*\]/gi, prenom);
-  const ctaUrlPersonalized = (ctaUrl || "").replace(/\{\{\s*email\s*\}\}/gi, encodeURIComponent(testEmail));
+  let ctaUrlPersonalized = (ctaUrl || "").replace(/\{\{\s*email\s*\}\}/gi, encodeURIComponent(testEmail));
+  if (ctaUrlPersonalized) {
+    ctaUrlPersonalized = openLoginLandingInsteadOfDashboard(ctaUrlPersonalized, {
+      fallbackLoginEmail: testEmail,
+    });
+  }
   const unsubscribeUrl = `${SITE_URL}/unsubscribe?email=${encodeURIComponent(testEmail)}`;
 
   const html = buildCampaignEmailHtml({

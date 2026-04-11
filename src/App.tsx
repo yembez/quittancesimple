@@ -75,6 +75,7 @@ import QuittanceLoyerParticulierPage from './pages/seo/QuittanceLoyerParticulier
 import QuittanceLoyerObligatoirePage from './pages/seo/QuittanceLoyerObligatoirePage';
 import CommentFaireQuittanceLoyerPage from './pages/seo/CommentFaireQuittanceLoyerPage';
 import QuittanceLoyerModeleGratuitPage from './pages/seo/QuittanceLoyerModeleGratuitPage';
+import { supabase } from './lib/supabase';
 
 // Component to scroll to top on route change
 function ScrollToTop() {
@@ -84,6 +85,36 @@ function ScrollToTop() {
     window.scrollTo(0, 0);
   }, [pathname]);
 
+  return null;
+}
+
+/**
+ * Liens e-mail historiques : /dashboard?loginHint=… sans session ne doit pas monter l’espace bailleur.
+ * getSession() (stockage local) est plus rapide que getUser() dans le layout → redirection immédiate vers /?openLogin=1
+ */
+function DashboardEmailLinkGuard() {
+  const location = useLocation();
+  React.useEffect(() => {
+    if (location.pathname !== '/dashboard') return;
+    const params = new URLSearchParams(location.search);
+    const loginHint = (params.get('loginHint') || '').trim();
+    if (!loginHint) return;
+    let cancelled = false;
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (cancelled || session?.user) return;
+      const qs = new URLSearchParams();
+      qs.set('openLogin', '1');
+      qs.set('loginEmail', loginHint);
+      qs.set('returnUrl', '/dashboard');
+      const openRelance = params.get('openRelance');
+      if (openRelance) qs.set('postLoginOpenRelance', openRelance);
+      window.location.replace(`${window.location.origin}/?${qs.toString()}`);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [location.pathname, location.search]);
   return null;
 }
 
@@ -276,6 +307,7 @@ function AppWrapper() {
   return (
     <Router>
       <ScrollToTop />
+      <DashboardEmailLinkGuard />
       <App />
     </Router>
   );

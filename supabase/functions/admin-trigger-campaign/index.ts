@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { buildCampaignEmailHtml } from "../_shared/campaign-email-template.ts";
+import { openLoginLandingInsteadOfDashboard } from "../_shared/email-landing-urls.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -180,7 +181,12 @@ Deno.serve(async (req: Request) => {
     if (!prenom) {
       subjectPersonalized = subjectPersonalized.replace(/^,\s*/, "").replace(/\s{2,}/g, " ").trim();
     }
-    const ctaUrlPersonalized = ctaUrlRaw.replace(/\{\{\s*email\s*\}\}/gi, encodeURIComponent(r.email.trim()));
+    let ctaUrlPersonalized = ctaUrlRaw.replace(/\{\{\s*email\s*\}\}/gi, encodeURIComponent(r.email.trim()));
+    if (ctaUrlPersonalized) {
+      ctaUrlPersonalized = openLoginLandingInsteadOfDashboard(ctaUrlPersonalized, {
+        fallbackLoginEmail: r.email.trim(),
+      });
+    }
     const ctaUrlForEmail = ctaUrlPersonalized
       ? `${supabaseUrl}/functions/v1/track-cta-click?campaign=${campaign}&to=${encodeURIComponent(ctaUrlPersonalized)}`
       : undefined;

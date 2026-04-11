@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { buildEmailHtml } from "../_shared/email-template.ts";
+import { openLoginLandingInsteadOfDashboard } from "../_shared/email-landing-urls.ts";
 
 const SITE_URL = "https://www.quittancesimple.fr";
 const corsHeaders = {
@@ -79,11 +80,14 @@ Deno.serve(async (req: Request) => {
 
     const propEmail = String(prop.email || "").trim();
     const cancelUrl = `${SITE_URL}/send-quittance-manual?action=cancel&id=${encodeURIComponent(scheduledId)}`;
-    const relanceUrl = `${SITE_URL}/dashboard?openRelance=${encodeURIComponent(row.locataire_id)}${propEmail ? `&loginHint=${encodeURIComponent(propEmail)}` : ""}`;
+    const relanceUrl = openLoginLandingInsteadOfDashboard(
+      `${SITE_URL}/dashboard?openRelance=${encodeURIComponent(row.locataire_id)}${propEmail ? `&loginHint=${encodeURIComponent(propEmail)}` : ""}`,
+      { fallbackLoginEmail: propEmail },
+    );
     const token = row.action_token_send_manual;
     const sendManualUrl = token
       ? `${SITE_URL}/send-quittance-manual?token=${encodeURIComponent(token)}`
-      : `${SITE_URL}/dashboard`;
+      : openLoginLandingInsteadOfDashboard(`${SITE_URL}/dashboard`, { fallbackLoginEmail: propEmail });
 
     const ctaBaseStyle =
       "display: inline-block; padding: 8px 16px; border-radius: 8px; border: 1px solid #1e3a5f; color: #1e3a5f !important; background-color: #ffffff; text-decoration: none; font-weight: bold; margin: 4px; min-width: 240px; text-align: center;";
