@@ -79,6 +79,12 @@ interface BulkPayload {
    * (prénom + jours restants, etc.). Prioritaire sur `testEmails`.
    */
   testRecipients?: Array<{ email: string; prenom?: string; jours_restants?: number; days_remaining?: number }>;
+  /**
+   * Miroir production : liste et personnalisation identiques à un envoi réel (segment BDD, prénom, jours restants,
+   * CTA / loginHint du contact réel), mais l’e-mail est livré uniquement sur cette adresse (ex. la vôtre).
+   * Incompatible avec `testEmails` / `testRecipients`. N’avance pas `nextOffset` (ne consomme pas la file d’envoi prod).
+   */
+  deliverToTestEmail?: string;
 }
 
 Deno.serve(async (req: Request) => {
@@ -108,7 +114,12 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  if (!isInternalCall) {
+  const adminPwEnv = Deno.env.get("ADMIN_ANALYTICS_PASSWORD");
+  const bodyAdminPw = typeof bodyJson._adminPassword === "string" ? String(bodyJson._adminPassword).trim() : "";
+  const adminAuthOk = !!adminPwEnv && bodyAdminPw === adminPwEnv.trim();
+  delete bodyJson._adminPassword;
+
+  if (!isInternalCall && !adminAuthOk) {
     const secretRaw = Deno.env.get("MAILING_LIST_SECRET");
     const secret = typeof secretRaw === "string" ? secretRaw.trim() : "";
     const customHeader = req.headers.get("X-Mailing-List-Secret");
@@ -119,7 +130,7 @@ Deno.serve(async (req: Request) => {
       return new Response(
         JSON.stringify({
           error: "Non autorisé (401)",
-          hint: "MAILING_LIST_SECRET n'est pas défini. Supabase → Edge Functions → Secrets → ajoutez MAILING_LIST_SECRET. Ou utilisez le déclenchement depuis l'admin (admin-trigger-campaign envoie avec la Service Role Key).",
+          hint: "MAILING_LIST_SECRET non défini, ou envoyez _adminPassword (mot de passe admin analytics) dans le body depuis l’admin.",
         }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -128,7 +139,7 @@ Deno.serve(async (req: Request) => {
       return new Response(
         JSON.stringify({
           error: "Non autorisé (401)",
-          hint: "Le secret reçu ne correspond pas à MAILING_LIST_SECRET.",
+          hint: "Secret mailing incorrect. Ou utilisez _adminPassword (admin analytics) depuis /admin/analytics.",
         }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -157,6 +168,14 @@ Deno.serve(async (req: Request) => {
 
   // Minimum 500 ms entre chaque e-mail pour rester sous 2 req/s Resend (sinon 429 / blocage).
   const delayMs = Math.max(500, payload.delayMs ?? DEFAULT_DELAY_MS);
+
+  const deliverToTestEmail = typeof payload.deliverToTestEmail === "string" ? payload.deliverToTestEmail.trim() : "";
+  if (deliverToTestEmail && !deliverToTestEmail.includes("@")) {
+    return new Response(JSON.stringify({ error: "deliverToTestEmail doit être une adresse e-mail valide" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   // Mode test : envoi uniquement aux adresses fournies (pour prévisualiser avant campagne)
   const rawTestEmails = payload.testEmails;
@@ -188,6 +207,15 @@ Deno.serve(async (req: Request) => {
           }))
           .filter((r) => r.email && r.email.includes("@"))
       : null;
+
+  if (deliverToTestEmail && ((testEmails && testEmails.length > 0) || (testRecipients && testRecipients.length > 0))) {
+    return new Response(
+      JSON.stringify({
+        error: "deliverToTestEmail est incompatible avec testEmails / testRecipients (utilisez uniquement le segment BDD).",
+      }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
 
   if (testRecipients && testRecipients.length > 0) {
     list = testRecipients.map((r) => ({ email: r.email, prenom: r.prenom || "Prénom", jours_restants: r.jours_restants }));
@@ -429,8 +457,10 @@ Deno.serve(async (req: Request) => {
         body: JSON.stringify({
           from: "Marc – Quittance Simple <contact@quittancesimple.fr>",
           reply_to: "Marc – Quittance Simple <contact@quittancesimple.fr>",
-          to: [r.email.trim()],
-          subject: subjectPersonalized || subject,
+          to: [deliverToTestEmail ? deliverToTestEmail : r.email.trim()],
+          subject: deliverToTestEmail
+            ? `[TEST — miroir prod] ${subjectPersonalized || subject}`
+            : subjectPersonalized || subject,
           html,
         }),
       });
@@ -440,7 +470,7 @@ Deno.serve(async (req: Request) => {
         failed.push({ email: r.email, error: `${res.status}: ${errText.slice(0, 200)}` });
       } else {
         sent++;
-        if (!testEmails && r.id != null) {
+        if (!testEmails && !deliverToTestEmail && r.id != null) {
           sentIds.push(r.id);
         }
       }
@@ -477,16 +507,24 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  const nextOffset = (testEmails || testRecipients) ? undefined : runOffset + list.length;
+  const nextOffset = (testEmails || testRecipients || deliverToTestEmail) ? undefined : runOffset + list.length;
 
   return new Response(
     JSON.stringify({
       testMode: !!testEmails || !!testRecipients,
+      productionMirrorTest: !!deliverToTestEmail,
+      ...(deliverToTestEmail && list.length > 0
+        ? { personalizationSourceEmails: list.map((row) => row.email.trim()) }
+        : {}),
       sent,
       failed: failed.length,
       failedDetails: failed.length > 0 ? failed : undefined,
       nextOffset,
-      message: testEmails
+      message: deliverToTestEmail
+        ? failed.length === 0
+          ? `${sent} e-mail(s) miroir envoyé(s) sur ${deliverToTestEmail} (personnalisation = contacts réels du segment).`
+          : `${sent} envoyé(s), ${failed.length} en erreur.`
+        : testEmails
         ? (failed.length === 0
             ? `${sent} e-mail(s) de test envoyé(s). Vérifiez votre boîte.`
             : `${sent} envoyé(s), ${failed.length} en erreur.`)

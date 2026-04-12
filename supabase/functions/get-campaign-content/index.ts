@@ -61,6 +61,7 @@ Deno.serve(async (req: Request) => {
   const j2 = (rows || []).find((r: { campaign_key: string }) => r.campaign_key === "j2");
   const j5 = (rows || []).find((r: { campaign_key: string }) => r.campaign_key === "j5");
   const j8 = (rows || []).find((r: { campaign_key: string }) => r.campaign_key === "j8");
+  const trialLt20 = (rows || []).find((r: { campaign_key: string }) => r.campaign_key === "trial_auto_incomplete_lt20");
 
   const mapRow = (r: { subject: string; body_html: string; cta_text: string; cta_url: string; closing_html: string; slots?: unknown; updated_at: string } | undefined) =>
     r
@@ -80,6 +81,7 @@ Deno.serve(async (req: Request) => {
       j2: mapRow(j2),
       j5: mapRow(j5),
       j8: mapRow(j8),
+      trial_auto_incomplete_lt20: mapRow(trialLt20),
     }),
     { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );

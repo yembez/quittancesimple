@@ -145,6 +145,30 @@
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M96TW654"
     height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
+
+    <!-- Liens mail /dashboard?loginHint=… : redirection synchrone AVANT React (évite flash dashboard + courses StrictMode / session). Les connectés sont renvoyés vers /dashboard par l’app via returnUrl. -->
+    <script>
+      (function () {
+        try {
+          var host = (location.hostname || '').replace(/^www\./, '');
+          if (host !== 'quittancesimple.fr' && host !== 'localhost') return;
+          if (location.pathname !== '/dashboard') return;
+          var q = new URLSearchParams(location.search);
+          var hint = (q.get('loginHint') || q.get('loginEmail') || '').trim();
+          if (!hint) return;
+          if (q.get('code') || q.get('powens')) return;
+          var h = location.hash || '';
+          if (/access_token|refresh_token|type=recovery|type=signup/i.test(h)) return;
+          var out = new URLSearchParams();
+          out.set('openLogin', '1');
+          out.set('loginEmail', hint);
+          out.set('returnUrl', '/dashboard');
+          var rel = q.get('openRelance');
+          if (rel) out.set('postLoginOpenRelance', rel);
+          location.replace(location.origin + '/?' + out.toString());
+        } catch (e) {}
+      })();
+    </script>
     
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

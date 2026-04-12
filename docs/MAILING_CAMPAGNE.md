@@ -198,6 +198,37 @@ supabase functions deploy send-bulk-mailing
 | `delayMs` | number | non         | Délai en ms entre chaque envoi (défaut **800** pour &lt; 2 req/s) |
 | `segment` | string | non         | `all` (défaut) ou `leads` |
 | `testEmails` | string[] | non  | **Envoi test** : envoie uniquement à ces adresses (max 5). Aucun envoi à la liste BDD. Idéal pour prévisualiser le mail avant de lancer la campagne. |
+| `deliverToTestEmail` | string | non | **Miroir production** : la liste vient bien du **segment BDD** (ex. `trial_auto_incomplete_lt20`) avec la **même** personnalisation (prénom, jours, CTA / `loginHint` du contact réel), mais **tous** les e-mails partent sur cette adresse (la vôtre). Incompatible avec `testEmails` / `testRecipients`. **Ne fait pas avancer** `nextOffset`. Sujet préfixé `[TEST — miroir prod]`. |
+
+### Miroir production sur ton adresse (`deliverToTestEmail`)
+
+Pour recevoir **exactement** le mail que verrait le premier contact du segment (ou les N premiers si tu mets `limit` &gt; 1), **sans** envoyer aux vraies boîtes :
+
+- Ne mets **pas** `testEmails` ni `testRecipients`.
+- Renseigne **`deliverToTestEmail`** avec ton adresse (ex. `leachainais+test@gmail.com`).
+- Utilise le **même** `segment`, `subject`, `bodyHtml`, `ctaUrl`, etc. que pour la prod.
+- **`limit: 1`** : un seul miroir (le premier de la liste segment).
+
+Exemple (segment essai &lt; 20 j, contenu à adapter) :
+
+```bash
+curl -X POST "https://TON_PROJECT.supabase.co/functions/v1/send-bulk-mailing" \
+  -H "Content-Type: application/json" \
+  -H "X-Mailing-List-Secret: TA_SECRET" \
+  -d '{
+    "segment": "trial_auto_incomplete_lt20",
+    "limit": 1,
+    "offset": 0,
+    "deliverToTestEmail": "ton-email@exemple.fr",
+    "subject": "…",
+    "bodyHtml": "<p>Bonjour {{ prenom }}, … {{ jours_restants }} …</p>",
+    "ctaText": "…",
+    "ctaUrl": "https://www.quittancesimple.fr/dashboard",
+    "emailTitle": "QS- Espace Bailleur"
+  }'
+```
+
+La réponse JSON contient `productionMirrorTest: true` et **`personalizationSourceEmails`** : ce sont les adresses **réelles** des fiches utilisées pour remplir le corps et le lien (tu vérifies ainsi quel profil a servi de modèle).
 
 ### Envoi test (prévisualiser avant de déclencher la campagne)
 

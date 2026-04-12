@@ -97,23 +97,25 @@ function DashboardEmailLinkGuard() {
   React.useEffect(() => {
     if (location.pathname !== '/dashboard') return;
     const params = new URLSearchParams(location.search);
-    const loginHint = (params.get('loginHint') || '').trim();
+    const loginHint = (params.get('loginHint') || params.get('loginEmail') || '').trim();
     if (!loginHint) return;
-    let cancelled = false;
+    if (params.get('code') || params.get('powens')) return;
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (cancelled || session?.user) return;
+      if (session?.user) return;
+      // Re-vérifier l’URL au moment T (évite qu’une annulation StrictMode empêche la redirection)
+      if (window.location.pathname !== '/dashboard') return;
+      const p = new URLSearchParams(window.location.search);
+      const hint = (p.get('loginHint') || p.get('loginEmail') || '').trim();
+      if (!hint) return;
       const qs = new URLSearchParams();
       qs.set('openLogin', '1');
-      qs.set('loginEmail', loginHint);
+      qs.set('loginEmail', hint);
       qs.set('returnUrl', '/dashboard');
-      const openRelance = params.get('openRelance');
+      const openRelance = p.get('openRelance');
       if (openRelance) qs.set('postLoginOpenRelance', openRelance);
       window.location.replace(`${window.location.origin}/?${qs.toString()}`);
     })();
-    return () => {
-      cancelled = true;
-    };
   }, [location.pathname, location.search]);
   return null;
 }

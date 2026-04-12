@@ -56,9 +56,12 @@ Deno.serve(async (req: Request) => {
   }
 
   const campaign = (body.campaign ?? "").toLowerCase();
-  if (campaign !== "j2" && campaign !== "j5" && campaign !== "j8") {
+  if (
+    campaign !== "j2" && campaign !== "j5" && campaign !== "j8" &&
+    campaign !== "trial_auto_incomplete_lt20"
+  ) {
     return new Response(
-      JSON.stringify({ error: "Campagne invalide (j2, j5 ou j8)" }),
+      JSON.stringify({ error: "Campagne invalide (j2, j5, j8 ou trial_auto_incomplete_lt20)" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

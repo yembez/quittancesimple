@@ -370,6 +370,138 @@ const AdminAnalytics: React.FC = () => {
   const [automationGeneratedAt, setAutomationGeneratedAt] = useState<string | null>(null);
   const [automationTab, setAutomationTab] = useState<'systematic' | 'classic'>('systematic');
 
+  const [mirrorLt20, setMirrorLt20] = useState({
+    deliverToTestEmail: '',
+    subject: '',
+    bodyHtml: '',
+    ctaText: '',
+    ctaUrl: 'https://www.quittancesimple.fr/dashboard',
+    closingHtml: '',
+  });
+  const [mirrorLt20Loading, setMirrorLt20Loading] = useState(false);
+  const [mirrorLt20SaveLoading, setMirrorLt20SaveLoading] = useState(false);
+  const [mirrorLt20Msg, setMirrorLt20Msg] = useState('');
+
+  const loadMirrorLt20Template = useCallback(async () => {
+    setMirrorLt20Loading(true);
+    setMirrorLt20Msg('');
+    try {
+      const { data, error } = await supabase.functions.invoke('get-campaign-content', {
+        body: { adminPassword: ADMIN_PASSWORD },
+      });
+      if (error) {
+        setMirrorLt20Msg(error.message || 'Erreur chargement');
+        return;
+      }
+      const raw = data as { error?: string; trial_auto_incomplete_lt20?: { subject?: string; bodyHtml?: string; ctaText?: string; ctaUrl?: string; closingHtml?: string } };
+      if (raw?.error) {
+        setMirrorLt20Msg(raw.error);
+        return;
+      }
+      const c = raw?.trial_auto_incomplete_lt20;
+      if (c && (c.subject || c.bodyHtml || c.ctaText)) {
+        setMirrorLt20((prev) => ({
+          ...prev,
+          subject: c.subject ?? '',
+          bodyHtml: c.bodyHtml ?? '',
+          ctaText: c.ctaText ?? '',
+          ctaUrl: (c.ctaUrl && c.ctaUrl.trim()) ? c.ctaUrl : prev.ctaUrl,
+          closingHtml: c.closingHtml ?? '',
+        }));
+        setMirrorLt20Msg('Modèle chargé depuis campaign_templates (trial_auto_incomplete_lt20).');
+      } else {
+        setMirrorLt20Msg(
+          'Aucun modèle en base pour trial_auto_incomplete_lt20 : collez le HTML ci-dessous ou enregistrez un modèle.',
+        );
+      }
+    } catch (e) {
+      setMirrorLt20Msg(e instanceof Error ? e.message : String(e));
+    } finally {
+      setMirrorLt20Loading(false);
+    }
+  }, []);
+
+  const saveMirrorLt20Template = async () => {
+    setMirrorLt20SaveLoading(true);
+    setMirrorLt20Msg('');
+    try {
+      const { data, error } = await supabase.functions.invoke('update-campaign-content', {
+        body: {
+          adminPassword: ADMIN_PASSWORD,
+          campaign: 'trial_auto_incomplete_lt20',
+          subject: mirrorLt20.subject,
+          bodyHtml: mirrorLt20.bodyHtml,
+          ctaText: mirrorLt20.ctaText,
+          ctaUrl: mirrorLt20.ctaUrl,
+          closingHtml: mirrorLt20.closingHtml,
+        },
+      });
+      if (error) {
+        setMirrorLt20Msg(error.message || 'Erreur');
+        return;
+      }
+      const raw = data as { error?: string; success?: boolean };
+      if (raw?.error) {
+        setMirrorLt20Msg(raw.error);
+        return;
+      }
+      setMirrorLt20Msg('Modèle enregistré (clé trial_auto_incomplete_lt20).');
+    } catch (e) {
+      setMirrorLt20Msg(e instanceof Error ? e.message : String(e));
+    } finally {
+      setMirrorLt20SaveLoading(false);
+    }
+  };
+
+  const sendMirrorLt20 = async () => {
+    const to = mirrorLt20.deliverToTestEmail.trim();
+    if (!to.includes('@')) {
+      setMirrorLt20Msg('Indiquez une adresse de réception valide.');
+      return;
+    }
+    if (!mirrorLt20.subject.trim() || !mirrorLt20.bodyHtml.trim()) {
+      setMirrorLt20Msg('Sujet et corps HTML sont requis.');
+      return;
+    }
+    setMirrorLt20Loading(true);
+    setMirrorLt20Msg('');
+    try {
+      const { data, error } = await supabase.functions.invoke('send-bulk-mailing', {
+        body: {
+          _adminPassword: ADMIN_PASSWORD,
+          segment: 'trial_auto_incomplete_lt20',
+          limit: 1,
+          offset: 0,
+          deliverToTestEmail: to,
+          subject: mirrorLt20.subject.trim(),
+          bodyHtml: mirrorLt20.bodyHtml.trim(),
+          ctaText: mirrorLt20.ctaText.trim(),
+          ctaUrl: mirrorLt20.ctaUrl.trim() || 'https://www.quittancesimple.fr/dashboard',
+          closingHtml: mirrorLt20.closingHtml.trim() || undefined,
+          emailTitle: 'QS- Espace Bailleur',
+        },
+      });
+      if (error) {
+        setMirrorLt20Msg(error.message || 'Erreur envoi');
+        return;
+      }
+      const d = data as { message?: string; error?: string; personalizationSourceEmails?: string[] };
+      if (d?.error) {
+        setMirrorLt20Msg(d.error);
+        return;
+      }
+      setMirrorLt20Msg(
+        d?.message
+          ? `${d.message}${d.personalizationSourceEmails?.length ? ` — Profils : ${d.personalizationSourceEmails.join(', ')}` : ''}`
+          : 'Envoi terminé.',
+      );
+    } catch (e) {
+      setMirrorLt20Msg(e instanceof Error ? e.message : String(e));
+    } finally {
+      setMirrorLt20Loading(false);
+    }
+  };
+
   const fetchAutomationOverview = useCallback(async () => {
     setAutomationLoading(true);
     setAutomationError('');
@@ -2524,6 +2656,109 @@ const AdminAnalytics: React.FC = () => {
                       </div>
                     )}
                   </>
+                )}
+              </div>
+            </div>
+
+            {/* Miroir mail essai &lt; 20 j (sans curl) */}
+            <div className="bg-white rounded-xl shadow-sm border border-[#e5e7eb] overflow-hidden">
+              <div className="p-4 border-b border-[#e5e7eb]">
+                <h2 className="text-lg font-semibold text-[#111827]">Test e-mail « essai &lt; 20 j » (miroir prod)</h2>
+                <p className="text-sm text-[#6b7280] mt-1">
+                  Même segment BDD et personnalisation qu’en production ; livraison uniquement sur l’adresse indiquée. Auth : mot de passe admin (pas le secret mailing). Déployez{' '}
+                  <code className="bg-gray-100 px-1 rounded text-xs">send-bulk-mailing</code>,{' '}
+                  <code className="bg-gray-100 px-1 rounded text-xs">get-campaign-content</code> et{' '}
+                  <code className="bg-gray-100 px-1 rounded text-xs">update-campaign-content</code> à jour.
+                </p>
+              </div>
+              <div className="p-4 space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void loadMirrorLt20Template()}
+                    disabled={mirrorLt20Loading}
+                    className="px-3 py-2 rounded-lg border border-[#e5e7eb] text-sm font-medium text-[#374151] hover:bg-[#f9fafb] disabled:opacity-50"
+                  >
+                    {mirrorLt20Loading ? 'Chargement…' : 'Charger le modèle depuis la BDD'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void saveMirrorLt20Template()}
+                    disabled={mirrorLt20SaveLoading}
+                    className="px-3 py-2 rounded-lg border border-[#2563eb] text-sm font-medium text-[#2563eb] hover:bg-blue-50 disabled:opacity-50"
+                  >
+                    {mirrorLt20SaveLoading ? 'Enregistrement…' : 'Enregistrer le modèle en BDD'}
+                  </button>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#6b7280] mb-1">Recevoir le miroir sur</label>
+                  <input
+                    type="email"
+                    value={mirrorLt20.deliverToTestEmail}
+                    onChange={(e) => setMirrorLt20((f) => ({ ...f, deliverToTestEmail: e.target.value }))}
+                    className="w-full max-w-md rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm"
+                    placeholder="vous+test@gmail.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#6b7280] mb-1">Sujet</label>
+                  <input
+                    type="text"
+                    value={mirrorLt20.subject}
+                    onChange={(e) => setMirrorLt20((f) => ({ ...f, subject: e.target.value }))}
+                    className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#6b7280] mb-1">
+                    Corps HTML ({'{{ prenom }}'}, {'{{ jours_restants }}'}, etc.)
+                  </label>
+                  <textarea
+                    value={mirrorLt20.bodyHtml}
+                    onChange={(e) => setMirrorLt20((f) => ({ ...f, bodyHtml: e.target.value }))}
+                    className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm font-mono min-h-[140px]"
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-[#6b7280] mb-1">Texte CTA</label>
+                    <input
+                      type="text"
+                      value={mirrorLt20.ctaText}
+                      onChange={(e) => setMirrorLt20((f) => ({ ...f, ctaText: e.target.value }))}
+                      className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-[#6b7280] mb-1">URL CTA</label>
+                    <input
+                      type="text"
+                      value={mirrorLt20.ctaUrl}
+                      onChange={(e) => setMirrorLt20((f) => ({ ...f, ctaUrl: e.target.value }))}
+                      className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#6b7280] mb-1">Signature / fin (HTML, optionnel)</label>
+                  <textarea
+                    value={mirrorLt20.closingHtml}
+                    onChange={(e) => setMirrorLt20((f) => ({ ...f, closingHtml: e.target.value }))}
+                    className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm font-mono min-h-[60px]"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void sendMirrorLt20()}
+                  disabled={mirrorLt20Loading}
+                  className="px-4 py-2 rounded-lg bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 disabled:opacity-50"
+                >
+                  {mirrorLt20Loading ? 'Envoi…' : 'Envoyer le miroir (1 contact segment)'}
+                </button>
+                {mirrorLt20Msg && (
+                  <p className={`text-sm ${mirrorLt20Msg.includes('Erreur') || mirrorLt20Msg.includes('Aucun') || mirrorLt20Msg.includes('requis') || mirrorLt20Msg.includes('valide') ? 'text-red-600' : 'text-green-700'}`}>
+                    {mirrorLt20Msg}
+                  </p>
                 )}
               </div>
             </div>
