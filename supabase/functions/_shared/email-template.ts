@@ -118,7 +118,10 @@ export function buildEmailHtml(options: EmailTemplateOptions): string {
     footerReason = DEFAULT_FOOTER_REASON,
   } = options;
 
-  const closingResolved = closingHtml ?? defaultMarcClosingForTitle(title);
+  const closingResolved =
+    closingHtml != null && String(closingHtml).trim() !== ""
+      ? String(closingHtml)
+      : defaultMarcClosingForTitle(title);
 
   const ctaBlock =
     ctaText && ctaUrl

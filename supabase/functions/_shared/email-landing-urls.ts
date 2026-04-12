@@ -38,3 +38,66 @@ export function openLoginLandingInsteadOfDashboard(
   if (openRelance) out.searchParams.set("postLoginOpenRelance", openRelance);
   return out.toString();
 }
+
+function attrAmpersandEscape(url: string): string {
+  return url.replace(/&/g, "&amp;");
+}
+
+/**
+ * Pour la campagne trial_auto_incomplete_lt20 : le corps peut contenir des liens bruts vers `/dashboard`
+ * (HTML complet, copier-coller admin, `{{ lien_activation }}` mal configuré).
+ * On force tout href vers le dashboard public vers la landing `openLogin` + `returnUrl`,
+ * et on réécrit le paramètre `to=` des URLs `track-cta-click` si la cible est `/dashboard`.
+ */
+export function rewriteTrialDashboardLinksInHtml(html: string, recipientEmail: string): string {
+  const email = recipientEmail.trim();
+  const hintDashboard = `https://www.quittancesimple.fr/dashboard?loginHint=${encodeURIComponent(email)}`;
+  const landing = openLoginLandingInsteadOfDashboard(hintDashboard, { fallbackLoginEmail: email });
+  const safe = attrAmpersandEscape(landing);
+
+  let out = html;
+
+  out = out.replace(/href="(https?:\/\/[^/]+\/functions\/v1\/track-cta-click\?[^"]+)"/gi, (full, urlStr: string) => {
+    try {
+      const normalized = urlStr.replace(/&amp;/g, "&");
+      const u = new URL(normalized);
+      const toRaw = u.searchParams.get("to");
+      if (!toRaw) return full;
+      let decoded = toRaw;
+      for (let d = 0; d < 4; d++) {
+        try {
+          const next = decodeURIComponent(decoded);
+          if (next === decoded) break;
+          decoded = next;
+        } catch {
+          break;
+        }
+      }
+      let innerUrl: URL;
+      try {
+        innerUrl = new URL(decoded);
+      } catch {
+        return full;
+      }
+      const host = innerUrl.hostname.replace(/^www\./, "");
+      const path = (innerUrl.pathname.replace(/\/$/, "") || "/").toLowerCase();
+      if (host !== "quittancesimple.fr" || path !== "/dashboard") return full;
+      const newTo = openLoginLandingInsteadOfDashboard(decoded, { fallbackLoginEmail: email });
+      u.searchParams.set("to", newTo);
+      return `href="${attrAmpersandEscape(u.toString())}"`;
+    } catch {
+      return full;
+    }
+  });
+
+  out = out.replace(
+    /href="https?:\/\/(www\.)?quittancesimple\.fr\/dashboard[^"]*"/gi,
+    `href="${safe}"`,
+  );
+  out = out.replace(
+    /href='https?:\/\/(www\.)?quittancesimple\.fr\/dashboard[^']*'/gi,
+    `href='${safe}'`,
+  );
+
+  return out;
+}

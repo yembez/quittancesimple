@@ -411,7 +411,7 @@ const AdminAnalytics: React.FC = () => {
         setMirrorLt20Msg('Modèle chargé depuis campaign_templates (trial_auto_incomplete_lt20).');
       } else {
         setMirrorLt20Msg(
-          'Aucun modèle en base pour trial_auto_incomplete_lt20 : collez le HTML ci-dessous ou enregistrez un modèle.',
+          'Aucune ligne « trial_auto_incomplete_lt20 » en base. Tant que la contrainte SQL sur campaign_templates n’inclut pas cette clé, l’enregistrement est refusé. Exécutez la migration 20260411120000_campaign_templates_trial_lt20.sql (dossier supabase/migrations) dans l’éditeur SQL Supabase, puis rechargez et cliquez à nouveau « Charger le modèle depuis la BDD ». Vous pouvez aussi coller le HTML à la main puis « Enregistrer » après la migration.',
         );
       }
     } catch (e) {

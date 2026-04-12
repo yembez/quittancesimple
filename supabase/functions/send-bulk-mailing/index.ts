@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { buildEmailHtml, type EmailTitle, MARC_SIGNATURE_IMAGE_URL } from "../_shared/email-template.ts";
-import { openLoginLandingInsteadOfDashboard } from "../_shared/email-landing-urls.ts";
+import { openLoginLandingInsteadOfDashboard, rewriteTrialDashboardLinksInHtml } from "../_shared/email-landing-urls.ts";
 import { buildCampaignEmailHtml } from "../_shared/campaign-email-template.ts";
 import { buildRecipientsTrialAutoIncompleteLt20, loadAutomationOverviewData } from "../_shared/automation-overview-data.ts";
 
@@ -422,7 +422,7 @@ Deno.serve(async (req: Request) => {
       /^\s*<!doctype\s+html/i.test(bodyPersonalized) ||
       (/<html[\s>]/i.test(bodyPersonalized) && /<\/html>/i.test(bodyPersonalized));
 
-    const html = shouldSendRaw
+    let finalHtml = shouldSendRaw
       ? bodyPersonalized
           .replace(/\{\{\s*lien_activation\s*\}\}/gi, ctaUrlForEmail || ctaUrlPersonalized || "")
           .replace(/\{\{\s*lien_desabonnement\s*\}\}/gi, unsubscribeUrl)
@@ -447,6 +447,10 @@ Deno.serve(async (req: Request) => {
             unsubscribeUrl,
           });
 
+    if (bulkSegment === "trial_auto_incomplete_lt20") {
+      finalHtml = rewriteTrialDashboardLinksInHtml(finalHtml, r.email.trim());
+    }
+
     try {
     const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
@@ -461,7 +465,7 @@ Deno.serve(async (req: Request) => {
           subject: deliverToTestEmail
             ? `[TEST — miroir prod] ${subjectPersonalized || subject}`
             : subjectPersonalized || subject,
-          html,
+          html: finalHtml,
         }),
       });
 
