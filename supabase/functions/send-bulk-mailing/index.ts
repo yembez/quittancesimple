@@ -357,12 +357,13 @@ Deno.serve(async (req: Request) => {
   for (let i = 0; i < list.length; i++) {
     const r = list[i];
     const prenom = (r.prenom || "").trim() || "";
+    const linkEmail = (deliverToTestEmail || r.email || "").trim();
     const joursRestants =
       typeof r.jours_restants === "number" && Number.isFinite(r.jours_restants) ? Math.max(0, Math.round(r.jours_restants)) : null;
     let bodyPersonalized = bodyHtml
       .replace(/\{\{\s*prenom\s*\}\}/gi, prenom)
       .replace(/\[\s*Prénom\s*\]/gi, prenom)
-      .replace(/\{\{\s*email\s*\}\}/gi, encodeURIComponent(r.email.trim()))
+      .replace(/\{\{\s*email\s*\}\}/gi, encodeURIComponent(linkEmail))
       .replace(/\{\{\s*jours_restants\s*\}\}/gi, joursRestants === null ? "" : String(joursRestants))
       .replace(/\{\{\s*days_remaining\s*\}\}/gi, joursRestants === null ? "" : String(joursRestants))
       .replace(/\[\s*X\s*\]/gi, joursRestants === null ? "" : String(joursRestants));
@@ -379,7 +380,7 @@ Deno.serve(async (req: Request) => {
 
     const ctaUrlRaw = payload.ctaUrl || "";
     let ctaUrlPersonalized = ctaUrlRaw
-      .replace(/\{\{\s*email\s*\}\}/gi, encodeURIComponent(r.email.trim()));
+      .replace(/\{\{\s*email\s*\}\}/gi, encodeURIComponent(linkEmail));
 
     if (
       bulkSegment === "trial_auto_incomplete_lt20" &&
@@ -387,12 +388,12 @@ Deno.serve(async (req: Request) => {
       !/\bloginhint=/i.test(ctaUrlPersonalized)
     ) {
       const sep = ctaUrlPersonalized.includes("?") ? "&" : "?";
-      ctaUrlPersonalized = `${ctaUrlPersonalized}${sep}loginHint=${encodeURIComponent(r.email.trim())}`;
+      ctaUrlPersonalized = `${ctaUrlPersonalized}${sep}loginHint=${encodeURIComponent(linkEmail)}`;
     }
 
     if (ctaUrlPersonalized) {
       ctaUrlPersonalized = openLoginLandingInsteadOfDashboard(ctaUrlPersonalized, {
-        fallbackLoginEmail: r.email.trim(),
+        fallbackLoginEmail: linkEmail,
       });
     }
 
@@ -412,7 +413,7 @@ Deno.serve(async (req: Request) => {
         : ctaUrlPersonalized || undefined;
 
     const SITE_URL = "https://www.quittancesimple.fr";
-    const unsubscribeUrl = `${SITE_URL}/unsubscribe?email=${encodeURIComponent(r.email.trim())}`;
+    const unsubscribeUrl = `${SITE_URL}/unsubscribe?email=${encodeURIComponent(linkEmail)}`;
     const photoVincentUrl =
       (payload.photoVincentUrl && String(payload.photoVincentUrl).trim()) || MARC_SIGNATURE_IMAGE_URL;
 
@@ -452,7 +453,7 @@ Deno.serve(async (req: Request) => {
           });
 
     if (bulkSegment === "trial_auto_incomplete_lt20") {
-      finalHtml = rewriteTrialDashboardLinksInHtml(finalHtml, r.email.trim());
+      finalHtml = rewriteTrialDashboardLinksInHtml(finalHtml, linkEmail);
     }
 
     try {
