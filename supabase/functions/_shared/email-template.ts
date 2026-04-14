@@ -91,6 +91,8 @@ export interface EmailTemplateOptions {
   bodyHtml: string;
   ctaText?: string;
   ctaUrl?: string;
+  /** Bloc HTML inséré après le bouton CTA (avant la signature Marc). */
+  postCtaHtml?: string;
   closingHtml?: string;
   contactUrl?: string;
   year?: number;
@@ -111,6 +113,7 @@ export function buildEmailHtml(options: EmailTemplateOptions): string {
     bodyHtml,
     ctaText,
     ctaUrl,
+    postCtaHtml,
     closingHtml,
     unsubscribeUrl = DEFAULT_UNSUBSCRIBE_URL,
     contactUrl = DEFAULT_CONTACT_URL,
@@ -127,6 +130,8 @@ export function buildEmailHtml(options: EmailTemplateOptions): string {
     ctaText && ctaUrl
       ? `<p style="margin-top: 25px; text-align: center;"><a href="${ctaUrl}" class="button">${ctaText}</a></p>`
       : "";
+
+  const postCtaResolved = postCtaHtml?.trim() ? postCtaHtml : "";
 
   const logoBlock = title ? `<div class="logo">${title}</div>` : "";
 
@@ -156,6 +161,7 @@ export function buildEmailHtml(options: EmailTemplateOptions): string {
     ${bodyHtml}
     </div>
 ${ctaBlock}
+${postCtaResolved}
 
     <p style="margin-top: 40px;">${closingResolved}</p>
 

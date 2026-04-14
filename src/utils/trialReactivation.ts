@@ -58,6 +58,12 @@ export function needsTrialReactivationPage(p: {
     // date_fin_essai illisible : on laisse les branches legacy ci-dessous
   }
 
+  // Essai / pack encore actif en BDD mais sans date_fin_essai exploitable : ne pas envoyer vers /essai-termine
+  // (sinon les bailleur·e·s visé·e·s par la relance auto incomplète se font expulser du dashboard).
+  if (p.abonnement_actif === true) {
+    return false;
+  }
+
   // Pas de date_fin_essai : anciens comptes auto/premium (>30 j) sans essai daté en BDD
   const age = accountAgeDays(p.created_at);
   if (age !== null && age > 30 && (plan === 'auto' || plan === 'premium')) {
