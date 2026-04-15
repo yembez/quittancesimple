@@ -507,7 +507,7 @@ const AdminAnalytics: React.FC = () => {
 
   const sendRealLt20 = async (limit: number) => {
     if (!mirrorLt20.subject.trim() || !mirrorLt20.bodyHtml.trim()) {
-      setLt20SendMsg('Chargez d'abord le modèle (sujet + corps requis).');
+      setLt20SendMsg('Chargez d\u2019abord le modèle (sujet + corps requis).');
       return;
     }
     const confirmMsg = limit === 1
