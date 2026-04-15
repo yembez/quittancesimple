@@ -446,7 +446,7 @@ Deno.serve(async (req: Request) => {
             ctaUrl: ctaUrlForEmail,
             postCtaHtml:
               bulkSegment === "trial_auto_incomplete_lt20"
-                ? `<p style="margin: 22px 0 0 0; line-height: 1.75; color: #333333;">Si vous avez la moindre question, répondez à cet e-mail&nbsp;!<br/>À très vite&nbsp;!</p>`
+                ? `<p style="margin: 22px 0 0 0; line-height: 1.75; color: #333333;">À votre disposition pour vous aider,</p>`
                 : undefined,
             closingHtml: payload.closingHtml,
             unsubscribeUrl,
