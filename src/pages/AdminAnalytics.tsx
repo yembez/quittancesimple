@@ -381,6 +381,9 @@ const AdminAnalytics: React.FC = () => {
   const [mirrorLt20Loading, setMirrorLt20Loading] = useState(false);
   const [mirrorLt20SaveLoading, setMirrorLt20SaveLoading] = useState(false);
   const [mirrorLt20Msg, setMirrorLt20Msg] = useState('');
+  const [lt20SendLimit, setLt20SendLimit] = useState(1);
+  const [lt20SendLoading, setLt20SendLoading] = useState(false);
+  const [lt20SendMsg, setLt20SendMsg] = useState('');
 
   const loadMirrorLt20Template = useCallback(async () => {
     setMirrorLt20Loading(true);
@@ -499,6 +502,47 @@ const AdminAnalytics: React.FC = () => {
       setMirrorLt20Msg(e instanceof Error ? e.message : String(e));
     } finally {
       setMirrorLt20Loading(false);
+    }
+  };
+
+  const sendRealLt20 = async (limit: number) => {
+    if (!mirrorLt20.subject.trim() || !mirrorLt20.bodyHtml.trim()) {
+      setLt20SendMsg('Chargez d'abord le modèle (sujet + corps requis).');
+      return;
+    }
+    const confirmMsg = limit === 1
+      ? 'Envoyer un VRAI e-mail au 1er lead du segment < 20 j ?'
+      : `Envoyer un VRAI e-mail aux ${limit} premiers leads du segment < 20 j ?`;
+    if (!window.confirm(confirmMsg)) return;
+    setLt20SendLoading(true);
+    setLt20SendMsg('');
+    try {
+      const { data, error } = await supabase.functions.invoke('send-bulk-mailing', {
+        body: {
+          _adminPassword: ADMIN_PASSWORD,
+          segment: 'trial_auto_incomplete_lt20',
+          limit,
+          offset: 0,
+          subject: mirrorLt20.subject.trim(),
+          bodyHtml: mirrorLt20.bodyHtml.trim(),
+          ctaText: mirrorLt20.ctaText.trim(),
+          ctaUrl: mirrorLt20.ctaUrl.trim() || 'https://www.quittancesimple.fr/dashboard',
+          closingHtml: mirrorLt20.closingHtml.trim() || undefined,
+          emailTitle: 'QS- Espace Bailleur',
+        },
+      });
+      if (error) { setLt20SendMsg(error.message || 'Erreur'); return; }
+      const d = data as { sent?: number; failed?: number; failedDetails?: { email: string; error: string }[]; nextOffset?: number; message?: string; error?: string };
+      if (d?.error) { setLt20SendMsg(d.error); return; }
+      const parts = [`${d?.sent ?? 0} envoyé(s)`];
+      if (d?.failed) parts.push(`${d.failed} en erreur`);
+      if (d?.nextOffset) parts.push(`nextOffset=${d.nextOffset} (il reste des destinataires)`);
+      else parts.push('segment terminé');
+      setLt20SendMsg(parts.join(' · '));
+    } catch (e) {
+      setLt20SendMsg(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLt20SendLoading(false);
     }
   };
 
@@ -2760,6 +2804,44 @@ const AdminAnalytics: React.FC = () => {
                     {mirrorLt20Msg}
                   </p>
                 )}
+
+                <div className="border-t border-[#e5e7eb] pt-3 mt-3">
+                  <h3 className="text-sm font-semibold text-[#111827] mb-2">Envoi réel (PRODUCTION)</h3>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => void sendRealLt20(1)}
+                      disabled={lt20SendLoading}
+                      className="px-4 py-2 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600 disabled:opacity-50"
+                    >
+                      {lt20SendLoading ? 'Envoi…' : 'Envoyer à 1 vrai lead'}
+                    </button>
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs text-[#6b7280]">Limit :</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={200}
+                        value={lt20SendLimit}
+                        onChange={(e) => setLt20SendLimit(Math.max(1, Math.min(200, Number(e.target.value) || 1)))}
+                        className="w-20 rounded-lg border border-[#e5e7eb] px-2 py-1 text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => void sendRealLt20(lt20SendLimit)}
+                        disabled={lt20SendLoading}
+                        className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-50"
+                      >
+                        {lt20SendLoading ? 'Envoi…' : `Envoyer au segment (${lt20SendLimit})`}
+                      </button>
+                    </div>
+                  </div>
+                  {lt20SendMsg && (
+                    <p className={`text-sm mt-2 ${lt20SendMsg.includes('Erreur') || lt20SendMsg.includes('erreur') ? 'text-red-600' : 'text-green-700'}`}>
+                      {lt20SendMsg}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 

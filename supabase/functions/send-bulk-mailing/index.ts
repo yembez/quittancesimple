@@ -418,6 +418,7 @@ Deno.serve(async (req: Request) => {
       (payload.photoVincentUrl && String(payload.photoVincentUrl).trim()) || MARC_SIGNATURE_IMAGE_URL;
 
     const isCampaign = ["free_leads", "leads_j2", "leads_j2_catchup", "leads_j5", "leads_j8"].includes(payload.segment || "");
+    const isTrialLt20 = bulkSegment === "trial_auto_incomplete_lt20";
     const shouldSendRaw =
       payload.rawHtml === true ||
       /^\s*<!doctype\s+html/i.test(bodyPersonalized) ||
@@ -428,7 +429,7 @@ Deno.serve(async (req: Request) => {
           .replace(/\{\{\s*lien_activation\s*\}\}/gi, ctaUrlForEmail || ctaUrlPersonalized || "")
           .replace(/\{\{\s*lien_desabonnement\s*\}\}/gi, unsubscribeUrl)
           .replace(/\{\{\s*photo_vincent_url\s*\}\}/gi, photoVincentUrl)
-      : isCampaign
+      : (isCampaign || isTrialLt20)
         ? buildCampaignEmailHtml({
             prenom: prenom || "Prénom",
             lienActivation: ctaUrlForEmail || ctaUrlPersonalized || "",
@@ -444,10 +445,6 @@ Deno.serve(async (req: Request) => {
             bodyHtml: bodyPersonalized,
             ctaText: payload.ctaText,
             ctaUrl: ctaUrlForEmail,
-            postCtaHtml:
-              bulkSegment === "trial_auto_incomplete_lt20"
-                ? `<p style="margin: 22px 0 0 0; line-height: 1.75; color: #333333;">À votre disposition pour vous aider,</p>`
-                : undefined,
             closingHtml: payload.closingHtml,
             unsubscribeUrl,
           });

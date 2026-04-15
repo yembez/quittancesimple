@@ -37,6 +37,123 @@ export interface CampaignEmailSlots {
   thanks?: string;
 }
 
+interface FreeformOptions {
+  prenomSafe: string;
+  bodyHtml: string;
+  ctaLabel: string;
+  lienSafe: string;
+  lienDesabonnementSafe: string;
+  closingHtml?: string;
+  photoVincentUrl: string;
+  contactUrl: string;
+}
+
+function buildCampaignFreeformHtml(opts: FreeformOptions): string {
+  const { prenomSafe, bodyHtml, ctaLabel, lienSafe, lienDesabonnementSafe, closingHtml, photoVincentUrl, contactUrl } = opts;
+  const hasCustomClosing = !!closingHtml && closingHtml.trim().length > 0;
+
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Quittance Simple</title>
+  <style>
+    @media only screen and (max-width: 620px) {
+      .wrapper { padding: 16px !important; }
+      .content { padding-left: 20px !important; padding-right: 20px !important; max-width: 100% !important; }
+      .cta-block { padding: 12px 24px !important; font-size: 16px !important; }
+      .signature-img { width: 64px !important; height: 64px !important; object-fit: cover !important; }
+    }
+  </style>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f5f5f5; -webkit-text-size-adjust: 100%;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f5f5f5;">
+    <tr>
+      <td class="wrapper" style="padding: 24px 16px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+          <tr>
+            <td class="content" style="padding: 32px 32px 0;">
+              <div style="font-size: 16px; line-height: 1.6; color: #000000;">
+                ${bodyHtml}
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="content" style="padding: 24px 32px 32px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <td style="text-align: center;">
+                    <a href="${lienSafe}" class="cta-block" style="display: inline-block; background-color: #4A90E2; color: #ffffff !important; text-decoration: none; padding: 14px 32px; font-size: 17px; font-weight: 600; border-radius: 6px;">
+                      ${ctaLabel}
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td class="content" style="padding: 0 32px 24px;">
+              <div style="border-top: 1px solid #e1e8ed;"></div>
+            </td>
+          </tr>
+          ${hasCustomClosing ? `
+          <tr>
+            <td class="content" style="padding: 0 32px 32px;">
+              ${closingHtml}
+            </td>
+          </tr>
+          ` : `
+          <tr>
+            <td class="content" style="padding: 0 32px 12px;">
+              <p style="margin: 0; font-size: 16px; line-height: 1.5; color: #000000;">
+                À votre disposition pour vous aider,
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td class="content" style="padding: 0 32px 32px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td style="width: 70px; vertical-align: top; padding-right: 16px;">
+                    <img src="${photoVincentUrl.replace(/"/g, "&quot;")}" alt="Marc" width="80" height="80" class="signature-img" style="border-radius: 50%; display: block; object-fit: cover;">
+                  </td>
+                  <td style="vertical-align: middle;">
+                    <p style="margin: 0 0 4px; font-size: 17px; font-weight: 600; color: #000000; line-height: 1.4;">
+                      Marc
+                    </p>
+                    <p style="margin: 0; font-size: 15px; line-height: 1.4; color: #000000;">
+                      Co-fondateur de Quittance&nbsp;Simple<br>
+                      Bailleur&nbsp;comme vous
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          `}
+          <tr>
+            <td class="content" style="padding: 24px 32px; background-color: #f8f9fa; border-top: 1px solid #e1e8ed;">
+              <p style="margin: 0 0 8px; font-size: 14px; line-height: 1.5; color: #333333;">
+                Vous recevez cet e-mail dans le cadre d'une communication Quittance&nbsp;Simple.<br>
+                Des questions&nbsp;? Des suggestions&nbsp;? Nous serions ravis d'avoir vos retours&nbsp;:
+                <a href="${contactUrl.replace(/"/g, "&quot;")}" style="color: #7CAA89; text-decoration: underline;">Nous&nbsp;contacter</a>
+              </p>
+              <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #333333;">
+                <a href="${lienDesabonnementSafe}" style="color: #333333; text-decoration: underline;">Se&nbsp;désabonner</a>
+                ©&nbsp;2026 Quittance&nbsp;Simple
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")
@@ -235,6 +352,20 @@ export function buildCampaignEmailHtml(options: CampaignEmailOptions): string {
   };
 
   const parsedBody = hasCustomBody ? parseCampaignTextFromBodyHtml(bodyHtml) : null;
+
+  const isFreeform = hasCustomBody && parsedBody && parsedBody.paragraphs.length > 0 && !parsedBody.boxHtml && !parsedBody.transitionHtml;
+  if (isFreeform) {
+    return buildCampaignFreeformHtml({
+      prenomSafe,
+      bodyHtml: replacePrenomTokens(bodyHtml!),
+      ctaLabel,
+      lienSafe,
+      lienDesabonnementSafe,
+      closingHtml: hasCustomClosing ? closingHtml! : undefined,
+      photoVincentUrl,
+      contactUrl,
+    });
+  }
 
   const defaultWelcomeHtml =
     "Vous avez créé une quittance récemment sur Quittance&nbsp;Simple et je voulais vous remercier et surtout vous souhaiter la bienvenue&nbsp;!";
