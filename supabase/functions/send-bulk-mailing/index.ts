@@ -259,7 +259,23 @@ Deno.serve(async (req: Request) => {
         const e = r.email.trim().toLowerCase();
         return isEmailValidePourMailing(r.email) && !desabonnesSet.has(e);
       });
-      const page = filtered.slice(runOffset, runOffset + limit);
+
+      // IMPORTANT: pour que l'admin puisse réellement "vider" le segment, on exclut ici
+      // les destinataires déjà envoyés (idempotence) AVANT la pagination.
+      // Sinon, offset/limit parcourt une liste où des contacts sont déjà "consommés".
+      const { data: sentRows } = await supabase
+        .from("campaign_sends")
+        .select("email")
+        .eq("campaign_key", "trial_auto_incomplete_lt20")
+        .limit(20000);
+      const sentSet = new Set(
+        (sentRows || [])
+          .map((r: { email?: string | null }) => (r.email || "").trim().toLowerCase())
+          .filter(Boolean),
+      );
+
+      const unsent = filtered.filter((r) => !sentSet.has(r.email.trim().toLowerCase()));
+      const page = unsent.slice(runOffset, runOffset + limit);
       list = page.map((r) => ({
         id: r.id,
         email: r.email,
@@ -397,7 +413,11 @@ Deno.serve(async (req: Request) => {
         if (insertErr) {
           // Doublon: contrainte unique (campaign_key, email) => on skip l'envoi.
           // PostgREST renvoie typiquement 409 Conflict.
-          if (String((insertErr as { code?: string; status?: number } | null)?.status) === "409") {
+          const errAny = insertErr as { code?: string; status?: number; message?: string } | null;
+          const isConflictStatus = String(errAny?.status) === "409";
+          const isUniqueViolation = String(errAny?.code || "") === "23505";
+          const looksLikeDuplicate = /\bduplicate key\b|\bunique constraint\b/i.test(String(errAny?.message || ""));
+          if (isConflictStatus || isUniqueViolation || looksLikeDuplicate) {
             skippedAlreadySent++;
             if (i < list.length - 1) await sleep(delayMs);
             continue;

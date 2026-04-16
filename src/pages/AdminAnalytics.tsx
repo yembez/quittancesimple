@@ -384,6 +384,7 @@ const AdminAnalytics: React.FC = () => {
   const [lt20SendLimit, setLt20SendLimit] = useState(1);
   const [lt20SendLoading, setLt20SendLoading] = useState(false);
   const [lt20SendMsg, setLt20SendMsg] = useState('');
+  const [lt20SendOffset, setLt20SendOffset] = useState(0);
 
   const loadMirrorLt20Template = useCallback(async () => {
     setMirrorLt20Loading(true);
@@ -522,7 +523,7 @@ const AdminAnalytics: React.FC = () => {
           _adminPassword: ADMIN_PASSWORD,
           segment: 'trial_auto_incomplete_lt20',
           limit,
-          offset: 0,
+          offset: lt20SendOffset,
           subject: mirrorLt20.subject.trim(),
           bodyHtml: mirrorLt20.bodyHtml.trim(),
           ctaText: mirrorLt20.ctaText.trim(),
@@ -532,11 +533,15 @@ const AdminAnalytics: React.FC = () => {
         },
       });
       if (error) { setLt20SendMsg(error.message || 'Erreur'); return; }
-      const d = data as { sent?: number; failed?: number; failedDetails?: { email: string; error: string }[]; nextOffset?: number; message?: string; error?: string };
+      const d = data as { sent?: number; skippedAlreadySent?: number; failed?: number; failedDetails?: { email: string; error: string }[]; nextOffset?: number; message?: string; error?: string };
       if (d?.error) { setLt20SendMsg(d.error); return; }
       const parts = [`${d?.sent ?? 0} envoyé(s)`];
+      if (d?.skippedAlreadySent) parts.push(`${d.skippedAlreadySent} ignoré(s) (déjà envoyés)`);
       if (d?.failed) parts.push(`${d.failed} en erreur`);
-      if (d?.nextOffset) parts.push(`nextOffset=${d.nextOffset} (il reste des destinataires)`);
+      if (typeof d?.nextOffset === 'number') {
+        setLt20SendOffset(d.nextOffset);
+        parts.push(`nextOffset=${d.nextOffset} (il reste des destinataires)`);
+      }
       else parts.push('segment terminé');
       setLt20SendMsg(parts.join(' · '));
     } catch (e) {
@@ -2816,6 +2821,16 @@ const AdminAnalytics: React.FC = () => {
                     >
                       {lt20SendLoading ? 'Envoi…' : 'Envoyer à 1 vrai lead'}
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => { setLt20SendOffset(0); setLt20SendMsg('Offset remis à 0.'); }}
+                      disabled={lt20SendLoading}
+                      className="px-3 py-2 rounded-lg bg-[#111827] text-white text-sm font-medium hover:bg-black disabled:opacity-50"
+                      title="Repartir du début de la liste des non-envoyés"
+                    >
+                      Reset offset
+                    </button>
+                    <span className="text-xs text-[#6b7280]">offset courant : <strong>{lt20SendOffset}</strong></span>
                     <div className="flex items-center gap-2">
                       <label className="text-xs text-[#6b7280]">Limit :</label>
                       <input
