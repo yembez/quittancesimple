@@ -9,7 +9,7 @@ SET
 <p style="margin: 0 0 1.15em 0; line-height: 1.75;">Je vous propose de tester la «&nbsp;magie&nbsp;» de l'envoi en 1 clic tout de suite, en 2 minutes chrono.</p>
 <p style="margin: 0 0 1.15em 0; line-height: 1.75;"><strong>Voici comment tester&nbsp;:</strong></p>
 <ol style="margin: 0.2em 0 1.25em 0; padding-left: 1.25em; line-height: 1.75;">
-<li style="margin-bottom: 0.65em;"><strong>Préparez l'envoi</strong>&nbsp;: Dans votre espace bailleur, renseignez votre numéro de mobile et mettez votre propre e-mail à la place de celui du locataire.</li>
+<li style="margin-bottom: 0.65em;"><strong>Préparez l'envoi</strong>&nbsp;: Dans votre espace bailleur, choisissez le mode «&nbsp;Validation en 1 clic&nbsp;», renseignez votre numéro de mobile et mettez votre propre e-mail à la place de celui du locataire.</li>
 <li style="margin-bottom: 0.65em;"><strong>Lancez le chrono</strong>&nbsp;: Réglez le rappel au jour d'aujourd'hui et l'heure à dans 2 minutes (ex&nbsp;: s'il est 14h05, mettez 14h07).</li>
 <li style="margin-bottom: 0.65em;"><strong>Vivez l'expérience</strong>&nbsp;: À l'heure dite, vous recevez le SMS et l'e-mail. Cliquez sur le bouton «&nbsp;Envoyer&nbsp;».</li>
 </ol>

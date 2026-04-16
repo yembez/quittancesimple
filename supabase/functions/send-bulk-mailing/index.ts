@@ -87,6 +87,10 @@ interface BulkPayload {
   deliverToTestEmail?: string;
 }
 
+function normaliseEmailForSend(value: unknown): string {
+  return typeof value === "string" ? value.trim().toLowerCase() : "";
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -187,7 +191,7 @@ Deno.serve(async (req: Request) => {
           .filter((e) => e && e.includes("@"))
       : null;
 
-  let list: { id?: number; email: string; prenom?: string; jours_restants?: number }[];
+  let list: { id?: string | number; email: string; prenom?: string; jours_restants?: number }[];
   let runOffset = 0;
 
   const rawTestRecipients = payload.testRecipients;
@@ -349,15 +353,65 @@ Deno.serve(async (req: Request) => {
   let sent = 0;
   const sentIds: (string | number)[] = [];
   const failed: { email: string; error: string }[] = [];
+  let skippedAlreadySent = 0;
 
   const bulkSegment = payload.segment || "";
   const effectiveEmailTitle = (payload.emailTitle ??
     (bulkSegment === "trial_auto_incomplete_lt20" ? "QS- Espace Bailleur" : "")) as EmailTitle;
 
+  const shouldTrackIdempotentSends =
+    !testEmails &&
+    !testRecipients &&
+    !deliverToTestEmail &&
+    bulkSegment === "trial_auto_incomplete_lt20";
+
+  const supabaseUrlForIdempotence = Deno.env.get("SUPABASE_URL");
+  const serviceKeyForIdempotence = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const supabaseForIdempotence =
+    shouldTrackIdempotentSends && supabaseUrlForIdempotence && serviceKeyForIdempotence
+      ? createClient(supabaseUrlForIdempotence, serviceKeyForIdempotence)
+      : null;
+
   for (let i = 0; i < list.length; i++) {
     const r = list[i];
     const prenom = (r.prenom || "").trim() || "";
     const linkEmail = (deliverToTestEmail || r.email || "").trim();
+    const normalizedRecipientEmail = normaliseEmailForSend(r.email);
+
+    // Anti-doublon robuste pour le segment trial_auto_incomplete_lt20 :
+    // on "réserve" l'envoi en base via une contrainte unique (campaign_key, email).
+    // Si la ligne existe déjà, on skip l'envoi (évite relances multiples sur la même adresse).
+    if (supabaseForIdempotence) {
+      const recipientEmail = normalizedRecipientEmail;
+      if (recipientEmail) {
+        const { data: inserted, error: insertErr } = await supabaseForIdempotence
+          .from("campaign_sends")
+          .upsert(
+            {
+              campaign_key: "trial_auto_incomplete_lt20",
+              email: recipientEmail,
+              sent_at: new Date().toISOString(),
+            },
+            { onConflict: "campaign_key,email", ignoreDuplicates: true },
+          )
+          .select("id")
+          .limit(1);
+
+        if (insertErr) {
+          failed.push({ email: r.email, error: `idempotence: ${insertErr.message}` });
+          if (i < list.length - 1) await sleep(delayMs);
+          continue;
+        }
+
+        // ignoreDuplicates=true: quand doublon, Supabase renvoie généralement une liste vide.
+        if (!inserted || inserted.length === 0) {
+          skippedAlreadySent++;
+          if (i < list.length - 1) await sleep(delayMs);
+          continue;
+        }
+      }
+    }
+
     const joursRestants =
       typeof r.jours_restants === "number" && Number.isFinite(r.jours_restants) ? Math.max(0, Math.round(r.jours_restants)) : null;
     let bodyPersonalized = bodyHtml
@@ -523,6 +577,7 @@ Deno.serve(async (req: Request) => {
         ? { personalizationSourceEmails: list.map((row) => row.email.trim()) }
         : {}),
       sent,
+      skippedAlreadySent: skippedAlreadySent > 0 ? skippedAlreadySent : undefined,
       failed: failed.length,
       failedDetails: failed.length > 0 ? failed : undefined,
       nextOffset,
@@ -539,8 +594,8 @@ Deno.serve(async (req: Request) => {
               ? `${sent} e-mail(s) de test (destinataires) envoyé(s). Vérifiez votre boîte.`
               : `${sent} envoyé(s), ${failed.length} en erreur.`)
         : failed.length === 0
-          ? `${sent} e-mail(s) envoyé(s). Pour la suite : rappeler avec offset=${nextOffset}.`
-          : `${sent} envoyé(s), ${failed.length} en erreur. Prochaine fois : offset=${nextOffset}.`,
+          ? `${sent} e-mail(s) envoyé(s).${skippedAlreadySent > 0 ? ` ${skippedAlreadySent} déjà envoyés ignorés.` : ""} Pour la suite : rappeler avec offset=${nextOffset}.`
+          : `${sent} envoyé(s), ${failed.length} en erreur.${skippedAlreadySent > 0 ? ` ${skippedAlreadySent} déjà envoyés ignorés.` : ""} Prochaine fois : offset=${nextOffset}.`,
     }),
     { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
