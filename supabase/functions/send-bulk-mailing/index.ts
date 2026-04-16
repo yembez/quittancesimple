@@ -386,25 +386,29 @@ Deno.serve(async (req: Request) => {
       if (recipientEmail) {
         const { data: inserted, error: insertErr } = await supabaseForIdempotence
           .from("campaign_sends")
-          .upsert(
-            {
-              campaign_key: "trial_auto_incomplete_lt20",
-              email: recipientEmail,
-              sent_at: new Date().toISOString(),
-            },
-            { onConflict: "campaign_key,email", ignoreDuplicates: true },
-          )
+          .insert({
+            campaign_key: "trial_auto_incomplete_lt20",
+            email: recipientEmail,
+            sent_at: new Date().toISOString(),
+          })
           .select("id")
           .limit(1);
 
         if (insertErr) {
+          // Doublon: contrainte unique (campaign_key, email) => on skip l'envoi.
+          // PostgREST renvoie typiquement 409 Conflict.
+          if (String((insertErr as { code?: string; status?: number } | null)?.status) === "409") {
+            skippedAlreadySent++;
+            if (i < list.length - 1) await sleep(delayMs);
+            continue;
+          }
           failed.push({ email: r.email, error: `idempotence: ${insertErr.message}` });
           if (i < list.length - 1) await sleep(delayMs);
           continue;
         }
 
-        // ignoreDuplicates=true: quand doublon, Supabase renvoie généralement une liste vide.
         if (!inserted || inserted.length === 0) {
+          // Cas ultra défensif : si on n'a pas la preuve d'une insertion, ne pas envoyer.
           skippedAlreadySent++;
           if (i < list.length - 1) await sleep(delayMs);
           continue;
